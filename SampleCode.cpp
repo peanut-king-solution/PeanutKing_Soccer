@@ -2,26 +2,6 @@
 #include "SampleCode.h"
 
 
-// motor test ----------------------------
-void motorTest (void) {
-  while (true) {
-    for (int i=0; i<9; i++) {
-      for (int j=0; j<4; j++) {
-        if ( i<4 )
-          robot.motorSet( j, i==j ? 100 : 0 );
-        else
-          robot.motorSet( j, (i-4)==j ? -100 : 0 );
-      }
-      do {
-        robot.buttons();
-        delay(10);
-      } while ( ! robot.buttonPressed[2] );
-    }
-  }
-}
-
-
-
 void Test (void) {
   /*
     Serial.println("start: ");
@@ -98,12 +78,12 @@ void Robot::strategy() {
           moveSmart(0, 100);          // move front
         break;
         case 11:
-          moveSmart(0, 0);          // Stop
+          moveSmart(0, 0);            // Stop
         break;
         case 10:
         case 9:
         case 8:
-          moveSmart(180, 100);          // move back
+          moveSmart(180, 100);        // move back
         break;
         default:
           moveSmart(eyeAngle, 80);
@@ -116,12 +96,12 @@ void Robot::strategy() {
           moveSmart(0, 100);          // move front
         break;
         case 3:
-          moveSmart(0, 0);          // Stop
+          moveSmart(0, 0);            // Stop
         break;
         case 4:
         case 5:
         case 6:
-          moveSmart(180, 100);          // move back
+          moveSmart(180, 100);        // move back
         break;
         default:
           moveSmart(eyeAngle, 80);

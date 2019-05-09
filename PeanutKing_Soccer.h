@@ -4,14 +4,12 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <SoftwareSerial.h>   //Software Serial Port
-#include <LiquidCrystal_I2C.h>
 
+#include <LiquidCrystal_I2C.h>
 
 // motor,  + clockwise
 // 14
 // 23
-
 
 
 #define LED1   0x01
@@ -81,11 +79,13 @@ typedef struct {
   uint8_t r; uint8_t g; uint8_t b; uint8_t w;
 } ledColor;
 
-enum sensorNum {front = 0, left, right, back};
-enum color {
+typedef enum { front = 0, left, right, back } sensorNum;
+
+typedef enum {
   black=0,  white,   grey,
   red,      green,   blue, 
-  yellow,   cyan,    magenta};
+  yellow,   cyan,    magenta
+} color;
 
 const uint8_t
   ALLIOs      = 0b11111111,
@@ -93,14 +93,13 @@ const uint8_t
 	COMPOUNDEYE = 0b00000001,     // 1.45ms
 	COMPASS     = 0b00000010,     // 0.27ms
 	ULTRASONIC  = 0b00000100,     // ~14ms ~ 32ms for 4
-	COLORSENSOR = 0b00001000,     // ~10ms for 4 (raw 2.7 FOR 4) , new 7.6ms for 4
+	COLORSENSOR = 0b00001000,     // ~10ms for 4 (2.7 FOR 4), new 7.6ms for 4
   ALLOUTPUT   = 0b11110000,
   LED         = 0b00010000,     // ~0.5ms for 8 leds
   MOTOR       = 0b00100000,     // 0.42ms for motorcontrol (4motors)
   LCDSCREEN   = 0b01000000;
   
 const float pi = 3.1415926535897;
-
 
 class PeanutKing_Soccer {
   uint8_t
@@ -116,8 +115,8 @@ class PeanutKing_Soccer {
     GET_READING = 0x55,
     SET_HOME    = 0x54,
     
-    BTRxPin     = 19,
-    BTTxPin     = 18,
+    //BTRxPin     = 19,
+    //BTTxPin     = 18,
     
     tcsblPin    = 32,
     ledPin      = 33,
@@ -144,9 +143,6 @@ class PeanutKing_Soccer {
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
   
-  
-  uint16_t 
-    EYEBOUNDARY = 20;
   uint8_t 
     _backlightval,
     _displayfunction,
@@ -164,11 +160,11 @@ class PeanutKing_Soccer {
     buttonPressed[3],
     buttonReleased[3],
     buttonTriggered[3],
-    isWhite[4] = {false},
-    onBound[4] = {false},
+    isWhite[4]  = {false},
+    onBound[4]  = {false},
     outBound[4] = {false};
   uint8_t 
-    systemTime,			//a reference 100Hz clock, count from 0-100 every second
+    systemTime,			//a reference 100Hz clock, 0-100 every second
     autoScanSensors = ALLSENSOR,
     MaxEye,
     MinEye,
@@ -176,6 +172,7 @@ class PeanutKing_Soccer {
   int16_t
     Xsonic[4]; 		  //4 xsonic reading
   uint16_t
+    EYEBOUNDARY = 20,
     eyeAngle,
     Eye[13];  		  // 12 ir reading , can be 16, depends on version number
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
@@ -187,25 +184,27 @@ class PeanutKing_Soccer {
     rgbData[4];
   hsv
     hsvData[4];
-    
-  //LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x38, 16, 2);
-  SoftwareSerial blueToothSerial = SoftwareSerial(BTRxPin, BTTxPin);
   
+  LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x38, 16, 2);
   
   // functions ------------------------------------------------------
-  bool
-    buttonRead(uint8_t);
+  void
+    ledTest (void),
+    motorTest(void);
+  
   hsv
     rgb2hsv(rgb in);
+  bool
+    buttonRead(uint8_t);
   float
     compassRead(void);
   uint8_t
-    colorSenseRead(uint8_t sensor_no);
+    colorSenseRead(uint8_t);
   uint16_t
     sort(uint16_t[], uint8_t),
     setHome(void),
     xsonicRead(uint8_t),
-    compoundEyeRead (uint8_t eye_no);
+    compoundEyeRead (uint8_t);
   void
     init(void),
     autoScanning(void),
@@ -224,6 +223,7 @@ class PeanutKing_Soccer {
     printSpace(uint32_t, uint8_t),
     debugging(uint16_t, uint8_t),
     setScreen(uint8_t, uint8_t, char string[] ),
+    
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
     moveSmart(uint16_t , int16_t),
@@ -240,8 +240,8 @@ class PeanutKing_Soccer {
     expanderWrite(uint8_t _data);
   
   size_t 
-    print(const char *ifsh),
-    write(uint8_t value);
+    print(const char *),
+    write(uint8_t);
   
   //protected:
   float rawGyro(void);
@@ -257,9 +257,7 @@ class PeanutKing_Soccer {
     rawColor(uint8_t, uint16_t &, uint16_t &, uint16_t &);
   
   
-
   uint16_t RawColorSensor(uint8_t);
-
 };
 
 
