@@ -185,7 +185,7 @@ class PeanutKing_Soccer {
   hsv
     hsvData[4];
   
-  LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x38, 16, 2);
+  //LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x38, 16, 2);
   
   // functions ------------------------------------------------------
   void

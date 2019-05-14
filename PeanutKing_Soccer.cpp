@@ -96,7 +96,7 @@ void PeanutKing_Soccer::init() {
   for (uint8_t i=0; i<3; i++)
     pinMode(buttonPin[i], INPUT);
   
-  //LCDSetup();
+  LCDSetup();
   
   ledSetup(0, ledPin, numLEDs);
   ledSetup(1, tcsblPin, 1);
@@ -681,12 +681,13 @@ void PeanutKing_Soccer::ledUpdate(uint8_t x) {
 
 // col(0-15), row(0-1) --------------------------------------------
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
+  /*
   lcd.backlight();
   lcd.setCursor(col, row);
-  lcd.print("Hello");
-  /*
+  lcd.print("Hello");*/
+  
   setCursor(col, row);
-  print(string);*/
+  print(string);
 }
 
 void PeanutKing_Soccer::bluetoothSend(char) {
