@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include <LiquidCrystal_I2C.h>
+//#include <LiquidCrystal_I2C.h>
 
 // motor,  + clockwise
 // 14
@@ -21,6 +21,13 @@
 #define LED7   0x40
 #define LED8   0x80
 
+#define DEC 10
+#define HEX 16
+#define OCT 8
+#ifdef  BIN // Prevent warnings if BIN is previously defined in "iotnx4.h" or similar
+#undef  BIN
+#endif
+#define BIN 2
 
 #define LCD_DISPLAYCONTROL 0x08
 
@@ -107,6 +114,12 @@ class PeanutKing_Soccer {
     _numlines   = 2,
     _cols       = 16,
     _rows       = 2;
+  
+  
+  
+  const int8_t 
+    PAGEUPPERLIMIT = 4,
+    PAGELOWERLIMIT = 0;
   
   
   const int8_t  compass_address = 8;
@@ -208,9 +221,13 @@ class PeanutKing_Soccer {
   void
     init(void),
     autoScanning(void),
-    strategy(),
-    bluetoothSend(char),
+    strategy(void),
+    bluetoothSend(char[]),
+    bluetoothReceive(void),
     enableScanning(bool, uint8_t),
+    
+    debugging(uint16_t, uint8_t),
+    LCDDebugging(uint16_t),
     
     ledClear(void),
     ledAddPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
@@ -221,8 +238,8 @@ class PeanutKing_Soccer {
     ledUpdate(void),
     
     printSpace(uint32_t, uint8_t),
-    debugging(uint16_t, uint8_t),
-    setScreen(uint8_t, uint8_t, char string[] ),
+    setScreen(uint8_t, uint8_t, char[] ),
+    setScreen(uint8_t, uint8_t, int16_t ),
     
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
@@ -240,6 +257,8 @@ class PeanutKing_Soccer {
     expanderWrite(uint8_t _data);
   
   size_t 
+    printNumber(unsigned long, uint8_t),
+    print(long, int = DEC),
     print(const char *),
     write(uint8_t);
   
@@ -248,6 +267,7 @@ class PeanutKing_Soccer {
 	float rawCompass(void);
   float rawAccel(void);
   
+  inline bool rawButton(uint8_t);
 	uint16_t rawUltrasonic(uint8_t);
 	inline uint16_t rawCompoundEye(uint8_t);
 	void 
