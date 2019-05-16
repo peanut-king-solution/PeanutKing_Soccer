@@ -125,44 +125,34 @@ void PeanutKing_Soccer::autoScanning(void) {
   static uint8_t cnt = 0;
   static bool wasWhite[4] = {false};
   
+  static int8_t autoScanTicks = -1;
+  
+  uint16_t currentSensor = autoScanSensors;
+  
   systemTime = (millis()/10) %100;
   
   buttons();
   if ( buttonPressed[2] ) {
     motorEnabled = !motorEnabled;
     if ( !motorEnabled ) {
-      for (int j=0; j<4; j++) {
-        motorSet( j, 0 );
-      }
+      stop();
     }
   }
   
   if ( !autoScanEnabled ) return;
   
-  switch (cnt) {
-    case 1:
-      if ( autoScanSensors & COMPASS ) {
-        sei();    //allow interrupts
-        Compass = rawCompass();
-        cli();    //disable interrupts
-      }
-      if ( autoScanSensors & COMPOUNDEYE )
-        compoundEyes();
-      
-      if ( autoScanSensors & COLORSENSOR ) {
-        GroundColor[back] = colorSenseRead(back);
-        /*
-        onBound[j] = isWhite[j] && ( Xsonic[j]>25 && Xsonic[j]<34 );
-        outBound[j] = (!isWhite[j] && Xsonic[j]<31) && ( !outBound[j] || wasWhite[j] );
-        wasWhite[j] = isWhite[j];
-        */
-      }
-    break;
-    case 2:
-      if ( autoScanSensors & COLORSENSOR ) {
-        GroundColor[left] = colorSenseRead(left);
-        //GroundColor[right] = colorSenseRead(right);
-      }
+  do {
+    autoScanTicks++;
+    currentSensor = autoScanSensors&(1<<autoScanTicks);
+  } while( currentSensor == 0 );
+  
+  switch (currentSensor) {
+    case COMPASS:
+    case COMPOUNDEYE:
+      sei();    //allow interrupts
+      Compass = rawCompass();
+      cli();    //disable interrupts
+      compoundEyes();
       if (ledEnabled) {
         ledClear();
         for(uint8_t i=0; i<4; i++) {
@@ -194,50 +184,54 @@ void PeanutKing_Soccer::autoScanning(void) {
           
           ledAddPixels( 1<<c | 1<<d, 0, 150, 0, 0);
         }
+        /*
+        for(uint8_t i=0; i<4; i++) {
+          uint8_t c = (systemTime/200) ? 127 : 0;
+          if ( Xsonic[i] )
+          switch (i) {
+            case front:
+              ledAddPixels(1<<0, 0, 0, 0, c);
+            break;
+            case left:
+              ledAddPixels(1<<5, 0, 0, 0, c);
+            break;
+            case right:
+              ledAddPixels(1<<1, 0, 0, 0, c);
+            break;
+            case back:
+              ledAddPixels(1<<3, 0, 0, 0, c);
+          }
+        }
+        */
         ledUpdate();
       }
     break;
-    case 3:
-      if ( autoScanSensors & ULTRASONIC )
-        Xsonic[left] = rawUltrasonic(left);
+    case ULTRASONIC0:
+    case ULTRASONIC1:
+    case ULTRASONIC2:
+    case ULTRASONIC3:
+      Xsonic[front] = rawUltrasonic(front);
+      Xsonic[left]  = rawUltrasonic(left);
+      Xsonic[right] = rawUltrasonic(right);
+      Xsonic[back]  = rawUltrasonic(back);
     break;
-    case 4:
-      if ( autoScanSensors & ULTRASONIC )
-        Xsonic[right] = rawUltrasonic(right);
-    break;
-    case 5:
-      if ( autoScanSensors & ULTRASONIC )
-        Xsonic[back] = rawUltrasonic(back);
-      cnt = 0;
-    break;
-    case 6:
-      if ( autoScanSensors & ULTRASONIC )
-        Xsonic[front] = rawUltrasonic(front);
+    case COLORSENSOR0:
+    case COLORSENSOR1:
+    case COLORSENSOR2:
+    case COLORSENSOR3:
+      GroundColor[left]  = colorSenseRead(left);
+      GroundColor[right] = colorSenseRead(right);
+      GroundColor[back]  = colorSenseRead(back);
+      /*
+      onBound[j] = isWhite[j] && ( Xsonic[j]>25 && Xsonic[j]<34 );
+      outBound[j] = (!isWhite[j] && Xsonic[j]<31) && ( !outBound[j] || wasWhite[j] );
+      wasWhite[j] = isWhite[j];
+      */
     break;
   }
   
-  /*
-  for(uint8_t i=0; i<4; i++) {
-    uint8_t c = (systemTime/200) ? 127 : 0;
-    if ( Xsonic[i] )
-    switch (i) {
-      case front:
-        ledAddPixels(1<<0, 0, 0, 0, c);
-      break;
-      case left:
-        ledAddPixels(1<<5, 0, 0, 0, c);
-      break;
-      case right:
-        ledAddPixels(1<<1, 0, 0, 0, c);
-      break;
-      case back:
-        ledAddPixels(1<<3, 0, 0, 0, c);
-    }
-  }
-  */
   cnt ++;
 }
-
 
 void PeanutKing_Soccer::strategy() {
   int16_t angularDirection = 0;
@@ -355,6 +349,7 @@ void PeanutKing_Soccer::ledTest (void) {
       ledUpdate();
       delay(250);
     }
+    index = 0;
   }
 }
 
@@ -500,19 +495,15 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
     break;
     case 1:
       setScreen(0, 0, "1 Angle");
-      //Serial1.print("Angle: ");
-      //Serial1.print(Compass, 2);
+      setScreen(0, 1, "   ");
+      setScreen(0, 1, (int16_t)Compass);
     break;
     case 2:
       setScreen(0, 0, "2 Eye       ");
-      setScreen(0, 1, 5);
-      /*
-      Serial1.print("MaxEye: ");
-      Serial1.print(MaxEye);
-      Serial1.print("   MaxReading: ");
-      Serial1.print(Eye[MaxEye]);
-      Serial1.print("Eyes:  ");
-      for (int i=1; i<=12; i++) {
+      setScreen(0, 1, "Max:              ");
+      setScreen(6, 1, MaxEye);
+      setScreen(11, 1, Eye[MaxEye]);
+      /*for (int i=1; i<=12; i++) {
         Serial.print(Eye[i]);
         Serial.print("  ");
       }*/
@@ -520,12 +511,12 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
     case 3:
       setScreen(0, 0, "3 ULTRASONIC");
       switch( ticks%4 ) {
-        case front:  setScreen(0, 1, "Front |  ");  break;
-        case left:   setScreen(0, 1, "Left  |  ");  break;
-        case right:  setScreen(0, 1, "Right |  ");  break;
-        case back:   setScreen(0, 1, "Back  |  ");  break;
+        case front:  setScreen(0, 1, "Front |    ");  break;
+        case left:   setScreen(0, 1, "Left  |    ");  break;
+        case right:  setScreen(0, 1, "Right |    ");  break;
+        case back:   setScreen(0, 1, "Back  |    ");  break;
       }
-      print(ticks);
+      setScreen(7, 1, Xsonic[ticks%4]);
     break;
     case 4:
       setScreen(0, 0, "4 ColorSense");
@@ -890,7 +881,7 @@ void PeanutKing_Soccer::buttons(void) {
   static bool lastButton[3] = {false};
 
   for (uint8_t i=0; i<3; i++) {
-    Button[i] = !digitalRead(buttonPin[i]);
+    Button[i] = !rawButton(i));
     buttonPressed[i] = ( Button[i] && !lastButton[i] );
     buttonReleased[i] = ( !Button[i] && lastButton[i] );  
 

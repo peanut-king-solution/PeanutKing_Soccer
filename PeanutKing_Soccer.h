@@ -94,17 +94,25 @@ typedef enum {
   yellow,   cyan,    magenta
 } color;
 
-const uint8_t
-  ALLIOs      = 0b11111111,
-  ALLSENSOR   = 0b00001111,
-	COMPOUNDEYE = 0b00000001,     // 1.45ms
-	COMPASS     = 0b00000010,     // 0.27ms
-	ULTRASONIC  = 0b00000100,     // ~14ms ~ 32ms for 4
-	COLORSENSOR = 0b00001000,     // ~10ms for 4 (2.7 FOR 4), new 7.6ms for 4
-  ALLOUTPUT   = 0b11110000,
-  LED         = 0b00010000,     // ~0.5ms for 8 leds
-  MOTOR       = 0b00100000,     // 0.42ms for motorcontrol (4motors)
-  LCDSCREEN   = 0b01000000;
+const uint16_t
+  ALLIOs       = 0xffff,
+  ALLSENSOR    = 0x0fff,
+  COMPASS      = 0x0001,    // 0.27ms
+  COMPOUNDEYE  = 0x0002,    // 1.45ms
+  ULTRASONIC   = 0x00f0,    // ~14ms ~ 32ms for 4
+  ULTRASONIC0  = 0x0010,    
+  ULTRASONIC1  = 0x0020,    
+  ULTRASONIC2  = 0x0040,    
+  ULTRASONIC3  = 0x0080,    
+  COLORSENSOR  = 0x0f00,    // ~10ms for 4 (2.7 FOR 4), new 7.6ms for 4
+  COLORSENSOR0 = 0x0100,    
+  COLORSENSOR1 = 0x0200,    
+  COLORSENSOR2 = 0x0400,    
+  COLORSENSOR3 = 0x0800,    
+  ALLOUTPUT    = 0xf000,
+  LED          = 0x1000,    // ~0.5ms for 8 leds
+  MOTOR        = 0x2000,    // 0.42ms for motorcontrol (4motors)
+  LCDSCREEN    = 0x4000;
   
 const float pi = 3.1415926535897;
 
@@ -114,8 +122,6 @@ class PeanutKing_Soccer {
     _numlines   = 2,
     _cols       = 16,
     _rows       = 2;
-  
-  
   
   const int8_t 
     PAGEUPPERLIMIT = 4,
@@ -177,23 +183,23 @@ class PeanutKing_Soccer {
     onBound[4]  = {false},
     outBound[4] = {false};
   uint8_t 
-    systemTime,			//a reference 100Hz clock, 0-100 every second
-    autoScanSensors = ALLSENSOR,
+    systemTime,      //a reference 100Hz clock, 0-100 every second
     MaxEye,
     MinEye,
     GroundColor[4]; //color sensor
   int16_t
-    Xsonic[4]; 		  //4 xsonic reading
+    Xsonic[4];       //4 xsonic reading
   uint16_t
+    autoScanSensors = ALLSENSOR,
     EYEBOUNDARY = 20,
     eyeAngle,
-    Eye[13];  		  // 12 ir reading , can be 16, depends on version number
+    Eye[13];        // 12 ir reading , can be 16, depends on version number
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
   float
-    Compass;		    //compass angle reading
+    Compass;        //compass angle reading
   ledType
     leds[2];
-	rgb
+  rgb
     rgbData[4];
   hsv
     hsvData[4];
@@ -246,7 +252,7 @@ class PeanutKing_Soccer {
     moveSmart(uint16_t , int16_t),
     stop(void);
     
-	int16_t mapSpeed (float);
+  int16_t mapSpeed (float);
   
   void
     LCDSetup(void),
@@ -264,16 +270,16 @@ class PeanutKing_Soccer {
   
   //protected:
   float rawGyro(void);
-	float rawCompass(void);
+  float rawCompass(void);
   float rawAccel(void);
   
   inline bool rawButton(uint8_t);
-	uint16_t rawUltrasonic(uint8_t);
-	inline uint16_t rawCompoundEye(uint8_t);
-	void 
+  uint16_t rawUltrasonic(uint8_t);
+  inline uint16_t rawCompoundEye(uint8_t);
+  void 
     buttons(void),
     motorControl(float,float,float),
-	  compoundEyes(void),
+    compoundEyes(void),
     rawColor(uint8_t, uint16_t &, uint16_t &, uint16_t &);
   
   
