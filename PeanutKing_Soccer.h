@@ -35,6 +35,10 @@
 #define LCD_BACKLIGHT   0x08    // B00001000
 #define LCD_NOBACKLIGHT 0x00    // B00000000
 
+#define En B00000100  // Enable bit
+//#define Rw B00000010  // Read/Write bit
+#define Rs B00000001  // Register select bit
+
 // flags for display on/off control
 #define LCD_DISPLAYON  0x04
 #define LCD_DISPLAYOFF 0x00
@@ -49,17 +53,10 @@
 
 #define LCD_SETDDRAMADDR 0x80
 
-#define LCD_FUNCTIONSET 0x20    // B00100000  Y
-#define LCD_8BITMODE    0x10    // B00010000  
-#define LCD_4BITMODE    0x00    //            Y
-#define LCD_2LINE       0x08    // B00001000  Y
-#define LCD_1LINE       0x00
-#define LCD_5x10DOTS    0x04    // B00000100
-#define LCD_5x8DOTS     0x00    //            Y
-
-#define En B00000100  // Enable bit
-#define Rw B00000010  // Read/Write bit
-#define Rs B00000001  // Register select bit
+#define LCD_FUNCTIONSET 0x20    // B00100000
+#define LCD_4BITMODE    0x00    // B000X0000  
+#define LCD_2LINE       0x08    // B0000X000
+#define LCD_5x8DOTS     0x00    // B00000X00
 
 
 typedef struct {
@@ -117,14 +114,26 @@ const uint16_t
 const float pi = 3.1415926535897;
 
 class PeanutKing_Soccer {
+  bool inwrite4bits = false;
   uint8_t
     _Addr       = 0x38,
     _numlines   = 2,
     _cols       = 16,
     _rows       = 2;
   
+  uint8_t 
+    _backlightval,
+    
+    _displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS,
+    
+    // turn the display on with no cursor or blinking default
+    _displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF,
+    
+    // Initialize to default text direction (for roman languages)
+    _displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
+    
   const int8_t 
-    PAGEUPPERLIMIT = 4,
+    PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
   
   
@@ -144,8 +153,8 @@ class PeanutKing_Soccer {
     buttonPin[3] = {42, 47, 48},
     
     pwmPin[4]   = { 5,  4,  3,  2},
-    dirPin[4]   = {22, 23, 24, 25},  // v2.1
-    //dirPin[4]   = {12, 10,  8,  6},  // v2.2
+    //dirPin[4]   = {22, 23, 24, 25},  // v2.1
+    dirPin[4]   = {12, 10,  8,  6},  // v2.2
     dir2Pin[4]  = {13, 11,  9,  7},
     diagPin[4]  = {50, 51, 52, 53},
     // xsound:     xf, xl. xr. xb
@@ -161,12 +170,6 @@ class PeanutKing_Soccer {
  public:
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
-  
-  uint8_t 
-    _backlightval,
-    _displayfunction,
-    _displaycontrol,
-    _displaymode;
   
   bool
     autoScanEnabled   = true,
@@ -208,8 +211,10 @@ class PeanutKing_Soccer {
   
   // functions ------------------------------------------------------
   void
-    ledTest (void),
+    ledTest (void);
+  uint8_t
     motorTest(void);
+  void btTest(void);
   
   hsv
     rgb2hsv(rgb in);
@@ -223,7 +228,7 @@ class PeanutKing_Soccer {
     sort(uint16_t[], uint8_t),
     setHome(void),
     xsonicRead(uint8_t),
-    compoundEyeRead (uint8_t);
+    compoundEyeRead(uint8_t);
   void
     init(void),
     autoScanning(void),
@@ -232,7 +237,7 @@ class PeanutKing_Soccer {
     bluetoothReceive(void),
     enableScanning(bool, uint8_t),
     
-    debugging(uint16_t, uint8_t),
+    debugging(uint16_t, uint16_t),
     LCDDebugging(uint16_t),
     
     ledClear(void),
@@ -256,7 +261,7 @@ class PeanutKing_Soccer {
   
   void
     LCDSetup(void),
-    clear(void),
+    LCDClear(void),
     setCursor(uint8_t col, uint8_t row),
     send(uint8_t value, uint8_t mode),
     write4bits(uint8_t value),
@@ -282,10 +287,8 @@ class PeanutKing_Soccer {
     compoundEyes(void),
     rawColor(uint8_t, uint16_t &, uint16_t &, uint16_t &);
   
-  
   uint16_t RawColorSensor(uint8_t);
 };
-
 
 #endif // ROBOT_H
 
