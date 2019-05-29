@@ -494,7 +494,7 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
   
   if      ( buttonRead(1) ) page--;
   else if ( buttonRead(2) ) page++;
-  else if ( millis() - LCDTime < 250) {
+  else if ( millis() - LCDTime < 200) {
     delay(5);
     return;
   }
@@ -537,23 +537,20 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
       break;
     }
   }
-    delay(50);
+  delay(5);
   switch(page) {
     case 0:
     break;
     case 1:
       setScreen(0, 1, (int16_t)Compass);
-      print("     ");
+      print("  ");
     break;
     case 2:
       //setScreen(0, 1, "Max:");
-      setScreen(6, 1, MaxEye);
-      setScreen(11, 1, Eye[MaxEye]);
-      /*
-      for (int i=1; i<=12; i++) {
-        Serial.print(Eye[i]);
-        Serial.print("  ");
-      }*/
+      setScreen(3, 1, MaxEye);
+      print(" ");
+      setScreen(10, 1, Eye[MaxEye]);
+      print("  ");
     break;
     case 3:
       /*
@@ -563,9 +560,18 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
         case right:  setScreen(0, 1, "Right |    ");  break;
         case back:   setScreen(0, 1, "Back  |    ");  break;
       }*/
-      setScreen(8, 1, Xsonic[1]);
+      setScreen(0, 1, Xsonic[0]);
+      setScreen(4, 1, Xsonic[1]);
+      setScreen(8, 1, Xsonic[2]);
+      setScreen(12, 1, Xsonic[3]);
     break;
     case 4:
+    /*
+      setScreen(0, 1, Xsonic[0]);
+      setScreen(4, 1, Xsonic[1]);
+      setScreen(8, 1, Xsonic[2]);
+      setScreen(12, 1, Xsonic[3]);*/
+      //setScreen(8, 0, isWhite[0] ? "W" : "  ");
     break;
     case 5:
       ledTest();
@@ -574,7 +580,6 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
       motorTest();
     break;
   }
-    
   lastPage = page;
 }
 
@@ -666,9 +671,9 @@ uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
   rgbRaw.b = map(rgbData[pin].b, 900, 75, 0, 1000)/1000.0;
   */
   // v2.1 robot
-  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/100.0;
-  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/100.0;
-  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/100.0;
+  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
   
   rgbRaw.r = constrain(rgbRaw.r,  0, 1);
   rgbRaw.g = constrain(rgbRaw.g,  0, 1);
@@ -765,11 +770,8 @@ void PeanutKing_Soccer::enableScanning(bool enabled, uint8_t sensorType) {
 
 // col(0-15), row(0-1) --------------------------------------------
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
-  //if ( millis() - LCDTime > LCDREFRESHRATE) {
     setCursor(col, row);
     print(string);
-  //  LCDTime = millis();
-  // }
 }
 
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
