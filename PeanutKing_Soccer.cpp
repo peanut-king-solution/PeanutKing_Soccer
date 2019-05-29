@@ -687,6 +687,14 @@ uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
   rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
   rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
   */
+<<<<<<< HEAD
+=======
+  // v2.1 robot
+  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
+  
+>>>>>>> 42c3a462d381a082e817aba3144c1d627eab0ed9
   rgbRaw.r = constrain(rgbRaw.r,  0, 1);
   rgbRaw.g = constrain(rgbRaw.g,  0, 1);
   rgbRaw.b = constrain(rgbRaw.b,  0, 1);
