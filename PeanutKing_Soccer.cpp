@@ -144,6 +144,7 @@ void PeanutKing_Soccer::autoScanning(void) {
   
   do {
     autoScanTicks++;
+    if (autoScanTicks>16) autoScanTicks=0;
     currentSensor = autoScanSensors&(1<<autoScanTicks);
   } while( currentSensor == 0 );
   
@@ -217,12 +218,13 @@ void PeanutKing_Soccer::autoScanning(void) {
     case COLORSENSOR1:
     case COLORSENSOR2:
     case COLORSENSOR3:
+      uint8_t j = autoScanTicks-8;
       GroundColor[autoScanTicks-8]  = colorSenseRead(autoScanTicks-8);
-      /*
+      
       onBound[j] = isWhite[j] && ( Xsonic[j]>25 && Xsonic[j]<34 );
       outBound[j] = (!isWhite[j] && Xsonic[j]<31) && ( !outBound[j] || wasWhite[j] );
       wasWhite[j] = isWhite[j];
-      */
+      
     break;
   }
 }
@@ -243,27 +245,31 @@ void PeanutKing_Soccer::strategy() {
     }
   }
   
+  /*
   if ( Eye[MaxEye] > EYEBOUNDARY )
     moveSmart(eyeAngle, 160);
   else
     stop();          // Stop
   
   return;
-  
+  */
   
   x = (Xsonic[left] - Xsonic[right])/2;
   y = Xsonic[back] - 15;
   
   if ( Eye[MaxEye] > EYEBOUNDARY ) {
+/*
     if ( outBound[left] )
       moveSmart(90, 80);
     else if ( outBound[right] )
       moveSmart(270, 80);
-    else if ( onBound[left] ) {
+    else 
+*/
+    if ( outBound[left] ) {
       switch (MaxEye) {
         case 1:
         case 12:
-          moveSmart(0, 180);          // move front
+          moveSmart(0, 100);          // move front
         break;
         case 11:
           moveSmart(0, 0);            // Stop
@@ -271,17 +277,17 @@ void PeanutKing_Soccer::strategy() {
         case 10:
         case 9:
         case 8:
-          moveSmart(180, 150);        // move back
+          moveSmart(180, 100);        // move back
         break;
         default:
-          moveSmart(eyeAngle*1.5, 180);
+          moveSmart(eyeAngle*1.5, 100);
       }
     }
-    else if ( onBound[right] ) {
+    else if ( outBound[right] ) {
       switch (MaxEye) {
         case 1:
         case 2:
-          moveSmart(0, 180);          // move front
+          moveSmart(0, 100);          // move front
         break;
         case 3:
           moveSmart(0, 0);            // Stop
@@ -289,16 +295,21 @@ void PeanutKing_Soccer::strategy() {
         case 4:
         case 5:
         case 6:
-          moveSmart(180, 150);        // move back
+          moveSmart(180, 100);        // move back
         break;
         default:
-          moveSmart( 360- (360-eyeAngle)*1.5, 180);
+          moveSmart( 360- (360-eyeAngle)*1.5, 100);
       }
     }
+/*
     else if ( outBound[front] && outBound[front] )
-      moveSmart(0, 0);          // Stop
+      stop();          // Stop
+*/
     else {
-      moveSmart(eyeAngle, 80);
+      if (eyeAngle<180)
+        moveSmart(eyeAngle*1.5, 100);
+      else
+        moveSmart( 360- (360-eyeAngle)*1.5, 100);
     }
   }
   else {
@@ -494,7 +505,7 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
   
   if      ( buttonRead(1) ) page--;
   else if ( buttonRead(2) ) page++;
-  else if ( millis() - LCDTime < 250) {
+  else if ( millis() - LCDTime < 200) {
     delay(5);
     return;
   }
@@ -537,23 +548,20 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
       break;
     }
   }
-    delay(50);
+  delay(5);
   switch(page) {
     case 0:
     break;
     case 1:
       setScreen(0, 1, (int16_t)Compass);
-      print("     ");
+      print("  ");
     break;
     case 2:
       //setScreen(0, 1, "Max:");
-      setScreen(6, 1, MaxEye);
-      setScreen(11, 1, Eye[MaxEye]);
-      /*
-      for (int i=1; i<=12; i++) {
-        Serial.print(Eye[i]);
-        Serial.print("  ");
-      }*/
+      setScreen(3, 1, MaxEye);
+      print(" ");
+      setScreen(10, 1, Eye[MaxEye]);
+      print("  ");
     break;
     case 3:
       /*
@@ -563,9 +571,18 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
         case right:  setScreen(0, 1, "Right |    ");  break;
         case back:   setScreen(0, 1, "Back  |    ");  break;
       }*/
-      setScreen(8, 1, Xsonic[1]);
+      setScreen(0, 1, Xsonic[0]);
+      setScreen(4, 1, Xsonic[1]);
+      setScreen(8, 1, Xsonic[2]);
+      setScreen(12, 1, Xsonic[3]);
     break;
     case 4:
+    /*
+      setScreen(0, 1, Xsonic[0]);
+      setScreen(4, 1, Xsonic[1]);
+      setScreen(8, 1, Xsonic[2]);
+      setScreen(12, 1, Xsonic[3]);*/
+      //setScreen(8, 0, isWhite[0] ? "W" : "  ");
     break;
     case 5:
       ledTest();
@@ -574,7 +591,6 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
       motorTest();
     break;
   }
-    
   lastPage = page;
 }
 
@@ -660,16 +676,17 @@ uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
   //rgbData[pin].b *= 1.15;
   
   rgb rgbRaw;
-  /*
-  rgbRaw.r = map(rgbData[pin].r, 900, 75, 0, 1000)/1000.0;
-  rgbRaw.g = map(rgbData[pin].g, 900, 75, 0, 1000)/1000.0;
-  rgbRaw.b = map(rgbData[pin].b, 900, 75, 0, 1000)/1000.0;
-  */
-  // v2.1 robot
-  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/100.0;
-  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/100.0;
-  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/100.0;
   
+  rgbRaw.r = map(rgbData[pin].r, 900, 100, 0, 1000)/1000.0;
+  rgbRaw.g = map(rgbData[pin].g, 900, 100, 0, 1000)/1000.0;
+  rgbRaw.b = map(rgbData[pin].b, 900, 100, 0, 1000)/1000.0;
+  
+  // v2.1 robot
+  /*
+  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
+  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
+  */
   rgbRaw.r = constrain(rgbRaw.r,  0, 1);
   rgbRaw.g = constrain(rgbRaw.g,  0, 1);
   rgbRaw.b = constrain(rgbRaw.b,  0, 1);
@@ -745,12 +762,12 @@ void PeanutKing_Soccer::moveSmart(uint16_t angular_direction, int16_t speed) {
   int16_t rotation = c < 180 ? -c : 360 - c;
   
   //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
-  //rotation*0.8
-  motorControl(angular_direction, speed, 0);
+  rotation*=0.7;
+  motorControl(angular_direction, speed, rotation);
 }
 
 
-inline void PeanutKing_Soccer::stop(void) {
+void PeanutKing_Soccer::stop(void) {
   for(uint8_t i=0; i<4; i++) {
     motorSet(i, 0);
   }
@@ -765,11 +782,8 @@ void PeanutKing_Soccer::enableScanning(bool enabled, uint8_t sensorType) {
 
 // col(0-15), row(0-1) --------------------------------------------
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
-  //if ( millis() - LCDTime > LCDREFRESHRATE) {
     setCursor(col, row);
     print(string);
-  //  LCDTime = millis();
-  // }
 }
 
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
