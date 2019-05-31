@@ -114,37 +114,26 @@ const uint16_t
 const float pi = 3.1415926535897;
 
 class PeanutKing_Soccer {
-  bool inwrite4bits = false;
-  uint8_t
-    _Addr       = 0x38,
-    _numlines   = 2,
-    _cols       = 16,
-    _rows       = 2;
-  
-  uint8_t 
-    _backlightval,
-    
-    _displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS,
-    
-    // turn the display on with no cursor or blinking default
-    _displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF,
-    
-    // Initialize to default text direction (for roman languages)
-    _displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
-    
   const int8_t 
     PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
   
-  
   const int8_t  compass_address = 8;
   const uint8_t
+    LCD_Addr    = 0x38,
+    LCD_lineNum = 2,
+    
+    LCD_displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS,
+    
+    // turn the display on with no cursor or blinking default
+    LCD_displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF,
+    
+    // Initialize to default text direction (for roman languages)
+    LCD_displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT,
+    
     numLEDs     = 8,       // Number of RGB LEDs in strip
     GET_READING = 0x55,
     SET_HOME    = 0x54,
-    
-    //BTRxPin     = 19,
-    //BTTxPin     = 18,
     
     tcsblPin    = 32,
     ledPin      = 33,
@@ -186,7 +175,7 @@ class PeanutKing_Soccer {
     onBound[4]  = {false},
     outBound[4] = {false};
   uint8_t 
-    systemTime,      //a reference 100Hz clock, 0-100 every second
+    LCD_backlightval,
     MaxEye,
     MinEye,
     GroundColor[4]; //color sensor
@@ -206,8 +195,9 @@ class PeanutKing_Soccer {
     rgbData[4];
   hsv
     hsvData[4];
-  
-  //LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x38, 16, 2);
+  uint32_t
+    systemTime;      //a reference 100Hz clock, 0-100 every second
+    
   
   // functions ------------------------------------------------------
   void
@@ -249,6 +239,7 @@ class PeanutKing_Soccer {
     ledUpdate(void),
     
     printSpace(uint32_t, uint8_t),
+    LCDPrintSpace(int16_t),
     setScreen(uint8_t, uint8_t, char[] ),
     setScreen(uint8_t, uint8_t, int16_t ),
     
@@ -258,20 +249,6 @@ class PeanutKing_Soccer {
     stop(void);
     
   int16_t mapSpeed (float);
-  
-  void
-    LCDSetup(void),
-    LCDClear(void),
-    setCursor(uint8_t col, uint8_t row),
-    send(uint8_t value, uint8_t mode),
-    write4bits(uint8_t value),
-    expanderWrite(uint8_t _data);
-  
-  size_t 
-    printNumber(unsigned long, uint8_t),
-    print(long, int = DEC),
-    print(const char *),
-    write(uint8_t);
   
   //protected:
   float rawGyro(void);
@@ -288,6 +265,20 @@ class PeanutKing_Soccer {
     rawColor(uint8_t, uint16_t &, uint16_t &, uint16_t &);
   
   uint16_t RawColorSensor(uint8_t);
+  
+  void
+    LCDSetup(void),
+    LCDClear(void),
+    setCursor(uint8_t col, uint8_t row),
+    send(uint8_t value, uint8_t mode),
+    write4bits(uint8_t value),
+    expanderWrite(uint8_t _data);
+  
+  size_t 
+    printNumber(unsigned long, uint8_t),
+    print(long, int = DEC),
+    print(const char *),
+    write(uint8_t);
 };
 
 #endif // ROBOT_H

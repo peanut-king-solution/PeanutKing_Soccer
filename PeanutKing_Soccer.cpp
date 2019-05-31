@@ -78,8 +78,8 @@ void PeanutKing_Soccer::init() {
   Serial1.begin(9600);
   
   for (uint8_t i=0; i<4; i++) {
-    pinMode(trigPin[i], OUTPUT);
     pinMode(echoPin[i], INPUT);
+    pinMode(trigPin[i], OUTPUT);
     pinMode(pwmPin[i], OUTPUT);
     pinMode(dirPin[i], OUTPUT);
     pinMode(dir2Pin[i], OUTPUT);
@@ -123,12 +123,10 @@ void PeanutKing_Soccer::init() {
 
 void PeanutKing_Soccer::autoScanning(void) {
   static bool wasWhite[4] = {false};
-  
   static int8_t autoScanTicks = -1;
-  
   uint16_t currentSensor = autoScanSensors;
   
-  systemTime = (millis()/10) %100;
+  systemTime ++;
   
   buttons();
   /*
@@ -140,7 +138,7 @@ void PeanutKing_Soccer::autoScanning(void) {
   }
   */
   
-  if ( !autoScanEnabled || inwrite4bits ) return;
+  if ( !autoScanEnabled ) return;
   
   do {
     autoScanTicks++;
@@ -205,6 +203,8 @@ void PeanutKing_Soccer::autoScanning(void) {
           }
         }
         */
+          uint8_t e = (systemTime/5) % 2 ? 127 : 0;
+          ledAddPixels(1<<4, 0, 0, 0, e);
         ledUpdate();
       }
     break;
@@ -421,7 +421,9 @@ void PeanutKing_Soccer::debugging(uint16_t updateRate, uint16_t sensorType) {
   lastTimeIn = millis();
   
   Serial.print("Ticks: ");
-  Serial.println(lastTimeIn/1000.0, 2);
+  Serial.print(lastTimeIn/1000.0, 2);
+  Serial.print("   systemTime: ");
+  Serial.println(systemTime);
   
   if ( sensorType&COMPASS ) {
     Serial.print("Angle: ");
@@ -564,25 +566,24 @@ void PeanutKing_Soccer::LCDDebugging(uint16_t updateRate) {
       print("  ");
     break;
     case 3:
-      /*
-      switch( (ticks/10)%4 ) {
-        case front:  setScreen(0, 1, "Front |    ");  break;
-        case left:   setScreen(0, 1, "Left  |    ");  break;
-        case right:  setScreen(0, 1, "Right |    ");  break;
-        case back:   setScreen(0, 1, "Back  |    ");  break;
-      }*/
       setScreen(0, 1, Xsonic[0]);
-      setScreen(4, 1, Xsonic[1]);
-      setScreen(8, 1, Xsonic[2]);
-      setScreen(12, 1, Xsonic[3]);
+      LCDPrintSpace(Xsonic[0]);
+      print(" ");
+      print(Xsonic[1]);
+      LCDPrintSpace(Xsonic[1]);
+      print(" ");
+      print(Xsonic[2]);
+      LCDPrintSpace(Xsonic[2]);
+      print(" ");
+      print(Xsonic[3]);
+      LCDPrintSpace(Xsonic[3]);
+      print(" ");
     break;
     case 4:
-    /*
-      setScreen(0, 1, Xsonic[0]);
-      setScreen(4, 1, Xsonic[1]);
-      setScreen(8, 1, Xsonic[2]);
-      setScreen(12, 1, Xsonic[3]);*/
-      //setScreen(8, 0, isWhite[0] ? "W" : "  ");
+      setScreen(0, 1, isWhite[0]);
+      setScreen(4, 1, isWhite[1]);
+      setScreen(8, 1, isWhite[2]);
+      setScreen(12, 1, isWhite[3]);
     break;
     case 5:
       ledTest();
@@ -680,21 +681,12 @@ uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
   rgbRaw.r = map(rgbData[pin].r, 900, 100, 0, 1000)/1000.0;
   rgbRaw.g = map(rgbData[pin].g, 900, 100, 0, 1000)/1000.0;
   rgbRaw.b = map(rgbData[pin].b, 900, 100, 0, 1000)/1000.0;
-  
   // v2.1 robot
   /*
   rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/1000.0;
   rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
   rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
   */
-<<<<<<< HEAD
-=======
-  // v2.1 robot
-  rgbRaw.r = map(rgbData[pin].r, 180, 20, 0, 1000)/1000.0;
-  rgbRaw.g = map(rgbData[pin].g, 180, 20, 0, 1000)/1000.0;
-  rgbRaw.b = map(rgbData[pin].b, 180, 20, 0, 1000)/1000.0;
-  
->>>>>>> 42c3a462d381a082e817aba3144c1d627eab0ed9
   rgbRaw.r = constrain(rgbRaw.r,  0, 1);
   rgbRaw.g = constrain(rgbRaw.g,  0, 1);
   rgbRaw.b = constrain(rgbRaw.b,  0, 1);
@@ -790,8 +782,8 @@ void PeanutKing_Soccer::enableScanning(bool enabled, uint8_t sensorType) {
 
 // col(0-15), row(0-1) --------------------------------------------
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
-    setCursor(col, row);
-    print(string);
+  setCursor(col, row);
+  print(string);
 }
 
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
@@ -814,6 +806,13 @@ void PeanutKing_Soccer::printSpace(uint32_t data, uint8_t digit) {
     if ( data < pow(10, i) )   Serial.print(" ");
   }
   Serial.print(data);
+}
+
+void PeanutKing_Soccer::LCDPrintSpace(int16_t x) {
+  if ( x<100 )
+    print(" ");
+  if ( x<10 )
+    print(" ");
 }
 
 uint16_t PeanutKing_Soccer::setHome(void) { 
@@ -1128,21 +1127,21 @@ void PeanutKing_Soccer::LCDSetup (void) {
   write4bits(0x02 << 4); 
 
   // set # lines, font size, etc.
-  send(LCD_FUNCTIONSET | _displayfunction, 0);      // **********send**********
+  send(LCD_FUNCTIONSET | LCD_displayfunction, 0);      // **********send**********
   
   // turn the display on with no cursor or blinking default
-  send(LCD_DISPLAYCONTROL | _displaycontrol, 0);
+  send(LCD_DISPLAYCONTROL | LCD_displaycontrol, 0);
 
   // clear it off
   LCDClear();
   
   // set the entry mode
-  send(LCD_ENTRYMODESET | _displaymode, 0);         // **********send**********
+  send(LCD_ENTRYMODESET | LCD_displaymode, 0);         // **********send**********
   
   send(LCD_RETURNHOME, 0);  // set cursor position to zero
   delayMicroseconds(2000);  // this command takes a long time!
   
-  _backlightval=LCD_BACKLIGHT;
+  LCD_backlightval=LCD_BACKLIGHT;
 }
 
 
@@ -1154,8 +1153,8 @@ void PeanutKing_Soccer::LCDClear(void) {
 
 void PeanutKing_Soccer::setCursor(uint8_t col, uint8_t row) {
   int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-  if ( row > _numlines ) {
-    row = _numlines-1;    // we count rows starting w/0
+  if ( row > LCD_lineNum ) {
+    row = LCD_lineNum-1;    // we count rows starting w/0
   }
   send(LCD_SETDDRAMADDR | (col + row_offsets[row]), 0);   // **********send**********
 }
@@ -1225,24 +1224,23 @@ void PeanutKing_Soccer::send(uint8_t value, uint8_t mode) {
 }
 
 void PeanutKing_Soccer::write4bits(uint8_t value) {
-  inwrite4bits = true;
+  autoScanEnabled = false;
+  Wire.beginTransmission(LCD_Addr);
   
-  Wire.beginTransmission(_Addr);
-  
-  Wire.write((int)(value) | _backlightval);
-  Wire.write((int)(value | En) | _backlightval);    //pulseEnable
+  Wire.write((int)(value) | LCD_backlightval);
+  Wire.write((int)(value | En) | LCD_backlightval);    //pulseEnable
   delayMicroseconds(1);        // enable pulse must be >450ns
-  Wire.write((int)(value & ~En) | _backlightval);
+  Wire.write((int)(value & ~En) | LCD_backlightval);
   
   Wire.endTransmission();
+  autoScanEnabled = true;
   
   delayMicroseconds(40);       // commands need > 37us to settle
-  inwrite4bits = false;
 }
 
 void PeanutKing_Soccer::expanderWrite(uint8_t _data) {
-  Wire.beginTransmission(_Addr);
-  Wire.write((int)(_data) | _backlightval);
+  Wire.beginTransmission(LCD_Addr);
+  Wire.write((int)(_data) | LCD_backlightval);
   Wire.endTransmission();
 }
 
