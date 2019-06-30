@@ -84,11 +84,10 @@ void PeanutKing_Soccer::init() {
   
   ledSetup(0, ledPin, numLEDs);
   ledSetup(1, tcsblPin, 1);
-  //ledSetPixels(1, 0, 0, 0, 0, 0);
-  ledSetPixels(1, 0, 255, 255, 255, 0);
+  ledShow(0, 255, 255, 255, 0, 1);
   ledUpdate(1);
   
-  delay(100);
+  delay(10);
   
   cli();    //disable interrupts
   // Timer 1
@@ -172,6 +171,9 @@ void PeanutKing_Soccer::autoScanning(void) {
           ledAddPixels( 1<<c | 1<<d, 0, 150, 0, 0);
         }
       }
+      else {
+        ledShow(255, 0, 0, 0, 0);
+      }
     break;
     case ULTRASONIC0:
     case ULTRASONIC1:
@@ -193,30 +195,64 @@ void PeanutKing_Soccer::autoScanning(void) {
   }
   
   // ultrasonic range 5-200 -> led delay 2-100
-  for(uint8_t i=0; i<4; i++) {
-    uint16_t limit = constrain(Xsonic[i]/2, 2, 125);
-    if ( sysTicks - ultsBlinkTimer[i] > limit ) {
-      uint8_t e = ultsBlinkState[i] ? 127 : 0;
-      switch (i) {
-        case front:
-          ledAddPixels(1<<0, e, 0, 0, 0);
-        break;
-        case left:
-          ledAddPixels(1<<6, e, 0, 0, 0);
-        break;
-        case right:
-          ledAddPixels(1<<2, e, 0, 0, 0);
-        break;
-        case back:
-          ledAddPixels(1<<4, e, 0, 0, 0);
+  if (ledEnabled) {
+    for(uint8_t i=0; i<4; i++) {
+      uint16_t limit = constrain(Xsonic[i]/2, 2, 125);
+      if ( sysTicks - ultsBlinkTimer[i] > limit ) {
+        uint8_t e = ultsBlinkState[i] ? 127 : 0;
+        switch (i) {
+          case front:
+            ledAddPixels(1<<0, e, 0, 0, 0);
+          break;
+          case left:
+            ledAddPixels(1<<6, e, 0, 0, 0);
+          break;
+          case right:
+            ledAddPixels(1<<2, e, 0, 0, 0);
+          break;
+          case back:
+            ledAddPixels(1<<4, e, 0, 0, 0);
+        }
+        ultsBlinkState[i] = !ultsBlinkState[i];
+        ultsBlinkTimer[i] = sysTicks;
       }
-      ultsBlinkState[i] = !ultsBlinkState[i];
-      ultsBlinkTimer[i] = sysTicks;
     }
   }
   ledUpdate();
 }
 
+void PeanutKing_Soccer::testProgram (void) {
+  static bool start = false, ledStart = false, motorStart = false;
+
+  if ( buttonRead(0) ) {
+    start = !start;
+    if ( !start ) {
+      motorStop();
+    }
+  }
+  if ( buttonRead(1) ) {
+    ledStart = !ledStart;
+    if ( !ledStart ) {
+      ledShow(255, 0, 0, 0, 0);
+      ledUpdate();
+    }
+  }
+  if ( buttonRead(2) ) {
+    motorStart = !motorStart;
+    if ( !motorStart ) {
+      motorStop();
+    }
+  }
+  if ( motorStart )
+    motorTest();
+  if ( ledStart )
+    ledTest();
+  if ( !start ) {
+    debug(ALLSENSOR);
+  }
+}
+
+// LED test ------------------------------------------------------
 void PeanutKing_Soccer::ledTest (uint8_t state) {
   static uint32_t lastTimeIn = 0;
   static uint8_t index = 0, i = 0, j = 0;
@@ -660,12 +696,50 @@ void PeanutKing_Soccer::LCDPrintSpace(int16_t x) {
     print(" ");
 }
 
+
+// Hidden functions ---------------------------------------------
+void PeanutKing_Soccer::buttons(void) {
+  static bool lastButton[3] = {false};
+
+  for (uint8_t i=0; i<3; i++) {
+    Button[i] = rawButton(i);
+    buttonPressed[i] = ( Button[i] && !lastButton[i] );
+    buttonReleased[i] = ( !Button[i] && lastButton[i] );  
+
+    if ( buttonPressed[i] )    buttonTriggered[i] = true;
+
+    lastButton[i] = Button[i];
+  }
+}
+
+void PeanutKing_Soccer::compoundEyes(void) {
+  MaxEye = 1;
+  MinEye = 1;
+  for (int i=1; i<13; i++) {
+    Eye[i] = rawCompoundEye(i);
+  //Serial.print("eye[");Serial.print(i+1);Serial.print("]: ");Serial.println(eye[i]); //debugging use
+    if( Eye[i]>Eye[MaxEye] )
+      MaxEye = i;
+    else if( Eye[i]<Eye[MinEye] )
+      MinEye = i;
+  }
+  
+  int16_t
+    upper = (MaxEye==12) ? Eye[1] : Eye[MaxEye+1],
+    lower = (MaxEye==1) ? Eye[12] : Eye[MaxEye-1],
+    add = 15.0 * (upper-lower) / (Eye[MaxEye] - ((upper<lower) ? upper : lower) );
+  
+  eyeAngle = 30 * MaxEye + add;
+  
+  eyeAngle += ( eyeAngle>=30 ) ? -30 : 330;
+}
+
+
 //                                  RAW
 // =================================================================================
 
-// Software Compass Set Home -------------------------------------
+// Software Set Compass Home -------------------------------------
 uint16_t PeanutKing_Soccer::setHome(void) { 
-// software set compass home
   uint8_t received_byte[2] = {0,0};  
   uint8_t i=0;
   uint16_t answer = 0;
@@ -787,61 +861,39 @@ uint8_t PeanutKing_Soccer::rawMonoColor(uint8_t out) {
   return temp;
 }
 
-// Hidden functions ---------------------------------------------
-void PeanutKing_Soccer::buttons(void) {
-  static bool lastButton[3] = {false};
-
-  for (uint8_t i=0; i<3; i++) {
-    Button[i] = rawButton(i);
-    buttonPressed[i] = ( Button[i] && !lastButton[i] );
-    buttonReleased[i] = ( !Button[i] && lastButton[i] );  
-
-    if ( buttonPressed[i] )    buttonTriggered[i] = true;
-
-    lastButton[i] = Button[i];
-  }
-}
-
-void PeanutKing_Soccer::compoundEyes(void) {
-  MaxEye = 1;
-  MinEye = 1;
-  for (int i=1; i<13; i++) {
-    Eye[i] = rawCompoundEye(i);
-  //Serial.print("eye[");Serial.print(i+1);Serial.print("]: ");Serial.println(eye[i]); //debugging use
-    if( Eye[i]>Eye[MaxEye] )
-      MaxEye = i;
-    else if( Eye[i]<Eye[MinEye] )
-      MinEye = i;
-  }
-  
-  int16_t
-    upper = (MaxEye==12) ? Eye[1] : Eye[MaxEye+1],
-    lower = (MaxEye==1) ? Eye[12] : Eye[MaxEye-1],
-    add = 15.0 * (upper-lower) / (Eye[MaxEye] - ((upper<lower) ? upper : lower) );
-  
-  eyeAngle = 30 * MaxEye + add;
-  
-  eyeAngle += ( eyeAngle>=30 ) ? -30 : 330;
-}
-
-
 //                                  LEDs
 // =================================================================================
-
-void PeanutKing_Soccer::ledClear(void) {
-  //static uint32_t lastTime = millis();
-  for (uint8_t i=0; i<8; i++) {
-    ledSetPixels(0, i, 0, 0, 0, 0);
+void PeanutKing_Soccer::ledSetup (uint8_t x, uint8_t p, uint8_t n) {
+  leds[x].port = portOutputRegister(digitalPinToPort(p));
+  leds[x].mask = digitalPinToBitMask(p);
+  leds[x].numLEDs = n;
+  // Allocate new data -- note: ALL PIXELS ARE CLEARED
+  leds[x].numBytes = n * 4; // Size of 'pixels' buffer below (3 bytes/pixel)
+  if((leds[x].pixels = (uint8_t *)malloc(leds[x].numBytes))) {
+    memset(leds[x].pixels, 0, leds[x].numBytes);
   }
+  pinMode(p, OUTPUT);
+  digitalWrite(p, LOW);
 }
+
 // not using adaFruit, we write our own library, will check if same \
 // color, Which_led use the same methodology as module, 
 // just like: LED_1 + LED_2.... if multiple color at same time}
-void PeanutKing_Soccer::ledShow(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+// r = (r * brightness) >> 8;
+// Offset:    W          R          G          B
+// NEO_GRB  ((1 << 6) | (1 << 4) | (0 << 2) | (2))   GRBW 
+// Set pixel color from separate R,G,B components:
+void PeanutKing_Soccer::ledShow(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t x) {
   //static uint32_t lastTime = millis();
   for (uint8_t i=0; i<8; i++) {
     if ( n & (1<<i) ) {
-      ledSetPixels(0, i, r, g, b, w);
+      uint8_t *p = &leds[x].pixels[n * 4];  // 4 bytes per pixel
+      if(n < numLEDs) {
+        p[1] = r;                   // R
+        p[0] = g;                   // G
+        p[2] = b;                   // B
+        p[3] = w;                   // W
+      }
     }
   }
 }
@@ -862,35 +914,11 @@ void PeanutKing_Soccer::ledAddPixels(uint8_t n, uint8_t r, uint8_t g, uint8_t b,
   }
 }
 
-//r = (r * brightness) >> 8;
-// Offset:    W          R          G          B
-// NEO_GRB  ((1 << 6) | (1 << 4) | (0 << 2) | (2))   GRBW 
-// Set pixel color from separate R,G,B components:
-void PeanutKing_Soccer::ledSetPixels(uint8_t x, uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  uint8_t *p = &leds[x].pixels[n * 4];  // 4 bytes per pixel
-  if(n < numLEDs) {
-    p[1] = r;                   // R
-    p[0] = g;                   // G
-    p[2] = b;                   // B
-    p[3] = w;                   // W
+void PeanutKing_Soccer::ledClear(void) {
+  for (uint8_t i=0; i<8; i++) {
+    ledShow(i, 0, 0, 0, 0);
   }
-}
-
-void PeanutKing_Soccer::ledSetup (uint8_t x, uint8_t p, uint8_t n) {
-  leds[x].port = portOutputRegister(digitalPinToPort(p));
-  leds[x].mask = digitalPinToBitMask(p);
-  leds[x].numLEDs = n;
-  // Allocate new data -- note: ALL PIXELS ARE CLEARED
-  leds[x].numBytes = n * 4; // Size of 'pixels' buffer below (3 bytes/pixel)
-  if((leds[x].pixels = (uint8_t *)malloc(leds[x].numBytes))) {
-    memset(leds[x].pixels, 0, leds[x].numBytes);
-  }
-  pinMode(p, OUTPUT);
-  digitalWrite(p, LOW);
-}
-
-inline void PeanutKing_Soccer::ledUpdate(void) {
-  ledUpdate(0);
+  ledUpdate();
 }
 
 void PeanutKing_Soccer::ledUpdate(uint8_t x) {

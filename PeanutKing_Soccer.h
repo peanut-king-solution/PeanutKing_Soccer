@@ -112,7 +112,8 @@ const uint16_t
   LCDSCREEN    = 0x4000;
   
   const uint8_t
-    STATERESET  = 0;
+    STATERESET  = 0,
+    STATESET    = 1;
 
 const float pi = 3.1415926535897;
 
@@ -167,7 +168,7 @@ class PeanutKing_Soccer {
     autoScanEnabled   = true,
     motorEnabled      = true,
     motorBrakeEnabled = true,
-    ledEnabled        = true,
+    ledEnabled        = false,
     ledFlashEnabled   = false,
     
     Button[3],
@@ -189,10 +190,9 @@ class PeanutKing_Soccer {
     autoScanSensors = ALLSENSOR,
     EYEBOUNDARY = 20,
     eyeAngle,
-    Eye[13];         // 12 ir reading , can be 16, depends on version number
-  //  BT_buffer[100]; //store at most the most updated 100 values from BT
-  float
+    Eye[13],         // 12 ir reading , can be 16, depends on version number
     Compass;         // compass angle reading
+  //  BT_buffer[100]; //store at most the most updated 100 values from BT
   ledType
     leds[2];
     
@@ -206,10 +206,11 @@ class PeanutKing_Soccer {
   
   // functions ------------------------------------------------------
   void
-    ledTest (uint8_t = STATERESET);
+    ledTest (uint8_t = STATESET),
+    btTest(void),
+    testProgram(void);
   uint8_t
     motorTest(void);
-  void btTest(void);
   
   hsv
     rgb2hsv(rgb in);
@@ -232,6 +233,7 @@ class PeanutKing_Soccer {
     bluetoothReceive(void),
     enableScanning(bool, uint8_t),
     
+    Testing(void),
     debug(uint16_t),
     LCDMenu(void),
     
@@ -240,13 +242,11 @@ class PeanutKing_Soccer {
     moveSmart(uint16_t , int16_t),
     motorStop(void),
     
-    ledClear(void),
-    ledAddPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
-    ledShow(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
-    ledSetPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
     ledSetup(uint8_t, uint8_t, uint8_t),
-    ledUpdate(uint8_t),
-    ledUpdate(void),
+    ledShow(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t = 0),
+    ledAddPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
+    ledClear(void),
+    ledUpdate(uint8_t = 0),
     
     printSpace(uint32_t, uint8_t),
     LCDPrintSpace(int16_t),
