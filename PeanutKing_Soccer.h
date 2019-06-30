@@ -25,7 +25,7 @@
 #define HEX 16
 #define OCT 8
 #ifdef  BIN // Prevent warnings if BIN is previously defined in "iotnx4.h" or similar
-#undef  BIN
+  #undef  BIN
 #endif
 #define BIN 2
 
@@ -60,15 +60,15 @@
 
 
 typedef struct {
-  double r;       // a fraction between 0 and 1
-  double g;       // a fraction between 0 and 1
-  double b;       // a fraction between 0 and 1
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 } rgb;
 
 typedef struct {
-  double h;       // angle in degrees
-  double s;       // a fraction between 0 and 1
-  double v;       // a fraction between 0 and 1
+  uint16_t h;
+  uint8_t s;
+  uint8_t v;
 } hsv;
 
 typedef struct {
@@ -111,6 +111,9 @@ const uint16_t
   MOTOR        = 0x2000,    // 0.42ms for motorcontrol (4motors)
   LCDSCREEN    = 0x4000;
   
+  const uint8_t
+    STATERESET  = 0;
+
 const float pi = 3.1415926535897;
 
 class PeanutKing_Soccer {
@@ -176,59 +179,66 @@ class PeanutKing_Soccer {
     outBound[4] = {false};
   uint8_t 
     LCD_backlightval,
+    systemTime,      //a reference 100Hz clock, 0-100 every second
     MaxEye,
     MinEye,
-    GroundColor[4]; //color sensor
+    GroundColor[4];  //color sensor
   int16_t
     Xsonic[4];       //4 xsonic reading
   uint16_t
     autoScanSensors = ALLSENSOR,
     EYEBOUNDARY = 20,
     eyeAngle,
-    Eye[13];        // 12 ir reading , can be 16, depends on version number
+    Eye[13];         // 12 ir reading , can be 16, depends on version number
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
   float
-    Compass;        //compass angle reading
+    Compass;         // compass angle reading
   ledType
     leds[2];
-  rgb
-    rgbData[4];
-  hsv
-    hsvData[4];
-  uint32_t
-    systemTime;      //a reference 100Hz clock, 0-100 every second
     
+  rgb
+    colorRGB[4];
+  hsv
+    colorHSV[4];
+    
+  uint32_t
+    sysTicks = 0;
   
   // functions ------------------------------------------------------
   void
-    ledTest (void);
+    ledTest (uint8_t = STATERESET);
   uint8_t
     motorTest(void);
   void btTest(void);
   
   hsv
     rgb2hsv(rgb in);
+    
   bool
     buttonRead(uint8_t);
-  float
-    compassRead(void);
-  uint8_t
-    colorSenseRead(uint8_t);
   uint16_t
-    sort(uint16_t[], uint8_t),
-    setHome(void),
-    xsonicRead(uint8_t),
-    compoundEyeRead(uint8_t);
+    compassRead(void),
+    compoundEyeRead(uint8_t),
+    ultrasonicRead(uint8_t);
+  uint8_t
+    goundColorRead(uint8_t);
+    
+  int16_t mapSpeed (float);
+  
   void
     init(void),
     autoScanning(void),
-    strategy(void),
     bluetoothSend(char[]),
     bluetoothReceive(void),
     enableScanning(bool, uint8_t),
     
-    debugging(uint16_t, uint16_t),
-    LCDDebugging(uint16_t),
+    debug(uint16_t),
+    LCDMenu(void),
+    
+    motorSet(uint8_t, int16_t),
+    move(int16_t, int16_t),
+    moveSmart(uint16_t , int16_t),
+    motorStop(void),
     
     ledClear(void),
     ledAddPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
@@ -241,30 +251,26 @@ class PeanutKing_Soccer {
     printSpace(uint32_t, uint8_t),
     LCDPrintSpace(int16_t),
     setScreen(uint8_t, uint8_t, char[] ),
-    setScreen(uint8_t, uint8_t, int16_t ),
+    setScreen(uint8_t, uint8_t, int16_t );
     
-    motorSet(uint8_t, int16_t),
-    move(int16_t, int16_t),
-    moveSmart(uint16_t , int16_t),
-    stop(void);
-    
-  int16_t mapSpeed (float);
-  
   //protected:
-  float rawGyro(void);
-  float rawCompass(void);
-  float rawAccel(void);
+  float 
+    rawCompass(void),
+    rawGyro(void),
+    rawAccel(void);
   
-  inline bool rawButton(uint8_t);
-  uint16_t rawUltrasonic(uint8_t);
-  inline uint16_t rawCompoundEye(uint8_t);
+  bool rawButton(uint8_t);
+  uint16_t
+    setHome(void),
+    rawCompoundEye(uint8_t),
+    rawUltrasonic(uint8_t);
+    
+  uint8_t rawMonoColor(uint8_t);
+  
   void 
-    buttons(void),
     motorControl(float,float,float),
-    compoundEyes(void),
-    rawColor(uint8_t, uint16_t &, uint16_t &, uint16_t &);
-  
-  uint16_t RawColorSensor(uint8_t);
+    buttons(void),
+    compoundEyes(void);
   
   void
     LCDSetup(void),
