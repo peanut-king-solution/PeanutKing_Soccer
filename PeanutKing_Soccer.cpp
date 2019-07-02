@@ -145,30 +145,30 @@ void PeanutKing_Soccer::autoScanning(void) {
           uint8_t c = isWhite[i] ? 127 : 0;
           switch (i) {
             case front:
-              ledAddPixels(1<<7, 0, 0, 0, c);
+              ledSetPixels(1<<7, 0, 0, 0, c);
             break;
             case left:
-              ledAddPixels(1<<5, 0, 0, 0, c);
+              ledSetPixels(1<<5, 0, 0, 0, c);
             break;
             case right:
-              ledAddPixels(1<<1, 0, 0, 0, c);
+              ledSetPixels(1<<1, 0, 0, 0, c);
             break;
             case back:
-              ledAddPixels(1<<3, 0, 0, 0, c);
+              ledSetPixels(1<<3, 0, 0, 0, c);
             break;
           }
         }
         uint16_t AngleLED = 360 - Compass;
         uint8_t a = AngleLED<350 ? (AngleLED+10)/45 : (AngleLED-350)/45;
         uint8_t b = AngleLED>=10 ? (AngleLED-10)/45 : (AngleLED+350)/45;
-        ledAddPixels( 1<<a | 1<<b, 0, 0, 150, 0 );
+        ledSetPixels( 1<<a | 1<<b, 0, 0, 150, 0 );
         
         if ( Eye[MaxEye] > EYEBOUNDARY ) {
           // eyeAngle -> 16 divisions
           uint8_t c = eyeAngle<350 ? (eyeAngle+10)/45 : (eyeAngle-350)/45;
           uint8_t d = eyeAngle>=10 ? (eyeAngle-10)/45 : (eyeAngle+350)/45;
           
-          ledAddPixels( 1<<c | 1<<d, 0, 150, 0, 0);
+          ledSetPixels( 1<<c | 1<<d, 0, 150, 0, 0);
         }
       }
       else {
@@ -202,16 +202,16 @@ void PeanutKing_Soccer::autoScanning(void) {
         uint8_t e = ultsBlinkState[i] ? 127 : 0;
         switch (i) {
           case front:
-            ledAddPixels(1<<0, e, 0, 0, 0);
+            ledSetPixels(1<<0, e, 0, 0, 0);
           break;
           case left:
-            ledAddPixels(1<<6, e, 0, 0, 0);
+            ledSetPixels(1<<6, e, 0, 0, 0);
           break;
           case right:
-            ledAddPixels(1<<2, e, 0, 0, 0);
+            ledSetPixels(1<<2, e, 0, 0, 0);
           break;
           case back:
-            ledAddPixels(1<<4, e, 0, 0, 0);
+            ledSetPixels(1<<4, e, 0, 0, 0);
         }
         ultsBlinkState[i] = !ultsBlinkState[i];
         ultsBlinkTimer[i] = sysTicks;
@@ -223,7 +223,8 @@ void PeanutKing_Soccer::autoScanning(void) {
 
 void PeanutKing_Soccer::testProgram (void) {
   static bool start = false, ledStart = false, motorStart = false;
-
+  ledEnabled = false;
+  
   if ( buttonRead(0) ) {
     start = !start;
     if ( !start ) {
@@ -248,20 +249,24 @@ void PeanutKing_Soccer::testProgram (void) {
   if ( ledStart )
     ledTest();
   if ( !start ) {
-    debug(ALLSENSOR);
+    printSensors(ALLSENSOR);
   }
+  else
+    btTest();
 }
 
 // LED test ------------------------------------------------------
 void PeanutKing_Soccer::ledTest (uint8_t state) {
-  static uint32_t lastTimeIn = 0;
+  static uint32_t ledTimer = 0;
   static uint8_t index = 0, i = 0, j = 0;
+  uint32_t timeNow = millis();
+  
   
   if ( state == STATERESET )
     index = 0, i = 0, j = 0;
   
-  if ( millis() - lastTimeIn > 250) {
-    lastTimeIn = millis(); 
+  if ( timeNow - ledTimer > 250) {
+    ledTimer = timeNow; 
     index |= (1<<j);
     switch(i) {
       case 0:
@@ -291,11 +296,12 @@ void PeanutKing_Soccer::ledTest (uint8_t state) {
 
 // motor test ------------------------------------------------------
 uint8_t PeanutKing_Soccer::motorTest (void) {
-  static uint32_t lastTimeIn = 0;
+  static uint32_t motorTimer = 0;
   static uint8_t i = 0;
-
-  if ( millis() - lastTimeIn > 1000) {
-    lastTimeIn = millis();
+  uint32_t timeNow = millis();
+  
+  if ( timeNow - motorTimer > 1000) {
+    motorTimer = timeNow;
     for (uint8_t j=0; j<4; j++) {
       if ( i<4 )
         motorSet( j, i==j ? 100 : 0 );
@@ -328,46 +334,32 @@ void PeanutKing_Soccer::btTest(void) {
   }
 }
 
-void PeanutKing_Soccer::debug(uint16_t sensorType) {
-  const uint16_t updateInterval = 1000;
-  static uint32_t lastTimeIn = 0;
+void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
+  static uint32_t sensorPrintTimer = 0;
+  uint32_t timeNow = millis();
+  autoScanEnabled = true;
   
-  for (uint8_t i=0; i<3; i++) {
-    if ( buttonPressed[i] ) {
-      Serial.print("Button ");
-      Serial.print(i);
-      Serial.println("pressed. ");
-    }
-  }
-  if ( millis() - lastTimeIn < updateInterval ) {
+  if ( timeNow - sensorPrintTimer < 1000 ) {
     delay(5);
     return;
   }
-  lastTimeIn = millis();
+  sensorPrintTimer = timeNow;
   
   Serial.print("Ticks: ");
-  Serial.print(lastTimeIn/1000.0, 2);
+  Serial.print( timeNow/1000.0, 2);
   Serial.print("   systemTime: ");
   Serial.println(systemTime);
   
   if ( sensorType&COMPASS ) {
     Serial.print("Angle: ");
-    Serial.print(Compass, 2);
+    Serial.print(Compass);
     Serial.print("    ");
-    /*
-    Serial.print("Gyro: ");
-    Serial.print( rawGyro(), 2 );
-    Serial.print("    ");
-    Serial.print("Accel: ");
-    Serial.print( rawAccel(), 2 );*/
   }
   if ( sensorType&COMPOUNDEYE ) {
     Serial.print("MaxEye: ");
     Serial.print(MaxEye);
     Serial.print("   MaxReading: ");
-    Serial.print(Eye[MaxEye]);
-    Serial.print("   EyeAngle: ");
-    Serial.println(eyeAngle);
+    Serial.println(Eye[MaxEye]);
     Serial.print("Eyes:  ");
     for (int i=1; i<=12; i++) {
       Serial.print(Eye[i]);
@@ -397,12 +389,7 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
         Serial.print(", ");
         Serial.print(colorRGB[i].b);
         Serial.print("  |  hsv ");
-        printSpace(colorHSV[i].h, 3);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].s);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].v);
-        Serial.print(isWhite[i] ? "  |  True " : "  |  False" );
+        Serial.print(isWhite[i] ? "  |  is white " : "  |  " );
         /*
         switch( GroundColor[i] ) {
           case black:   Serial.print("black  ");  break;
@@ -416,6 +403,103 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
           case magenta: Serial.print("magenta");  break;
         }
         */
+      }
+      Serial.println();
+    }
+  }
+  Serial.println();
+}
+
+void PeanutKing_Soccer::debug(uint16_t sensorType) {
+  const uint16_t updateInterval = 1000;
+  static uint32_t debugTimer = 0;
+  static int8_t sensorTypeIndex = -1;
+  uint32_t timeNow = millis();
+  uint16_t currentSensor = 0;
+  
+  autoScanEnabled = true;
+  for (uint8_t i=0; i<3; i++) {
+    if ( buttonPressed[i] ) {
+      Serial.print("Button ");
+      Serial.print(i);
+      Serial.println("pressed. ");
+    }
+  }
+  
+  if ( timeNow - debugTimer < updateInterval ) {
+    delay(5);
+    return;
+  }
+  debugTimer = timeNow;
+  
+  
+  do {
+    sensorTypeIndex++;
+    if ( sensorTypeIndex>16 ) sensorTypeIndex = 0;
+    currentSensor = sensorType&(1<<sensorTypeIndex);
+  } while( currentSensor == 0 );
+  
+  /*
+    Serial.print("Ticks: ");
+    Serial.print(lastTimeIn/1000.0, 2);
+    Serial.print("   systemTime: ");
+    Serial.println(systemTime);
+  */
+  
+  switch ( currentSensor ) {
+  case COMPASS:
+    Serial.print("Angle: ");
+    Serial.print(Compass, 2);
+    Serial.print("    ");
+    /*
+    Serial.print("Gyro: ");
+    Serial.print( rawGyro(), 2 );
+    Serial.print("    ");
+    Serial.print("Accel: ");
+    Serial.print( rawAccel(), 2 );*/
+    break;
+  case COMPOUNDEYE:
+    Serial.print("MaxEye: ");
+    Serial.print(MaxEye);
+    Serial.print("   MaxReading: ");
+    Serial.print(Eye[MaxEye]);
+    Serial.print("   EyeAngle: ");
+    //Serial.println(eyeAngle);
+    //Serial.print("Eyes:  ");
+    for (int i=1; i<=12; i++) {
+      Serial.print(Eye[i]);
+      Serial.print("  ");
+    }
+    if ( sensorType&(COMPASS|COMPOUNDEYE) )
+      Serial.println();
+  break;
+  
+  }
+  if ( sensorType&(ULTRASONIC|COLORSENSOR) ) {
+    for (int i=0; i<4; i++) {
+      switch( i ) {
+        case front:  Serial.print("Front |  ");  break;
+        case left:   Serial.print("Left  |  ");  break;
+        case right:  Serial.print("Right |  ");  break;
+        case back:   Serial.print("Back  |  ");  break;
+      }
+      if ( sensorType&ULTRASONIC ) {
+        Serial.print("xsonic ");
+        printSpace(Xsonic[i], 3);
+      }
+      if ( sensorType&COLORSENSOR ) {
+        Serial.print("  |  rgb  ");
+        Serial.print(colorRGB[i].r);
+        Serial.print(", ");
+        Serial.print(colorRGB[i].g);
+        Serial.print(", ");
+        Serial.print(colorRGB[i].b);
+        Serial.print("  |  hsv ");
+        printSpace(colorHSV[i].h, 3);
+        Serial.print(", ");
+        Serial.print(colorHSV[i].s);
+        Serial.print(", ");
+        Serial.print(colorHSV[i].v);
       }
       Serial.println();
     }
@@ -887,18 +971,16 @@ void PeanutKing_Soccer::ledShow(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint
   //static uint32_t lastTime = millis();
   for (uint8_t i=0; i<8; i++) {
     if ( n & (1<<i) ) {
-      uint8_t *p = &leds[x].pixels[n * 4];  // 4 bytes per pixel
-      if(n < numLEDs) {
-        p[1] = r;                   // R
-        p[0] = g;                   // G
-        p[2] = b;                   // B
-        p[3] = w;                   // W
-      }
+      uint8_t *p = &leds[x].pixels[i * 4];  // 4 bytes per pixel
+      p[1] = r;                   // R
+      p[0] = g;                   // G
+      p[2] = b;                   // B
+      p[3] = w;                   // W
     }
   }
 }
 
-void PeanutKing_Soccer::ledAddPixels(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+void PeanutKing_Soccer::ledSetPixels(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   for (uint8_t i=0; i<8; i++) {
     if ( n & (1<<i) ) {
       uint8_t *p = &leds[0].pixels[i * 4];  // 4 bytes per pixel
@@ -915,9 +997,7 @@ void PeanutKing_Soccer::ledAddPixels(uint8_t n, uint8_t r, uint8_t g, uint8_t b,
 }
 
 void PeanutKing_Soccer::ledClear(void) {
-  for (uint8_t i=0; i<8; i++) {
-    ledShow(i, 0, 0, 0, 0);
-  }
+  ledShow(255, 0, 0, 0, 0);
   ledUpdate();
 }
 

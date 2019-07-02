@@ -12,7 +12,9 @@ PeanutKing_Soccer	KEYWORD1
 
 ledTest			KEYWORD2
 motorTest		KEYWORD2
-btTest
+btTest			KEYWORD2
+testProgram		KEYWORD2
+
 
 rgb2hsv			KEYWORD2
 buttonRead		KEYWORD2
@@ -43,7 +45,6 @@ motorControl		KEYWORD2
 compoundEyes		KEYWORD2
 
 ledClear		KEYWORD2
-ledAddPixels		KEYWORD2
 ledShow			KEYWORD2
 ledSetPixels		KEYWORD2
 ledSetup		KEYWORD2

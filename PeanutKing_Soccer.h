@@ -79,9 +79,6 @@ typedef struct {
   uint8_t *pixels;     // Holds LED color values (3 or 4 bytes each)
 } ledType;
 
-typedef struct {
-  uint8_t r; uint8_t g; uint8_t b; uint8_t w;
-} ledColor;
 
 typedef enum { front = 0, left, right, back } sensorNum;
 
@@ -111,9 +108,9 @@ const uint16_t
   MOTOR        = 0x2000,    // 0.42ms for motorcontrol (4motors)
   LCDSCREEN    = 0x4000;
   
-  const uint8_t
-    STATERESET  = 0,
-    STATESET    = 1;
+const uint8_t
+  STATERESET   = 0,
+  STATESET     = 1;
 
 const float pi = 3.1415926535897;
 
@@ -141,7 +138,6 @@ class PeanutKing_Soccer {
     
     tcsblPin    = 32,
     ledPin      = 33,
-    //actledPin   = 30,
     
     buttonPin[3] = {42, 47, 48},
     
@@ -195,7 +191,6 @@ class PeanutKing_Soccer {
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
   ledType
     leds[2];
-    
   rgb
     colorRGB[4];
   hsv
@@ -208,7 +203,8 @@ class PeanutKing_Soccer {
   void
     ledTest (uint8_t = STATESET),
     btTest(void),
-    testProgram(void);
+    testProgram(void),
+    printSensors(uint16_t);
   uint8_t
     motorTest(void);
   
@@ -244,7 +240,7 @@ class PeanutKing_Soccer {
     
     ledSetup(uint8_t, uint8_t, uint8_t),
     ledShow(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t = 0),
-    ledAddPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
+    ledSetPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
     ledClear(void),
     ledUpdate(uint8_t = 0),
     
