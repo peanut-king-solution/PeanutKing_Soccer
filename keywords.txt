@@ -15,30 +15,29 @@ motorTest		KEYWORD2
 btTest			KEYWORD2
 testProgram		KEYWORD2
 
-
 rgb2hsv			KEYWORD2
 buttonRead		KEYWORD2
 compassRead		KEYWORD2
 compoundEyeRead		KEYWORD2
 ultrasonicRead		KEYWORD2
 goundColorRead		KEYWORD2
-
-setHome			KEYWORD2
+colorSenseRead		KEYWORD2
+printSensors		KEYWORD2
 
 init			KEYWORD2
-autoScanning		KEYWORD2
 bluetoothSend		KEYWORD2
 enableScanning		KEYWORD2
 debug			KEYWORD2
-LCDMenu			KEYWORD2
+lcdMenu			KEYWORD2
 
-
+setHome			KEYWORD2
 motorSet		KEYWORD2
 move			KEYWORD2
 moveSmart		KEYWORD2
 motorStop		KEYWORD2
 
 printSpace		KEYWORD2
+lcdPrintSpace		KEYWORD2
 
 buttons			KEYWORD2
 motorControl		KEYWORD2
@@ -47,25 +46,22 @@ compoundEyes		KEYWORD2
 ledClear		KEYWORD2
 ledShow			KEYWORD2
 ledSetPixels		KEYWORD2
-ledSetup		KEYWORD2
 ledUpdate		KEYWORD2
 
-LCDSetup		KEYWORD2
-clear			KEYWORD2
+lcdclear		KEYWORD2
 setCursor		KEYWORD2
-print			KEYWORD2
 setScreen		KEYWORD2
 
 #######################################
 # Structures
 #######################################	
 
-rgb				KEYWORD3
-hsv				KEYWORD3
-ledType				KEYWORD3
-ledColor			KEYWORD3
-sensorNum			KEYWORD3
-color				KEYWORD3
+rgb			KEYWORD3
+hsv			KEYWORD3
+ledType			KEYWORD3
+ledColor		KEYWORD3
+sensorNum		KEYWORD3
+color			KEYWORD3
 
 
 #######################################
@@ -73,6 +69,17 @@ color				KEYWORD3
 #######################################
 
 EYEBOUNDARY		LITERAL1
+
+LED1			LITERAL1
+LED2			LITERAL1
+LED3			LITERAL1
+LED4			LITERAL1
+LED5			LITERAL1
+LED6			LITERAL1
+LED7			LITERAL1
+LED8			LITERAL1
+
+pi			LITERAL1
 
 ALLIOs			LITERAL1
 ALLSENSOR		LITERAL1
@@ -92,5 +99,3 @@ ALLOUTPUT		LITERAL1
 LED			LITERAL1
 MOTOR			LITERAL1
 LCDSCREEN		LITERAL1
-
-

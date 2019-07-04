@@ -8,8 +8,8 @@
 //#include <LiquidCrystal_I2C.h>
 
 // motor,  + clockwise
-// 14
-// 23
+// 1 4
+// 2 3
 
 
 #define LED1   0x01
@@ -160,6 +160,7 @@ class PeanutKing_Soccer {
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
   
+  // Variables ======================================================================================
   bool
     autoScanEnabled   = true,
     motorEnabled      = true,
@@ -167,7 +168,7 @@ class PeanutKing_Soccer {
     ledEnabled        = false,
     ledFlashEnabled   = false,
     
-    Button[3],
+    button[3],
     buttonPressed[3],
     buttonReleased[3],
     buttonTriggered[3],
@@ -177,17 +178,17 @@ class PeanutKing_Soccer {
   uint8_t 
     LCD_backlightval,
     systemTime,      //a reference 100Hz clock, 0-100 every second
-    MaxEye,
-    MinEye,
-    GroundColor[4];  //color sensor
+    maxEye,
+    minEye,
+    groundColor[4];  //color sensor
   int16_t
-    Xsonic[4];       //4 xsonic reading
+    ultrasonic[4];       //4 ultrasonic reading
   uint16_t
     autoScanSensors = ALLSENSOR,
     EYEBOUNDARY = 20,
     eyeAngle,
-    Eye[13],         // 12 ir reading , can be 16, depends on version number
-    Compass;         // compass angle reading
+    eye[13],         // 12 ir reading , can be 16, depends on version number
+    compass;         // compass angle reading
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
   ledType
     leds[2];
@@ -199,7 +200,9 @@ class PeanutKing_Soccer {
   uint32_t
     sysTicks = 0;
   
-  // functions ------------------------------------------------------
+  
+  
+  // functions ======================================================================================
   void
     ledTest (uint8_t = STATESET),
     btTest(void),
@@ -217,45 +220,43 @@ class PeanutKing_Soccer {
     compassRead(void),
     compoundEyeRead(uint8_t),
     ultrasonicRead(uint8_t);
-  uint8_t
+  rgb 
     goundColorRead(uint8_t);
+  uint8_t
+    colorSenseRead(uint8_t);
     
   int16_t mapSpeed (float);
   
   void
     init(void),
-    autoScanning(void),
     bluetoothSend(char[]),
     bluetoothReceive(void),
-    enableScanning(bool, uint8_t),
     
-    Testing(void),
     debug(uint16_t),
-    LCDMenu(void),
+    lcdMenu(void),
     
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
     moveSmart(uint16_t , int16_t),
     motorStop(void),
     
-    ledSetup(uint8_t, uint8_t, uint8_t),
     ledShow(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t = 0),
     ledSetPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
     ledClear(void),
     ledUpdate(uint8_t = 0),
     
     printSpace(uint32_t, uint8_t),
-    LCDPrintSpace(int16_t),
+    lcdPrintSpace(int16_t),
     setScreen(uint8_t, uint8_t, char[] ),
     setScreen(uint8_t, uint8_t, int16_t );
     
   //protected:
+  bool rawButton(uint8_t);
   float 
     rawCompass(void),
     rawGyro(void),
     rawAccel(void);
   
-  bool rawButton(uint8_t);
   uint16_t
     setHome(void),
     rawCompoundEye(uint8_t),
@@ -264,13 +265,15 @@ class PeanutKing_Soccer {
   uint8_t rawMonoColor(uint8_t);
   
   void 
+    autoScanning(void),
+    enableScanning(bool, uint8_t),
     motorControl(float,float,float),
     buttons(void),
-    compoundEyes(void);
+    compoundEyes(void),
   
-  void
-    LCDSetup(void),
-    LCDClear(void),
+    ledSetup(uint8_t, uint8_t, uint8_t),
+    lcdSetup(void),
+    lcdClear(void),
     setCursor(uint8_t col, uint8_t row),
     send(uint8_t value, uint8_t mode),
     write4bits(uint8_t value),
