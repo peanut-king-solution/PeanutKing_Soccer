@@ -187,8 +187,7 @@ class PeanutKing_Soccer {
     autoScanSensors = ALLSENSOR,
     EYEBOUNDARY = 20,
     eyeAngle,
-    eye[13],         // 12 ir reading , can be 16, depends on version number
-    compass;         // compass angle reading
+    eye[13];         // 12 ir reading , can be 16, depends on version number
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
   ledType
     leds[2];
@@ -196,7 +195,8 @@ class PeanutKing_Soccer {
     colorRGB[4];
   hsv
     colorHSV[4];
-    
+  float
+    compass;         // compass angle reading
   uint32_t
     sysTicks = 0;
   
@@ -217,9 +217,10 @@ class PeanutKing_Soccer {
   bool
     buttonRead(uint8_t);
   uint16_t
-    compassRead(void),
     compoundEyeRead(uint8_t),
     ultrasonicRead(uint8_t);
+  float
+    compassRead(void);
   rgb 
     goundColorRead(uint8_t);
   uint8_t

@@ -449,7 +449,7 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
   switch ( currentSensor ) {
   case COMPASS:
     Serial.print("Angle: ");
-    Serial.print(compass, 2);
+    Serial.print(compass);
     Serial.print("    ");
     /*
     Serial.print("Gyro: ");
@@ -614,7 +614,7 @@ bool PeanutKing_Soccer::buttonRead(uint8_t y) {
 }
 
 // compassRead -----------------------------------------------------
-uint16_t PeanutKing_Soccer::compassRead(void) {
+float PeanutKing_Soccer::compassRead(void) {
   if ( !autoScanEnabled )
     compass = rawCompass();
   return compass;
