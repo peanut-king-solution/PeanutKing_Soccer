@@ -621,7 +621,7 @@ float PeanutKing_Soccer::compassRead(void) {
 }
 
 // return single eye reading ---------------------------------------
-inline uint16_t PeanutKing_Soccer::compoundEyeRead (uint8_t eye_no) {
+uint16_t PeanutKing_Soccer::compoundEyeRead (uint8_t eye_no) {
   //if ( !autoScanEnabled )
     //eye[eye_no] = rawCompoundEye(eye_no);
   return rawCompoundEye(eye_no);
