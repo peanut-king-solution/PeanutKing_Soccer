@@ -246,7 +246,7 @@ class PeanutKing_Soccer {
     ledClear(void),
     ledUpdate(uint8_t = 0),
     
-    printSpace(uint32_t, uint8_t),
+    printSpace(uint32_t, uint8_t = 3),
     lcdPrintSpace(int16_t),
     setScreen(uint8_t, uint8_t, char[] ),
     setScreen(uint8_t, uint8_t, int16_t );

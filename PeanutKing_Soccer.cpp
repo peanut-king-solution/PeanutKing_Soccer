@@ -83,8 +83,14 @@ void PeanutKing_Soccer::init() {
   lcdSetup();
   
   ledSetup(0, ledPin, numLEDs);
+  if ( !ledEnabled ) {
+    ledShow(255, 0, 0, 0, 0);
+    ledUpdate();
+  }
+  delay(5);
+  
   ledSetup(1, tcsblPin, 1);
-  ledShow(0, 255, 255, 255, 0, 1);
+  ledShow(1, 255, 255, 255, 255, 1);
   ledUpdate(1);
   
   delay(10);
@@ -334,7 +340,7 @@ void PeanutKing_Soccer::btTest(void) {
   }
 }
 
-void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
+void PeanutKing_Soccer::debug(uint16_t sensorType) {
   static uint32_t sensorPrintTimer = 0;
   uint32_t timeNow = millis();
   autoScanEnabled = true;
@@ -372,13 +378,13 @@ void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
   if ( sensorType&(ULTRASONIC|COLORSENSOR) ) {
     for (int i=0; i<4; i++) {
       switch( i ) {
-        case front:  Serial.print("Front |  ");  break;
-        case left:   Serial.print("Left  |  ");  break;
-        case right:  Serial.print("Right |  ");  break;
-        case back:   Serial.print("Back  |  ");  break;
+        case front:  Serial.print("Front");  break;
+        case left:   Serial.print("Left ");  break;
+        case right:  Serial.print("Right");  break;
+        case back:   Serial.print("Back ");  break;
       }
       if ( sensorType&ULTRASONIC ) {
-        Serial.print("ultrasonic ");
+        Serial.print(" |  ultrasonic ");
         printSpace(ultrasonic[i], 3);
       }
       if ( sensorType&COLORSENSOR ) {
@@ -389,6 +395,11 @@ void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
         Serial.print(", ");
         Serial.print(colorRGB[i].b);
         Serial.print("  |  hsv ");
+        printSpace(colorHSV[i].h);
+        Serial.print(", ");
+        Serial.print(colorHSV[i].s);
+        Serial.print(", ");
+        Serial.print(colorHSV[i].v);
         Serial.print(isWhite[i] ? "  |  is white " : "  |  " );
         /*
         switch( GroundColor[i] ) {
@@ -410,7 +421,7 @@ void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
   Serial.println();
 }
 
-void PeanutKing_Soccer::debug(uint16_t sensorType) {
+void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
   const uint16_t updateInterval = 1000;
   static uint32_t debugTimer = 0;
   static int8_t sensorTypeIndex = -1;
@@ -462,10 +473,10 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
     Serial.print("maxEye: ");
     Serial.print(maxEye);
     Serial.print("   MaxReading: ");
-    Serial.print(eye[maxEye]);
-    Serial.print("   EyeAngle: ");
+    Serial.println(eye[maxEye]);
+    //Serial.print("   EyeAngle: ");
     //Serial.println(eyeAngle);
-    //Serial.print("Eyes:  ");
+    Serial.print("Eyes:  ");
     for (int i=1; i<=12; i++) {
       Serial.print(eye[i]);
       Serial.print("  ");
@@ -478,13 +489,13 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
   if ( sensorType&(ULTRASONIC|COLORSENSOR) ) {
     for (int i=0; i<4; i++) {
       switch( i ) {
-        case front:  Serial.print("Front |  ");  break;
-        case left:   Serial.print("Left  |  ");  break;
-        case right:  Serial.print("Right |  ");  break;
-        case back:   Serial.print("Back  |  ");  break;
+        case front:  Serial.print("Front");  break;
+        case left:   Serial.print("Left ");  break;
+        case right:  Serial.print("Right");  break;
+        case back:   Serial.print("Back ");  break;
       }
       if ( sensorType&ULTRASONIC ) {
-        Serial.print("ultrasonic ");
+        Serial.print(" |  ultrasonic ");
         printSpace(ultrasonic[i], 3);
       }
       if ( sensorType&COLORSENSOR ) {
@@ -495,7 +506,7 @@ void PeanutKing_Soccer::debug(uint16_t sensorType) {
         Serial.print(", ");
         Serial.print(colorRGB[i].b);
         Serial.print("  |  hsv ");
-        printSpace(colorHSV[i].h, 3);
+        printSpace(colorHSV[i].h);
         Serial.print(", ");
         Serial.print(colorHSV[i].s);
         Serial.print(", ");
