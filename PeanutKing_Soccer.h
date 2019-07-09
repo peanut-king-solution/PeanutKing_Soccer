@@ -90,7 +90,7 @@ typedef enum {
 
 const uint16_t
   ALLIOs       = 0xffff,
-  ALLSENSOR    = 0x0fff,
+  ALLSENSORS   = 0x0fff,
   COMPASS      = 0x0001,    // 0.27ms
   COMPOUNDEYE  = 0x0002,    // 1.45ms
   ULTRASONIC   = 0x00f0,    // ~14ms ~ 32ms for 4
@@ -103,7 +103,7 @@ const uint16_t
   COLORSENSOR1 = 0x0200,    
   COLORSENSOR2 = 0x0400,    
   COLORSENSOR3 = 0x0800,    
-  ALLOUTPUT    = 0xf000,
+  ALLOUTPUTs   = 0xf000,
   LED          = 0x1000,    // ~0.5ms for 8 leds
   MOTOR        = 0x2000,    // 0.42ms for motorcontrol (4motors)
   LCDSCREEN    = 0x4000;
@@ -184,7 +184,7 @@ class PeanutKing_Soccer {
   int16_t
     ultrasonic[4];       //4 ultrasonic reading
   uint16_t
-    autoScanSensors = ALLSENSOR,
+    autoScanSensors = ALLSENSORS,
     EYEBOUNDARY = 20,
     eyeAngle,
     eye[13];         // 12 ir reading , can be 16, depends on version number
@@ -235,6 +235,7 @@ class PeanutKing_Soccer {
     
     debug(uint16_t),
     lcdMenu(void),
+    enableScanning(bool, uint16_t = ALLSENSORS),
     
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
@@ -267,7 +268,6 @@ class PeanutKing_Soccer {
   
   void 
     autoScanning(void),
-    enableScanning(bool, uint8_t),
     motorControl(float,float,float),
     buttons(void),
     compoundEyes(void),

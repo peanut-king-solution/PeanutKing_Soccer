@@ -255,7 +255,7 @@ void PeanutKing_Soccer::testProgram (void) {
   if ( ledStart )
     ledTest();
   if ( !start ) {
-    printSensors(ALLSENSOR);
+    debug(ALLSENSORS);
   }
   else
     btTest();
@@ -755,9 +755,9 @@ void PeanutKing_Soccer::motorSet(uint8_t motor_no, int16_t speed) {
 
 // turn on/off specific sensory system scannig function
 // CompoundEye + Compass + Ultrasonic + ColorSense
-void PeanutKing_Soccer::enableScanning(bool enabled, uint8_t sensorType) {
-  if ( true ) {
-  }
+void PeanutKing_Soccer::enableScanning(bool enabling, uint16_t sensorType) {
+  autoScanEnabled = enabling;
+  autoScanSensors = sensorType;
 }
 
 // col(0-15), row(0-1) --------------------------------------------
