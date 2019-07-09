@@ -121,14 +121,13 @@ void PeanutKing_Soccer::autoScanning(void) {
   sysTicks ++;
   
   buttons();
-  /*
-  if ( buttonPressed[2] ) {
+  
+  if ( buttonPressed[0] ) {
     motorEnabled = !motorEnabled;
     if ( !motorEnabled ) {
-      stop();
+      motorStop();
     }
   }
-  */
   
   if ( !autoScanEnabled ) return;
   
@@ -228,37 +227,37 @@ void PeanutKing_Soccer::autoScanning(void) {
 }
 
 void PeanutKing_Soccer::testProgram (void) {
-  static bool start = false, ledStart = false, motorStart = false;
+  static bool ledStart = false, btStart = false;
   ledEnabled = false;
   
-  if ( buttonRead(0) ) {
-    start = !start;
-    if ( !start ) {
-      motorStop();
-    }
-  }
-  if ( buttonRead(1) ) {
+  if ( buttTrigRead(1) ) {
     ledStart = !ledStart;
     if ( !ledStart ) {
       ledShow(255, 0, 0, 0, 0);
       ledUpdate();
     }
   }
-  if ( buttonRead(2) ) {
-    motorStart = !motorStart;
-    if ( !motorStart ) {
-      motorStop();
+  if ( buttTrigRead(2) ) {
+    btStart = !btStart;
+    if ( !btStart ) {
     }
   }
-  if ( motorStart )
-    motorTest();
-  if ( ledStart )
-    ledTest();
-  if ( !start ) {
+  
+  
+  if ( btStart )
+    btTest();
+  else {
+    enableScanning(true);
     debug(ALLSENSORS);
   }
+  
+  if ( ledStart )
+    ledTest();
+  
+  if ( motorEnabled )
+    motorTest();
   else
-    btTest();
+    motorStop();
 }
 
 // LED test ------------------------------------------------------
@@ -525,8 +524,8 @@ void PeanutKing_Soccer::lcdMenu(void) {
   static int8_t lastPage = 1;
   static uint16_t ticks = 0;
   
-  if      ( buttonRead(1) ) page--;
-  else if ( buttonRead(2) ) page++;
+  if      ( buttTrigRead(1) ) page--;
+  else if ( buttTrigRead(2) ) page++;
   else if ( millis() - lcdTime < 200) {
     delay(2);
     return;
@@ -617,26 +616,32 @@ void PeanutKing_Soccer::lcdMenu(void) {
 
 //                                  Sensor Read
 // =================================================================================
-// buttonRead ------------------------------------------------------
-bool PeanutKing_Soccer::buttonRead(uint8_t y) {
-  bool temp = buttonTriggered[y];
-  buttonTriggered[y] = false;
-  return temp;
+// buttonRead ----------------------------------------------------------
+bool PeanutKing_Soccer::buttonRead(uint8_t pin) {
+  if ( pin == 1 || pin == 2 ) 
+    return rawButton(pin);
+  else
+    return 0;
 }
 
-// compassRead -----------------------------------------------------
-float PeanutKing_Soccer::compassRead(void) {
+// compassRead ---------------------------------------------------------
+uint16_t PeanutKing_Soccer::compassRead(void) {
   if ( !autoScanEnabled )
     compass = rawCompass();
   return compass;
 }
 
-// return single eye reading ---------------------------------------
+// return single eye reading -------------------------------------------
 uint16_t PeanutKing_Soccer::compoundEyeRead (uint8_t eye_no) {
-  //if ( !autoScanEnabled )
-    //eye[eye_no] = rawCompoundEye(eye_no);
-  return rawCompoundEye(eye_no);
-//  return eye[eye_no];
+  if ( !autoScanEnabled )
+    compoundEyes();
+  
+  if ( eye_no >0 && eye_no <= 12 )
+    return eye[eye_no];
+  else if ( eye_no == 13 ) 
+    return maxEye;
+  else if ( eye_no == 14 ) 
+    return eye[maxEye];
 }
 
 // ultrasonicRead ------------------------------------------------------
@@ -646,7 +651,7 @@ uint16_t PeanutKing_Soccer::ultrasonicRead(uint8_t ultrasonic_no) {
   return ultrasonic[ultrasonic_no];
 }
 
-rgb PeanutKing_Soccer::goundColorRead(uint8_t pin) {
+uint8_t PeanutKing_Soccer::goundColorRead(uint8_t pin, uint8_t mono) {
   const uint8_t& out = tcsRxPin[pin];
   
   digitalWrite(tcsSxPin[2], LOW);
@@ -662,7 +667,10 @@ rgb PeanutKing_Soccer::goundColorRead(uint8_t pin) {
   delayMicroseconds(100);
   colorRGB[pin].g = rawMonoColor(out);
   
-  return colorRGB[pin];
+  if ( mono == red )        return colorRGB[pin].r;
+  else if ( mono == green ) return colorRGB[pin].g;
+  else if ( mono == blue )  return colorRGB[pin].b;
+  else return 0;
 }
 
 // return single color sensor reading
@@ -730,7 +738,7 @@ void PeanutKing_Soccer::motorStop(void) {
 // simple motor turn, motor_no cannot add, one by one 
 void PeanutKing_Soccer::motorSet(uint8_t motor_no, int16_t speed) {
   //static int16_t previousSpeed[4] = {0,0,0,0};
-  if ( motorEnabled == false ) speed = 0;
+  if ( !motorEnabled ) speed = 0;
   if      ( speed>0 && speed<256 ) {
     digitalWrite(dirPin[motor_no], LOW);
     digitalWrite(dir2Pin[motor_no], HIGH);
@@ -836,6 +844,13 @@ void PeanutKing_Soccer::compoundEyes(void) {
 
 //                                  RAW
 // =================================================================================
+
+bool PeanutKing_Soccer::buttTrigRead(uint8_t y) {
+  bool temp = buttonTriggered[y];
+  buttonTriggered[y] = false;
+  return temp;
+}
+
 
 // Software Set Compass Home -------------------------------------
 uint16_t PeanutKing_Soccer::setHome(void) { 

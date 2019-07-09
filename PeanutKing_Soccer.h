@@ -186,6 +186,7 @@ class PeanutKing_Soccer {
   uint16_t
     autoScanSensors = ALLSENSORS,
     EYEBOUNDARY = 20,
+    compass,
     eyeAngle,
     eye[13];         // 12 ir reading , can be 16, depends on version number
   //  BT_buffer[100]; //store at most the most updated 100 values from BT
@@ -195,8 +196,6 @@ class PeanutKing_Soccer {
     colorRGB[4];
   hsv
     colorHSV[4];
-  float
-    compass;         // compass angle reading
   uint32_t
     sysTicks = 0;
   
@@ -218,12 +217,10 @@ class PeanutKing_Soccer {
     buttonRead(uint8_t);
   uint16_t
     compoundEyeRead(uint8_t),
-    ultrasonicRead(uint8_t);
-  float
+    ultrasonicRead(uint8_t),
     compassRead(void);
-  rgb 
-    goundColorRead(uint8_t);
-  uint8_t
+  uint8_t 
+    goundColorRead(uint8_t, uint8_t = black),
     colorSenseRead(uint8_t);
     
   int16_t mapSpeed (float);
@@ -253,7 +250,9 @@ class PeanutKing_Soccer {
     setScreen(uint8_t, uint8_t, int16_t );
     
   //protected:
-  bool rawButton(uint8_t);
+  bool
+    rawButton(uint8_t),
+    buttTrigRead(uint8_t);
   float 
     rawCompass(void),
     rawGyro(void),

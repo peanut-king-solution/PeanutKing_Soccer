@@ -9,7 +9,7 @@ void setup() {
   robot.init();
 
   // Turn off sensors auto scanning
-  robot.enableScanning(true);
+  robot.enableScanning(false);
   
   //robot.EYEBOUNDARY = 20;
 }
@@ -19,13 +19,12 @@ void loop() {
   // start keeps the state
   static bool start = false;
   // get yellow button reading
-  bool yellowButton = robot.buttonRead(0);
+  bool ButtonA = robot.buttonRead(1);
   
-  if ( yellowButton ) {
+  if ( ButtonA ) {
     // when the button is pressed, the state flipped
     start = !start;
   }
-  
   
   if ( start ) {
     // Turn on sensors auto scanning and set all sonsers
@@ -38,14 +37,13 @@ void loop() {
 
     // print "Hello World" on serial monitor and start a new line
     Serial.println("Hello World");
-
     
     // print "Second line!" on serial monitor
     Serial.print("Second line!");
 
     // get eye 1 reading
-    int eye1 = robot.compoundEyeRead(1);
-
+    int eye1 = robot.compoundEyeRead(1);   //1-14
+    
     // get front ultrasonic reading
     int frontUltrasonic = robot.ultrasonicRead(front);
 
@@ -53,11 +51,15 @@ void loop() {
     int compass = robot.compassRead();
     
     // get rgb values from color sensor
-    rgb frontRGB = robot.goundColorRead(front);
+    int frontRed = robot.goundColorRead(front, red);
     
     // get the color from color sensor
     color frontColor = robot.colorSenseRead(front);
 
+    // motor      no, speed
+    robot.motorSet(0, 100);
+
+    // clear LCD
     robot.lcdClear();
     // print on LCD x, y, content
 
@@ -68,7 +70,7 @@ void loop() {
     // second line
     robot.setScreen(0, 1, "front ults: ");
     robot.setScreen(12, 1, frontUltrasonic);
-
+    
     // delay 0.5s before looping to the beginning
     delay(500);
   }
