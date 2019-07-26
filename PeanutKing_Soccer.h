@@ -214,14 +214,15 @@ class PeanutKing_Soccer {
     rgb2hsv(rgb in);
     
   bool
-    buttonRead(uint8_t);
+    buttonRead(uint8_t),
+    whiteLineCheck(uint8_t);
   uint16_t
     compoundEyeRead(uint8_t),
     ultrasonicRead(uint8_t),
     compassRead(void);
   uint8_t 
-    goundColorRead(uint8_t, uint8_t = black),
-    colorSenseRead(uint8_t);
+    floorColorReadRaw(uint8_t, uint8_t = black),
+    floorColorRead(uint8_t);
     
   int16_t mapSpeed (float);
   

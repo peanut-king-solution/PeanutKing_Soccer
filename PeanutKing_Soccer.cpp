@@ -191,7 +191,7 @@ void PeanutKing_Soccer::autoScanning(void) {
     case COLORSENSOR2:
     case COLORSENSOR3:
       uint8_t j = autoScanTicks-8;
-      groundColor[autoScanTicks-8]  = colorSenseRead(autoScanTicks-8);
+      groundColor[autoScanTicks-8]  = floorColorRead(autoScanTicks-8);
       
       onBound[j] = isWhite[j] && ( ultrasonic[j]>25 && ultrasonic[j]<34 );
       outBound[j] = (!isWhite[j] && ultrasonic[j]<31) && ( !outBound[j] || wasWhite[j] );
@@ -651,7 +651,7 @@ uint16_t PeanutKing_Soccer::ultrasonicRead(uint8_t ultrasonic_no) {
   return ultrasonic[ultrasonic_no];
 }
 
-uint8_t PeanutKing_Soccer::goundColorRead(uint8_t pin, uint8_t mono) {
+uint8_t PeanutKing_Soccer::floorColorReadRaw(uint8_t pin, uint8_t mono) {
   const uint8_t& out = tcsRxPin[pin];
   
   digitalWrite(tcsSxPin[2], LOW);
@@ -674,8 +674,8 @@ uint8_t PeanutKing_Soccer::goundColorRead(uint8_t pin, uint8_t mono) {
 }
 
 // return single color sensor reading
-uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
-  goundColorRead(pin);
+uint8_t PeanutKing_Soccer::floorColorRead(uint8_t pin) {
+  floorColorReadRaw(pin);
   //colorRGB[pin].b *= 1.15;
   
   hsv& op = colorHSV[pin];
@@ -691,6 +691,11 @@ uint8_t PeanutKing_Soccer::colorSenseRead(uint8_t pin) {
   else if ( op.h < 175 )               return green;
   else if ( op.h < 250 )               return blue;
   else                                 return magenta;
+}
+
+bool PeanutKing_Soccer::whiteLineCheck(uint8_t pin) {
+  floorColorRead(pin);
+  return isWhite[pin];
 }
 
 //                                  Motors
