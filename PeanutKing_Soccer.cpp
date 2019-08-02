@@ -200,6 +200,7 @@ void PeanutKing_Soccer::autoScanning(void) {
   }
   
   // ultrasonic range 5-200 -> led delay 2-100
+  /*
   if (ledEnabled) {
     for(uint8_t i=0; i<4; i++) {
       uint16_t limit = constrain(ultrasonic[i]/2, 2, 125);
@@ -222,7 +223,7 @@ void PeanutKing_Soccer::autoScanning(void) {
         ultsBlinkTimer[i] = sysTicks;
       }
     }
-  }
+  }*/
   ledUpdate();
 }
 
@@ -524,8 +525,9 @@ void PeanutKing_Soccer::lcdMenu(void) {
   static int8_t lastPage = 1;
   static uint16_t ticks = 0;
   
-  if      ( buttTrigRead(1) ) page--;
-  else if ( buttTrigRead(2) ) page++;
+  //if      ( buttTrigRead(1) ) page--;
+  //else 
+  if ( buttTrigRead(2) ) page++;
   else if ( millis() - lcdTime < 200) {
     delay(2);
     return;
@@ -536,7 +538,7 @@ void PeanutKing_Soccer::lcdMenu(void) {
   lcdTime = millis();
   
   if      ( page > PAGEUPPERLIMIT ) page = PAGELOWERLIMIT;
-  else if ( page < PAGELOWERLIMIT ) page = PAGEUPPERLIMIT;
+  //else if ( page < PAGELOWERLIMIT ) page = PAGEUPPERLIMIT;
   
   if ( page != lastPage )  {
     ticks = 0;
@@ -564,6 +566,7 @@ void PeanutKing_Soccer::lcdMenu(void) {
       break;
       case 6:
         setScreen(0, 0, "6 Motor Test");
+        motorEnabled = true;
         ledShow(255, 0, 0, 0, 0);
         ledUpdate();
       break;
@@ -891,6 +894,26 @@ float PeanutKing_Soccer::rawCompass(void) {
   //jerho[0] = received_byte[0];
   //jerho[1] = received_byte[1];
   //jerho[2] = received_byte[2];
+  answer = temp/100.0;
+
+  return answer;
+}
+
+// rawCompass ----------------------------------------------------
+float PeanutKing_Soccer::rawCompass66(void) {
+  uint8_t received_byte[3] = {0,0,0};
+  uint8_t i=0;
+  uint16_t temp=0;
+  float answer = 888;
+  Wire.beginTransmission(0x66);
+  Wire.write(GET_READING);
+  Wire.endTransmission();
+  Wire.requestFrom(0x66, 3);
+  while (Wire.available()) {
+    received_byte[i++] = Wire.read();
+  }
+  temp = received_byte[1]&0xFF;
+  temp |= (received_byte[2]<<8);
   answer = temp/100.0;
 
   return answer;

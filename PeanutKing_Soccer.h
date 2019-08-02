@@ -7,7 +7,7 @@
 
 //#include <LiquidCrystal_I2C.h>
 
-// motor,  + clockwise
+// motor,  + clockwise turn when positive value
 // 1 4
 // 2 3
 
@@ -256,6 +256,7 @@ class PeanutKing_Soccer {
     buttTrigRead(uint8_t);
   float 
     rawCompass(void),
+    rawCompass66(void),
     rawGyro(void),
     rawAccel(void);
   

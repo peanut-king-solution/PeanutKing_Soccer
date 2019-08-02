@@ -51,10 +51,10 @@ void loop() {
     int compass = robot.compassRead();
     
     // get rgb values from color sensor
-    int frontRed = robot.goundColorRead(front, red);
+    int frontRed = robot.floorColorReadRaw(front, red);
     
     // get the color from color sensor
-    color frontColor = robot.colorSenseRead(front);
+    color frontColor = robot.floorColorRead(front);
 
     // motor      no, speed
     robot.motorSet(0, 100);
