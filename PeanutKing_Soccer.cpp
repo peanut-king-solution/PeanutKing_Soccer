@@ -267,12 +267,11 @@ void PeanutKing_Soccer::ledTest (uint8_t state) {
   static uint8_t index = 0, i = 0, j = 0;
   uint32_t timeNow = millis();
   
-  
   if ( state == STATERESET )
     index = 0, i = 0, j = 0;
   
   if ( timeNow - ledTimer > 250) {
-    ledTimer = timeNow; 
+    ledTimer = timeNow;
     index |= (1<<j);
     switch(i) {
       case 0:
@@ -525,6 +524,7 @@ void PeanutKing_Soccer::lcdMenu(void) {
   static int8_t lastPage = 1;
   static uint16_t ticks = 0;
   
+  ledEnabled = false;
   //if      ( buttTrigRead(1) ) page--;
   //else 
   if ( buttTrigRead(2) ) page++;
@@ -548,41 +548,67 @@ void PeanutKing_Soccer::lcdMenu(void) {
         setScreen(0, 0, "0 Debug");
       break;
       case 1:
-        setScreen(0, 0, "1 Angle");
+        setScreen(0, 0, "1 CompassUP");
+        setScreen(0, 1, "  CompassDn");
       break;
       case 2:
         setScreen(0, 0, "2 Eye");
+        setScreen(0, 1, "Max:");
       break;
       case 3:
         setScreen(0, 0, "3 ULTRASONIC");
       break;
       case 4:
         setScreen(0, 0, "4 ColorSense");
-        ledShow(255, 0, 0, 0, 0);
-        ledUpdate();
       break;
       case 5:
         setScreen(0, 0, "5 LED Test");
+        autoScanEnabled = false;
       break;
       case 6:
         setScreen(0, 0, "6 Motor Test");
         motorEnabled = true;
+      break;
+    }
+    switch(lastPage) {
+      case 0:
+      
+      break;
+      case 1:
+      
+      break;
+      case 2:
+      
+      break;
+      case 3:
+      
+      break;
+      case 4:
+      
+      break;
+      case 5:
+        autoScanEnabled = true;
         ledShow(255, 0, 0, 0, 0);
         ledUpdate();
       break;
+      case 6:
+        motorEnabled = false;
+        motorStop();
+      break;
     }
   }
-  delay(5);
+  delay(1);
   switch(page) {
     case 0:
     break;
     case 1:
-      setScreen(0, 1, (int16_t)compass);
+      setScreen(12, 0, (int16_t)compass);
+      print("  ");
+      setScreen(12, 1, (int16_t)rawCompass66());
       print("  ");
     break;
     case 2:
-      //setScreen(0, 1, "Max:");
-      setScreen(3, 1, maxEye);
+      setScreen(5, 1, maxEye);
       print(" ");
       setScreen(10, 1, eye[maxEye]);
       print("  ");
@@ -905,10 +931,10 @@ float PeanutKing_Soccer::rawCompass66(void) {
   uint8_t i=0;
   uint16_t temp=0;
   float answer = 888;
-  Wire.beginTransmission(0x66);
-  Wire.write(GET_READING);
+  Wire.beginTransmission(16);
+  Wire.write(0x55);
   Wire.endTransmission();
-  Wire.requestFrom(0x66, 3);
+  Wire.requestFrom(16, 3);
   while (Wire.available()) {
     received_byte[i++] = Wire.read();
   }
