@@ -5,8 +5,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-//#include <LiquidCrystal_I2C.h>
-
 // motor,  + clockwise turn when positive value
 // 1 4
 // 2 3
@@ -39,14 +37,9 @@
 //#define Rw B00000010  // Read/Write bit
 #define Rs B00000001  // Register select bit
 
-// flags for display on/off control
-#define LCD_DISPLAYON  0x04
-#define LCD_DISPLAYOFF 0x00
-#define LCD_CURSOROFF  0x00
-#define LCD_BLINKOFF   0x00
 
 #define LCD_RETURNHOME 0x02
-#define LCD_ENTRYLEFT  0x02
+#define LCD_ENTRYLEFT  
 #define LCD_ENTRYSHIFTDECREMENT 0x00
 #define LCD_ENTRYMODESET 0x04
 #define LCD_CLEARDISPLAY 0x01
@@ -54,10 +47,9 @@
 #define LCD_SETDDRAMADDR 0x80
 
 #define LCD_FUNCTIONSET 0x20    // B00100000
-#define LCD_4BITMODE    0x00    // B000X0000  
-#define LCD_2LINE       0x08    // B0000X000
-#define LCD_5x8DOTS     0x00    // B00000X00
+  
 
+#define DEBUGMODE       1
 
 typedef struct {
   uint8_t r;
@@ -79,7 +71,6 @@ typedef struct {
   uint8_t *pixels;     // Holds LED color values (3 or 4 bytes each)
 } ledType;
 
-
 typedef enum { front = 0, left, right, back } sensorNum;
 
 typedef enum {
@@ -87,6 +78,28 @@ typedef enum {
   red,      green,   blue, 
   yellow,   cyan,    magenta
 } color;
+
+enum testUnit {
+  testLED = 1,
+  testMotor,
+  testCompass,
+  testUltrasonic,
+  testCompoundeye,
+  testColor,
+  testBT,
+  
+  testAll = 99,
+};
+
+enum pressureTestStatus {
+  chaseball,
+  goal,
+  gohome,
+  gohome2,
+  goleft,
+  goright,
+  gofront
+};
 
 const uint16_t
   ALLIOs       = 0xffff,
@@ -114,165 +127,87 @@ const uint8_t
 
 const float pi = 3.1415926535897;
 
+
+
 class PeanutKing_Soccer {
+ public:
   const int8_t 
     PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
   
   const int8_t  compass_address = 8;
+
   const uint8_t
     LCD_Addr    = 0x38,
-    LCD_lineNum = 2,
-    
-    LCD_displayfunction = LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS,
+    LCD_displayfunction = 0x08,
     
     // turn the display on with no cursor or blinking default
-    LCD_displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF,
-    
+    LCD_displaycontrol = 0x04,
     // Initialize to default text direction (for roman languages)
-    LCD_displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT,
-    
+    LCD_displaymode = 0x02,
     numLEDs     = 8,       // Number of RGB LEDs in strip
     GET_READING = 0x55,
-    SET_HOME    = 0x54,
+    SET_HOME    = 0x54;
     
-    tcsblPin    = 32,
-    ledPin      = 33,
-    
-    buttonPin[3] = {42, 47, 48},
-    
-    pwmPin[4]   = { 5,  4,  3,  2},
-    //dirPin[4]   = {22, 23, 24, 25},  // v2.1
-    dirPin[4]   = {12, 10,  8,  6},  // v2.2
-    dir2Pin[4]  = {13, 11,  9,  7},
-    diagPin[4]  = {50, 51, 52, 53},
-    // xsound:     xf, xl. xr. xb
-    trigPin[4]  = {37, 35, 34, 36},
-    echoPin[4]  = {41, 39, 38, 40},
-    // rgbs:       s0, s1, s2, s3
-    tcsSxPin[4] = {43, 44, 45, 46},
-    tcsRxPin[4] = {28, 27, 29, 26},
-    
-    irPin[12]   = {A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11};
   
-    
- public:
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
   
-  // Variables ======================================================================================
+  // Variables ===========================================================
   bool
     autoScanEnabled   = true,
     motorEnabled      = true,
     motorBrakeEnabled = true,
     ledEnabled        = false,
-    ledFlashEnabled   = false,
-    
-    button[3],
-    buttonPressed[3],
-    buttonReleased[3],
-    buttonTriggered[3],
-    isWhite[4]  = {false},
-    onBound[4]  = {false},
-    outBound[4] = {false};
-  uint8_t 
-    LCD_backlightval,
-    systemTime,      //a reference 100Hz clock, 0-100 every second
-    maxEye,
-    minEye,
-    groundColor[4];  //color sensor
-  int16_t
-    ultrasonic[4];       //4 ultrasonic reading
+    ledFlashEnabled   = false;
+  uint8_t
+    btTxBuffer[50],
+    btRxBuffer[50]; //store at most the most updated 100 values from BT
   uint16_t
-    autoScanSensors = ALLSENSORS,
     EYEBOUNDARY = 20,
-    compass,
-    eyeAngle,
-    eye[13];         // 12 ir reading , can be 16, depends on version number
-  //  BT_buffer[100]; //store at most the most updated 100 values from BT
+    autoScanSensors = ALLSENSORS;
+  int16_t
+    systemTime,      //a reference 100Hz clock, 0-100 every second
+    LCD_backlightval,
+    btDegree,
+    btDistance;
   ledType
     leds[2];
-  rgb
-    colorRGB[4];
-  hsv
-    colorHSV[4];
   uint32_t
     sysTicks = 0;
   
-  
-  
-  // functions ======================================================================================
-  void
-    ledTest (uint8_t = STATESET),
-    btTest(void),
-    testProgram(void),
-    printSensors(uint16_t);
-  uint8_t
-    motorTest(void);
-  
+  // functions ============================================================
+  uint16_t sort(uint16_t a[], uint8_t size);
   hsv
     rgb2hsv(rgb in);
-    
-  bool
-    buttonRead(uint8_t),
-    whiteLineCheck(uint8_t);
-  uint16_t
-    compoundEyeRead(uint8_t),
-    ultrasonicRead(uint8_t),
-    compassRead(void);
-  uint8_t 
-    floorColorReadRaw(uint8_t, uint8_t = black),
-    floorColorRead(uint8_t);
-    
-  int16_t mapSpeed (float);
-  
+  virtual void 
+    bluetoothRemote(void);
   void
-    init(void),
+    enableScanning(bool = true, uint16_t = ALLSENSORS, bool = false),
     bluetoothSend(char[]),
     bluetoothReceive(void),
-    
-    debug(uint16_t),
-    lcdMenu(void),
-    enableScanning(bool, uint16_t = ALLSENSORS),
-    
-    motorSet(uint8_t, int16_t),
-    move(int16_t, int16_t),
-    moveSmart(uint16_t , int16_t),
-    motorStop(void),
     
     ledShow(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t = 0),
     ledSetPixels(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t),
     ledClear(void),
     ledUpdate(uint8_t = 0),
     
-    printSpace(uint32_t, uint8_t = 3),
-    lcdPrintSpace(int16_t),
+    printSpace(uint32_t, uint8_t digits = 3),
     setScreen(uint8_t, uint8_t, char[] ),
-    setScreen(uint8_t, uint8_t, int16_t );
+    setScreen(uint8_t, uint8_t, int16_t, uint8_t digits = 3);
     
   //protected:
+  // sensors raw data
   bool
-    rawButton(uint8_t),
-    buttTrigRead(uint8_t);
+    rawButton(uint8_t);
+  uint8_t 
+    rawMonoColor(uint8_t);
   float 
-    rawCompass(void),
-    rawCompass66(void),
-    rawGyro(void),
-    rawAccel(void);
-  
+    rawCompass(int8_t, int8_t);
   uint16_t
-    setHome(void),
     rawCompoundEye(uint8_t),
-    rawUltrasonic(uint8_t);
-    
-  uint8_t rawMonoColor(uint8_t);
-  
+    rawUltrasonic(uint8_t, uint8_t);
   void 
-    autoScanning(void),
-    motorControl(float,float,float),
-    buttons(void),
-    compoundEyes(void),
-  
     ledSetup(uint8_t, uint8_t, uint8_t),
     lcdSetup(void),
     lcdClear(void),
@@ -280,7 +215,6 @@ class PeanutKing_Soccer {
     send(uint8_t value, uint8_t mode),
     write4bits(uint8_t value),
     expanderWrite(uint8_t _data);
-  
   size_t 
     printNumber(unsigned long, uint8_t),
     print(long, int = DEC),
@@ -288,6 +222,6 @@ class PeanutKing_Soccer {
     write(uint8_t);
 };
 
-#endif // ROBOT_H
+#endif
 
 

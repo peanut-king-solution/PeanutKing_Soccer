@@ -1,18 +1,20 @@
-
 #include "PeanutKing_Soccer.h"
 
-PeanutKing_Soccer* singlebot = NULL;
 
-PeanutKing_Soccer::PeanutKing_Soccer(uint8_t a) {
-  if (singlebot == NULL)  {
-    singlebot = this;
-  }
+PeanutKing_Soccer::PeanutKing_Soccer() {
 }
 
-ISR (TIMER1_COMPA_vect) {
-  if (singlebot != NULL ) {
-    singlebot->autoScanning();
+uint16_t PeanutKing_Soccer::sort(uint16_t a[], uint8_t size) {
+  for(uint8_t i=0; i<(size-1); i++) {
+    for(uint8_t o=0; o<(size-(i+1)); o++) {
+      if(a[o] > a[o+1]) {
+        uint16_t t = a[o];
+        a[o] = a[o+1];
+        a[o+1] = t;
+      }
+    }
   }
+  return a[(size-1)/2];
 }
 
 hsv PeanutKing_Soccer::rgb2hsv(rgb in) {
@@ -53,753 +55,83 @@ hsv PeanutKing_Soccer::rgb2hsv(rgb in) {
   return out;
 }
 
+//                             RAW
+// ================================================================
 
-// initialize all IOs, Serial.begin, I2C, timer interrupt, 
-// External interrupt different settings depends on version number 
-void PeanutKing_Soccer::init() {
-  Wire.begin();
-  Serial.begin(9600);
-  Serial1.begin(9600);
-  
-  for (uint8_t i=0; i<4; i++) {
-    pinMode(echoPin[i], INPUT);
-    pinMode(trigPin[i], OUTPUT);
-    pinMode(pwmPin[i], OUTPUT);
-    pinMode(dirPin[i], OUTPUT);
-    pinMode(dir2Pin[i], OUTPUT);
-    pinMode(diagPin[i], OUTPUT);
-    pinMode(tcsSxPin[i], OUTPUT);
-    pinMode(tcsRxPin[i], INPUT);
-    digitalWrite(diagPin[i], HIGH);
-  }
-  digitalWrite(tcsSxPin[0], HIGH);  
-  digitalWrite(tcsSxPin[1], HIGH);
-  
-  for (uint8_t i=0; i<12; i++)
-    pinMode(irPin[i], INPUT);
-  for (uint8_t i=0; i<3; i++)
-    pinMode(buttonPin[i], INPUT);
-  
-  lcdSetup();
-  
-  ledSetup(0, ledPin, numLEDs);
-  if ( !ledEnabled ) {
-    ledShow(255, 0, 0, 0, 0);
-    ledUpdate();
-  }
-  delay(5);
-  
-  ledSetup(1, tcsblPin, 1);
-  ledShow(1, 255, 255, 255, 255, 1);
-  ledUpdate(1);
-  
-  delay(10);
-  
-  cli();    //disable interrupts
-  // Timer 1
-  TCCR1A = 0x00;            // Normal mode, just as a Timer
-  TCCR1B = 0;               // same for TCCR0B
-  TCNT1 = 0;
-  
-  OCR1A = 624;       // =(16*10^6) / (125*256) -1 (must be <65536)
-  
-  TCCR1B |= (1 << WGM12);   // CTC mode; Clear Timer on Compare
-  TCCR1B |= (1 << CS12);    // prescaler = 256
-  
-  TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
-  sei();    //allow interrupts
+// rawButton  -----------------------------------------------------
+bool PeanutKing_Soccer::rawButton(uint8_t pin) {
+  return !digitalRead(pin);
 }
 
-void PeanutKing_Soccer::autoScanning(void) {
-  static bool wasWhite[4] = {false}, ultsBlinkState[4] = {false};
-  static uint32_t ultsBlinkTimer[4] = {0};
-  static int8_t autoScanTicks = -1;
-  
-  uint16_t currentSensor = autoScanSensors;
-  
-  systemTime = (millis()/10) % 100;
-  sysTicks ++;
-  
-  buttons();
-  
-  if ( buttonPressed[0] ) {
-    motorEnabled = !motorEnabled;
-    if ( !motorEnabled ) {
-      motorStop();
-    }
-  }
-  
-  if ( !autoScanEnabled ) return;
-  
-  do {
-    autoScanTicks++;
-    if (autoScanTicks>16) autoScanTicks=0;
-    currentSensor = autoScanSensors&(1<<autoScanTicks);
-  } while( currentSensor == 0 );
-  
-  switch (currentSensor) {
-    case COMPASS:
-    case COMPOUNDEYE:
-      sei();    //allow interrupts
-      compass = rawCompass();
-      cli();    //disable interrupts
-      compoundEyes();
-      if (ledEnabled) {
-        ledClear();
-        for(uint8_t i=0; i<4; i++) {
-          uint8_t c = isWhite[i] ? 127 : 0;
-          switch (i) {
-            case front:
-              ledSetPixels(1<<7, 0, 0, 0, c);
-            break;
-            case left:
-              ledSetPixels(1<<5, 0, 0, 0, c);
-            break;
-            case right:
-              ledSetPixels(1<<1, 0, 0, 0, c);
-            break;
-            case back:
-              ledSetPixels(1<<3, 0, 0, 0, c);
-            break;
-          }
-        }
-        uint16_t AngleLED = 360 - compass;
-        uint8_t a = AngleLED<350 ? (AngleLED+10)/45 : (AngleLED-350)/45;
-        uint8_t b = AngleLED>=10 ? (AngleLED-10)/45 : (AngleLED+350)/45;
-        ledSetPixels( 1<<a | 1<<b, 0, 0, 150, 0 );
-        
-        if ( eye[maxEye] > EYEBOUNDARY ) {
-          // eyeAngle -> 16 divisions
-          uint8_t c = eyeAngle<350 ? (eyeAngle+10)/45 : (eyeAngle-350)/45;
-          uint8_t d = eyeAngle>=10 ? (eyeAngle-10)/45 : (eyeAngle+350)/45;
-          
-          ledSetPixels( 1<<c | 1<<d, 0, 150, 0, 0);
-        }
-      }
-      else {
-        ledShow(255, 0, 0, 0, 0);
-      }
-    break;
-    case ULTRASONIC0:
-    case ULTRASONIC1:
-    case ULTRASONIC2:
-    case ULTRASONIC3:
-      ultrasonic[autoScanTicks-4] = rawUltrasonic(autoScanTicks-4);
-    break;
-    case COLORSENSOR0:
-    case COLORSENSOR1:
-    case COLORSENSOR2:
-    case COLORSENSOR3:
-      uint8_t j = autoScanTicks-8;
-      groundColor[autoScanTicks-8]  = floorColorRead(autoScanTicks-8);
-      
-      onBound[j] = isWhite[j] && ( ultrasonic[j]>25 && ultrasonic[j]<34 );
-      outBound[j] = (!isWhite[j] && ultrasonic[j]<31) && ( !outBound[j] || wasWhite[j] );
-      wasWhite[j] = isWhite[j];
-    break;
-  }
-  
-  // ultrasonic range 5-200 -> led delay 2-100
-  /*
-  if (ledEnabled) {
-    for(uint8_t i=0; i<4; i++) {
-      uint16_t limit = constrain(ultrasonic[i]/2, 2, 125);
-      if ( sysTicks - ultsBlinkTimer[i] > limit ) {
-        uint8_t e = ultsBlinkState[i] ? 127 : 0;
-        switch (i) {
-          case front:
-            ledSetPixels(1<<0, e, 0, 0, 0);
-          break;
-          case left:
-            ledSetPixels(1<<6, e, 0, 0, 0);
-          break;
-          case right:
-            ledSetPixels(1<<2, e, 0, 0, 0);
-          break;
-          case back:
-            ledSetPixels(1<<4, e, 0, 0, 0);
-        }
-        ultsBlinkState[i] = !ultsBlinkState[i];
-        ultsBlinkTimer[i] = sysTicks;
-      }
-    }
-  }*/
-  ledUpdate();
+// return single eye reading  -------------------------------------
+uint16_t PeanutKing_Soccer::rawCompoundEye(uint8_t pin) {
+  return 1023 - analogRead(pin);
 }
 
-void PeanutKing_Soccer::testProgram (void) {
-  static bool ledStart = false, btStart = false;
-  ledEnabled = false;
-  
-  if ( buttTrigRead(1) ) {
-    ledStart = !ledStart;
-    if ( !ledStart ) {
-      ledShow(255, 0, 0, 0, 0);
-      ledUpdate();
-    }
+// rawCompass -----------------------------------------------------
+float PeanutKing_Soccer::rawCompass(int8_t addr, int8_t cmd) {
+  uint8_t received_byte[3] = {0,0,0};
+  uint8_t i=0;
+  uint16_t temp=0;
+  float answer = 888;
+  Wire.beginTransmission(addr);
+  Wire.write(cmd);
+  Wire.endTransmission();
+  Wire.requestFrom(addr, 3);
+  while (Wire.available()) {
+    received_byte[i++] = Wire.read();
   }
-  if ( buttTrigRead(2) ) {
-    btStart = !btStart;
-    if ( !btStart ) {
-    }
-  }
-  
-  
-  if ( btStart )
-    btTest();
-  else {
-    enableScanning(true);
-    debug(ALLSENSORS);
-  }
-  
-  if ( ledStart )
-    ledTest();
-  
-  if ( motorEnabled )
-    motorTest();
-  else
-    motorStop();
+  temp  = received_byte[1] & 0xFF;
+  temp |= (received_byte[2] << 8);
+  answer = temp/100.0;
+
+  return answer;
 }
 
-// LED test ------------------------------------------------------
-void PeanutKing_Soccer::ledTest (uint8_t state) {
-  static uint32_t ledTimer = 0;
-  static uint8_t index = 0, i = 0, j = 0;
-  uint32_t timeNow = millis();
-  
-  if ( state == STATERESET )
-    index = 0, i = 0, j = 0;
-  
-  if ( timeNow - ledTimer > 250) {
-    ledTimer = timeNow;
-    index |= (1<<j);
-    switch(i) {
-      case 0:
-      ledShow(index, 255, 0, 0, 0);
-      break;
-      case 1:
-      ledShow(index, 0, 255, 0, 0);
-      break;
-      case 2:
-      ledShow(index, 0, 0, 255, 0);
-      break;
-      case 3:
-      ledShow(index, 0, 0, 0, 255);
-      break;
-    }
-    ledUpdate();
-    j++;
-    if ( j==8 ) {
-      j = 0;
-      i++;
-      if ( i==4 )
-        i=0;
-      index = 0;
-    }
-  }
+// rawUltrasonic --------------------------------------------------
+uint16_t PeanutKing_Soccer::rawUltrasonic(uint8_t txPin, uint8_t rxPin) {
+  uint32_t duration=0;
+  uint16_t distance=0;
+  digitalWrite(txPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(txPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(txPin, LOW);
+  duration = pulseIn(rxPin, HIGH, 13000);
+  distance = ( duration==0 ) ? 888 : duration*0.017; //0.034/2;
+  return distance;
 }
 
-// motor test ------------------------------------------------------
-uint8_t PeanutKing_Soccer::motorTest (void) {
-  static uint32_t motorTimer = 0;
-  static uint8_t i = 0;
-  uint32_t timeNow = millis();
-  
-  if ( timeNow - motorTimer > 1000) {
-    motorTimer = timeNow;
-    for (uint8_t j=0; j<4; j++) {
-      if ( i<4 )
-        motorSet( j, i==j ? 100 : 0 );
-      else
-        motorSet( j, (i-4)==j ? -100 : 0 );
-    }
-    i++;
-    if ( i==9 )
-      i=0;
-  }
+// rawMonoColor ---------------------------------------------------
+uint8_t PeanutKing_Soccer::rawMonoColor(uint8_t out) {
+  // v2.1 robot 180-20
+  const uint16_t MAX = 900, MIN = 100;
+  int16_t temp = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH, 2000);
+
+  if ( temp == 0 ) temp = MAX;
+  temp = map(temp, MAX, MIN, 0, 255);
+  temp = constrain(temp, 0, 255);
+  return temp;
 }
 
-void PeanutKing_Soccer::btTest(void) {
-  if (Serial1.available()) {
-    char v = Serial1.read();
-    Serial.print(v);
-    /*
-    char msg[20];
-    int i =0;
-    do {
-      msg[i] = Serial1.read();
-      i++;
-    } while (msg[i]!=10);
-    Serial.println(msg);*/
-  }
-  if (Serial.available()) {
-    char v = Serial.read();
-    Serial.print(v);
-    Serial1.write(v);
-  }
+// Bluetooth ---------------------------------------------------
+void PeanutKing_Soccer::bluetoothSend(char string[]) {
+// send char
+  Serial1.write(string, sizeof(string));
 }
 
-void PeanutKing_Soccer::debug(uint16_t sensorType) {
-  static uint32_t sensorPrintTimer = 0;
-  uint32_t timeNow = millis();
-  autoScanEnabled = true;
-  
-  if ( timeNow - sensorPrintTimer < 1000 ) {
-    delay(5);
-    return;
-  }
-  sensorPrintTimer = timeNow;
-  
-  Serial.print("Ticks: ");
-  Serial.print( timeNow/1000.0, 2);
-  Serial.print("   systemTime: ");
-  Serial.println(systemTime);
-  
-  if ( sensorType&COMPASS ) {
-    Serial.print("Angle: ");
-    Serial.print(compass);
-    Serial.print("    ");
-  }
-  if ( sensorType&COMPOUNDEYE ) {
-    Serial.print("maxEye: ");
-    Serial.print(maxEye);
-    Serial.print("   MaxReading: ");
-    Serial.println(eye[maxEye]);
-    Serial.print("Eyes:  ");
-    for (int i=1; i<=12; i++) {
-      Serial.print(eye[i]);
-      Serial.print("  ");
-    }
-  }
-  if ( sensorType&(COMPASS|COMPOUNDEYE) )
-    Serial.println();
-  
-  if ( sensorType&(ULTRASONIC|COLORSENSOR) ) {
-    for (int i=0; i<4; i++) {
-      switch( i ) {
-        case front:  Serial.print("Front");  break;
-        case left:   Serial.print("Left ");  break;
-        case right:  Serial.print("Right");  break;
-        case back:   Serial.print("Back ");  break;
-      }
-      if ( sensorType&ULTRASONIC ) {
-        Serial.print(" |  ultrasonic ");
-        printSpace(ultrasonic[i], 3);
-      }
-      if ( sensorType&COLORSENSOR ) {
-        Serial.print("  |  rgb  ");
-        Serial.print(colorRGB[i].r);
-        Serial.print(", ");
-        Serial.print(colorRGB[i].g);
-        Serial.print(", ");
-        Serial.print(colorRGB[i].b);
-        Serial.print("  |  hsv ");
-        printSpace(colorHSV[i].h);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].s);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].v);
-        Serial.print(isWhite[i] ? "  |  is white " : "  |  " );
-        /*
-        switch( GroundColor[i] ) {
-          case black:   Serial.print("black  ");  break;
-          case white:   Serial.print("white  ");  break;
-          case grey:    Serial.print("grey   ");  break;
-          case red:     Serial.print("red    ");  break;
-          case green:   Serial.print("green  ");  break;
-          case blue:    Serial.print("blue   ");  break;
-          case yellow:  Serial.print("yellow ");  break;
-          case cyan:    Serial.print("cyan   ");  break;
-          case magenta: Serial.print("magenta");  break;
-        }
-        */
-      }
-      Serial.println();
-    }
-  }
-  Serial.println();
+void PeanutKing_Soccer::bluetoothReceive(void) {
+// send char
+  btRxBuffer[0] = Serial1.read();
 }
 
-void PeanutKing_Soccer::printSensors(uint16_t sensorType) {
-  const uint16_t updateInterval = 1000;
-  static uint32_t debugTimer = 0;
-  static int8_t sensorTypeIndex = -1;
-  uint32_t timeNow = millis();
-  uint16_t currentSensor = 0;
-  
-  autoScanEnabled = true;
-  for (uint8_t i=0; i<3; i++) {
-    if ( buttonPressed[i] ) {
-      Serial.print("Button ");
-      Serial.print(i);
-      Serial.println("pressed. ");
-    }
-  }
-  
-  if ( timeNow - debugTimer < updateInterval ) {
-    delay(5);
-    return;
-  }
-  debugTimer = timeNow;
-  
-  
-  do {
-    sensorTypeIndex++;
-    if ( sensorTypeIndex>16 ) sensorTypeIndex = 0;
-    currentSensor = sensorType&(1<<sensorTypeIndex);
-  } while( currentSensor == 0 );
-  
-  /*
-    Serial.print("Ticks: ");
-    Serial.print(lastTimeIn/1000.0, 2);
-    Serial.print("   systemTime: ");
-    Serial.println(systemTime);
-  */
-  
-  switch ( currentSensor ) {
-  case COMPASS:
-    Serial.print("Angle: ");
-    Serial.print(compass);
-    Serial.print("    ");
-    /*
-    Serial.print("Gyro: ");
-    Serial.print( rawGyro(), 2 );
-    Serial.print("    ");
-    Serial.print("Accel: ");
-    Serial.print( rawAccel(), 2 );*/
-    break;
-  case COMPOUNDEYE:
-    Serial.print("maxEye: ");
-    Serial.print(maxEye);
-    Serial.print("   MaxReading: ");
-    Serial.println(eye[maxEye]);
-    //Serial.print("   EyeAngle: ");
-    //Serial.println(eyeAngle);
-    Serial.print("Eyes:  ");
-    for (int i=1; i<=12; i++) {
-      Serial.print(eye[i]);
-      Serial.print("  ");
-    }
-    if ( sensorType&(COMPASS|COMPOUNDEYE) )
-      Serial.println();
-  break;
-  
-  }
-  if ( sensorType&(ULTRASONIC|COLORSENSOR) ) {
-    for (int i=0; i<4; i++) {
-      switch( i ) {
-        case front:  Serial.print("Front");  break;
-        case left:   Serial.print("Left ");  break;
-        case right:  Serial.print("Right");  break;
-        case back:   Serial.print("Back ");  break;
-      }
-      if ( sensorType&ULTRASONIC ) {
-        Serial.print(" |  ultrasonic ");
-        printSpace(ultrasonic[i], 3);
-      }
-      if ( sensorType&COLORSENSOR ) {
-        Serial.print("  |  rgb  ");
-        Serial.print(colorRGB[i].r);
-        Serial.print(", ");
-        Serial.print(colorRGB[i].g);
-        Serial.print(", ");
-        Serial.print(colorRGB[i].b);
-        Serial.print("  |  hsv ");
-        printSpace(colorHSV[i].h);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].s);
-        Serial.print(", ");
-        Serial.print(colorHSV[i].v);
-      }
-      Serial.println();
-    }
-  }
-  Serial.println();
-}
-
-
-void PeanutKing_Soccer::lcdMenu(void) {
-  static uint32_t lcdTime = 0;
-  static int8_t page = 0;
-  static int8_t lastPage = 1;
-  static uint16_t ticks = 0;
-  
-  ledEnabled = false;
-  //if      ( buttTrigRead(1) ) page--;
-  //else 
-  if ( buttTrigRead(2) ) page++;
-  else if ( millis() - lcdTime < 200) {
-    delay(2);
-    return;
-  }
-  else
-    ticks++;
-
-  lcdTime = millis();
-  
-  if      ( page > PAGEUPPERLIMIT ) page = PAGELOWERLIMIT;
-  //else if ( page < PAGELOWERLIMIT ) page = PAGEUPPERLIMIT;
-  
-  if ( page != lastPage )  {
-    ticks = 0;
-    lcdClear();
-    switch(page) {
-      case 0:
-        setScreen(0, 0, "0 Debug");
-      break;
-      case 1:
-        setScreen(0, 0, "1 CompassUP");
-        setScreen(0, 1, "  CompassDn");
-      break;
-      case 2:
-        setScreen(0, 0, "2 Eye");
-        setScreen(0, 1, "Max:");
-      break;
-      case 3:
-        setScreen(0, 0, "3 ULTRASONIC");
-      break;
-      case 4:
-        setScreen(0, 0, "4 ColorSense");
-      break;
-      case 5:
-        setScreen(0, 0, "5 LED Test");
-        autoScanEnabled = false;
-      break;
-      case 6:
-        setScreen(0, 0, "6 Motor Test");
-        motorEnabled = true;
-      break;
-    }
-    switch(lastPage) {
-      case 0:
-      
-      break;
-      case 1:
-      
-      break;
-      case 2:
-      
-      break;
-      case 3:
-      
-      break;
-      case 4:
-      
-      break;
-      case 5:
-        autoScanEnabled = true;
-        ledShow(255, 0, 0, 0, 0);
-        ledUpdate();
-      break;
-      case 6:
-        motorEnabled = false;
-        motorStop();
-      break;
-    }
-  }
-  delay(1);
-  switch(page) {
-    case 0:
-    break;
-    case 1:
-      setScreen(12, 0, (int16_t)compass);
-      print("  ");
-      setScreen(12, 1, (int16_t)rawCompass66());
-      print("  ");
-    break;
-    case 2:
-      setScreen(5, 1, maxEye);
-      print(" ");
-      setScreen(10, 1, eye[maxEye]);
-      print("  ");
-    break;
-    case 3:
-      setScreen(0, 1, ultrasonic[0]);
-      lcdPrintSpace(ultrasonic[0]);
-      print(" ");
-      print(ultrasonic[1]);
-      lcdPrintSpace(ultrasonic[1]);
-      print(" ");
-      print(ultrasonic[2]);
-      lcdPrintSpace(ultrasonic[2]);
-      print(" ");
-      print(ultrasonic[3]);
-      lcdPrintSpace(ultrasonic[3]);
-      print(" ");
-    break;
-    case 4:
-      setScreen(0, 1, isWhite[0]);
-      setScreen(4, 1, isWhite[1]);
-      setScreen(8, 1, isWhite[2]);
-      setScreen(12, 1, isWhite[3]);
-    break;
-    case 5:
-      ledTest();
-    break;
-    case 6:
-      motorTest();
-    break;
-  }
-  lastPage = page;
-}
-
-//                                  Sensor Read
-// =================================================================================
-// buttonRead ----------------------------------------------------------
-bool PeanutKing_Soccer::buttonRead(uint8_t pin) {
-  if ( pin == 1 || pin == 2 ) 
-    return rawButton(pin);
-  else
-    return 0;
-}
-
-// compassRead ---------------------------------------------------------
-uint16_t PeanutKing_Soccer::compassRead(void) {
-  if ( !autoScanEnabled )
-    compass = rawCompass();
-  return compass;
-}
-
-// return single eye reading -------------------------------------------
-uint16_t PeanutKing_Soccer::compoundEyeRead (uint8_t eye_no) {
-  if ( !autoScanEnabled )
-    compoundEyes();
-  
-  if ( eye_no >0 && eye_no <= 12 )
-    return eye[eye_no];
-  else if ( eye_no == 13 ) 
-    return maxEye;
-  else if ( eye_no == 14 ) 
-    return eye[maxEye];
-}
-
-// ultrasonicRead ------------------------------------------------------
-uint16_t PeanutKing_Soccer::ultrasonicRead(uint8_t ultrasonic_no) {
-  if ( !autoScanEnabled )
-    ultrasonic[ultrasonic_no] = rawUltrasonic(ultrasonic_no);
-  return ultrasonic[ultrasonic_no];
-}
-
-uint8_t PeanutKing_Soccer::floorColorReadRaw(uint8_t pin, uint8_t mono) {
-  const uint8_t& out = tcsRxPin[pin];
-  
-  digitalWrite(tcsSxPin[2], LOW);
-  digitalWrite(tcsSxPin[3], LOW);
-  delayMicroseconds(100);
-  colorRGB[pin].r = rawMonoColor(out);
-  
-  digitalWrite(tcsSxPin[3], HIGH);
-  delayMicroseconds(100);
-  colorRGB[pin].b = rawMonoColor(out);
-  
-  digitalWrite(tcsSxPin[2], HIGH);
-  delayMicroseconds(100);
-  colorRGB[pin].g = rawMonoColor(out);
-  
-  if ( mono == red )        return colorRGB[pin].r;
-  else if ( mono == green ) return colorRGB[pin].g;
-  else if ( mono == blue )  return colorRGB[pin].b;
-  else return 0;
-}
-
-// return single color sensor reading
-uint8_t PeanutKing_Soccer::floorColorRead(uint8_t pin) {
-  floorColorReadRaw(pin);
-  //colorRGB[pin].b *= 1.15;
-  
-  hsv& op = colorHSV[pin];
-  op = rgb2hsv(colorRGB[pin]);
-  
-  isWhite[pin] = ( op.s < 10 && op.v > 85 );
-  
-  // COLOR decision making
-  if ( op.v < 30 )                     return black;
-  else if ( op.s < 10 && op.v > 150 )  return white;
-  else if ( op.h < 50 || op.h > 315 )  return red;
-  else if ( op.h < 100 )               return yellow;
-  else if ( op.h < 175 )               return green;
-  else if ( op.h < 250 )               return blue;
-  else                                 return magenta;
-}
-
-bool PeanutKing_Soccer::whiteLineCheck(uint8_t pin) {
-  floorColorRead(pin);
-  return isWhite[pin];
-}
-
-//                                  Motors
-// =================================================================================
-
-void PeanutKing_Soccer::move(int16_t speed_X, int16_t speed_Y) {
-  double mAngle = atan((double)speed_Y/(double)speed_X) * pi;
-  if ( speed_X<0 ) mAngle += 180;
-  if ( mAngle<0 )  mAngle += 360;
-  
-  uint16_t mSpeed = sqrt( speed_X*speed_X + speed_Y*speed_Y );
-  
-  moveSmart(mAngle, mSpeed);
-}
-
-// motor move + compass as reference
-void PeanutKing_Soccer::moveSmart(uint16_t angular_direction, int16_t speed) {
-  int16_t c = compass;
-  int16_t rotation = c < 180 ? -c : 360 - c;
-  
-  //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
-  rotation*=0.7;
-  motorControl(angular_direction, speed, rotation);
-}
-
-void PeanutKing_Soccer::motorControl(float mAngle, float mSpeed, float rotate) {
-  int16_t mc[4];
-
-  mc[0] = mSpeed*sin( (mAngle+45.0)*pi/180.0 );
-  mc[1] = mSpeed*cos( (mAngle+45.0)*pi/180.0 );
-  mc[2] = -mc[0];
-  mc[3] = -mc[1];
-
-  for(int8_t i=3; i>=0; i--) {
-    motorSet(i, mc[i] + rotate);
-  }
-}
-
-void PeanutKing_Soccer::motorStop(void) {
-  for(uint8_t i=0; i<4; i++) {
-    motorSet(i, 0);
-  }
-}
-
-// simple motor turn, motor_no cannot add, one by one 
-void PeanutKing_Soccer::motorSet(uint8_t motor_no, int16_t speed) {
-  //static int16_t previousSpeed[4] = {0,0,0,0};
-  if ( !motorEnabled ) speed = 0;
-  if      ( speed>0 && speed<256 ) {
-    digitalWrite(dirPin[motor_no], LOW);
-    digitalWrite(dir2Pin[motor_no], HIGH);
-    analogWrite(pwmPin[motor_no], speed);
-    digitalWrite(diagPin[motor_no], HIGH);
-  }
-  else if ( speed<0 && speed>-256 ) {
-    digitalWrite(dirPin[motor_no], HIGH);
-    digitalWrite(dir2Pin[motor_no], LOW);
-    analogWrite(pwmPin[motor_no], -speed);
-    digitalWrite(diagPin[motor_no], HIGH);
-  }
-  else{
-    //digitalWrite(dirPin[motor_no], motorBrakeEnabled ?  HIGH : LOW);
-    digitalWrite(dirPin[motor_no], HIGH);
-    digitalWrite(dir2Pin[motor_no], HIGH);
-    digitalWrite(pwmPin[motor_no], HIGH);
-    //digitalWrite(diagPin[motor_no], LOW);
-  }
-  //previousSpeed[motor_no] = speed;
-}
 
 // turn on/off specific sensory system scannig function
 // CompoundEye + Compass + Ultrasonic + ColorSense
-void PeanutKing_Soccer::enableScanning(bool enabling, uint16_t sensorType) {
-  autoScanEnabled = enabling;
+void PeanutKing_Soccer::enableScanning(bool enable, uint16_t sensorType, bool enableLED) {
+  autoScanEnabled = enable;
   autoScanSensors = sensorType;
+  ledEnabled = enableLED;
 }
 
 // col(0-15), row(0-1) --------------------------------------------
@@ -808,19 +140,12 @@ void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
   print(string);
 }
 
-void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
+void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers, uint8_t digits) {
   setCursor(col, row);
+  for ( int i=1; i<digits; i++ ) {
+    if ( numbers < pow(10, i) )   print(" ");
+  }
   print(numbers);
-}
-
-void PeanutKing_Soccer::bluetoothSend(char string[]) {
-// send char
-  Serial1.print(string);
-}
-
-void PeanutKing_Soccer::bluetoothReceive(void) {
-// send char
-  Serial1.read();
 }
 
 void PeanutKing_Soccer::printSpace(uint32_t data, uint8_t digit) {
@@ -830,207 +155,9 @@ void PeanutKing_Soccer::printSpace(uint32_t data, uint8_t digit) {
   Serial.print(data);
 }
 
-void PeanutKing_Soccer::lcdPrintSpace(int16_t x) {
-  if ( x<100 )
-    print(" ");
-  if ( x<10 )
-    print(" ");
-}
-
-
-// Hidden functions ---------------------------------------------
-void PeanutKing_Soccer::buttons(void) {
-  static bool lastButton[3] = {false};
-
-  for (uint8_t i=0; i<3; i++) {
-    button[i] = rawButton(i);
-    buttonPressed[i] = ( button[i] && !lastButton[i] );
-    buttonReleased[i] = ( !button[i] && lastButton[i] );  
-
-    if ( buttonPressed[i] )    buttonTriggered[i] = true;
-
-    lastButton[i] = button[i];
-  }
-}
-
-void PeanutKing_Soccer::compoundEyes(void) {
-  maxEye = 1;
-  minEye = 1;
-  for (int i=1; i<13; i++) {
-    eye[i] = rawCompoundEye(i);
-  //Serial.print("eye[");Serial.print(i+1);Serial.print("]: ");Serial.println(eye[i]); //debugging use
-    if( eye[i]>eye[maxEye] )
-      maxEye = i;
-    else if( eye[i]<eye[minEye] )
-      minEye = i;
-  }
-  
-  int16_t
-    upper = (maxEye==12) ? eye[1] : eye[maxEye+1],
-    lower = (maxEye==1) ? eye[12] : eye[maxEye-1],
-    add = 15.0 * (upper-lower) / (eye[maxEye] - ((upper<lower) ? upper : lower) );
-  
-  eyeAngle = 30 * maxEye + add;
-  
-  eyeAngle += ( eyeAngle>=30 ) ? -30 : 330;
-}
-
-
-//                                  RAW
-// =================================================================================
-
-bool PeanutKing_Soccer::buttTrigRead(uint8_t y) {
-  bool temp = buttonTriggered[y];
-  buttonTriggered[y] = false;
-  return temp;
-}
-
-
-// Software Set Compass Home -------------------------------------
-uint16_t PeanutKing_Soccer::setHome(void) { 
-  uint8_t received_byte[2] = {0,0};  
-  uint8_t i=0;
-  uint16_t answer = 0;
-  //uint16_t counter =0;
-  Wire.beginTransmission(compass_address);  
-  Wire.write(SET_HOME);
-  Wire.endTransmission(); 
-  Wire.requestFrom(compass_address, 2); 
-  while (Wire.available() ) { received_byte[i++] = Wire.read(); }
-  answer = received_byte[1]; 
-  return answer;
-}
-
-// rawCompass ----------------------------------------------------
-float PeanutKing_Soccer::rawCompass(void) {
-  //uint8_t jerho[3] = {0,0,0};
-  uint8_t received_byte[3] = {0,0,0};
-  uint8_t i=0;
-  uint16_t temp=0;
-  float answer = 888;
-  Wire.beginTransmission(compass_address);
-  Wire.write(GET_READING);
-  Wire.endTransmission();
-  Wire.requestFrom(compass_address, 3);
-  while (Wire.available()) {
-    received_byte[i++] = Wire.read();
-  }
-  temp = received_byte[1]&0xFF;
-  temp |= (received_byte[2]<<8);
-  //jerho[0] = received_byte[0];
-  //jerho[1] = received_byte[1];
-  //jerho[2] = received_byte[2];
-  answer = temp/100.0;
-
-  return answer;
-}
-
-// rawCompass ----------------------------------------------------
-float PeanutKing_Soccer::rawCompass66(void) {
-  uint8_t received_byte[3] = {0,0,0};
-  uint8_t i=0;
-  uint16_t temp=0;
-  float answer = 888;
-  Wire.beginTransmission(16);
-  Wire.write(0x55);
-  Wire.endTransmission();
-  Wire.requestFrom(16, 3);
-  while (Wire.available()) {
-    received_byte[i++] = Wire.read();
-  }
-  temp = received_byte[1]&0xFF;
-  temp |= (received_byte[2]<<8);
-  answer = temp/100.0;
-
-  return answer;
-}
-
-// rawGyro -------------------------------------------------------
-float PeanutKing_Soccer::rawGyro(void) {
-  uint8_t received_byte[3] = {0,0,0};
-  uint8_t i=0;  
-  uint16_t temp=0;
-  float answer = 888; 
-  
-  Wire.beginTransmission(compass_address);
-  Wire.write(0x56);  
-  Wire.endTransmission(); 
-  Wire.requestFrom(compass_address, 3); 
-  while (Wire.available()) { 
-    received_byte[i++] = Wire.read(); 
-  }
-  temp = received_byte[1]&0xFF;  
-  temp |= (received_byte[2]<<8);
-  answer = temp/128.0;
-  return answer;
-}
-
-// rawAccel -------------------------------------------------------
-float PeanutKing_Soccer::rawAccel(void) {
-  uint8_t received_byte[3] = {0,0,0};
-  uint8_t i=0;  
-  int16_t temp=0;
-  float answer = 888; 
-  
-  Wire.beginTransmission(compass_address);
-  Wire.write(0x57);  
-  Wire.endTransmission(); 
-  Wire.requestFrom(compass_address, 3); 
-  while (Wire.available()) { 
-    received_byte[i++] = Wire.read(); 
-  }
-  temp = received_byte[1]&0xFF;  
-  temp |= (received_byte[2]<<8);
-
-  answer = temp;
-
-  return answer;
-}
-
-// rawUltrasonic ------------------------------------------------
-uint16_t PeanutKing_Soccer::rawUltrasonic(uint8_t ultrasonic_no) {
-  uint32_t duration=0;
-  uint16_t distance=0;
-  if ( ultrasonic_no<0 || ultrasonic_no>=4 ) return 999;
-  digitalWrite(trigPin[ultrasonic_no], LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin[ultrasonic_no], HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin[ultrasonic_no], LOW);
-  duration = pulseIn(echoPin[ultrasonic_no], HIGH, 13000);
-  distance = ( duration==0 ) ? 888 : duration*0.017; //0.034/2;
-  return distance;
-}
-
-// rawButton  ---------------------------------------------------
-inline bool PeanutKing_Soccer::rawButton(uint8_t button_no) {
-  return !digitalRead(buttonPin[button_no]);
-}
-
-// return single eye reading  -----------------------------------
-inline uint16_t PeanutKing_Soccer::rawCompoundEye (uint8_t eye_no) {
-  return 1023 - analogRead(irPin[eye_no-1]);
-}
-
-// rawMonoColor -------------------------------------------------
-uint8_t PeanutKing_Soccer::rawMonoColor(uint8_t out) {
-  const uint16_t MAX = 900, MIN = 100;
-  int16_t temp = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH, 2000);
-  //static const uint8_t TCSARRAYCOUNT = 1;
-  //uint16_t rread[TCSARRAYCOUNT],
-  //for (uint8_t i=0; i<TCSARRAYCOUNT; i++)
-  //colorRGB[pin].r = sort(rread, TCSARRAYCOUNT);
-  if ( temp == 0 ) temp = MAX;
-  
-  // v2.1 robot 180-20
-  temp = map(temp, MAX, MIN, 0, 255);
-  temp = constrain(temp, 0, 255);
-  
-  return temp;
-}
 
 //                                  LEDs
-// =================================================================================
+// ================================================================
 void PeanutKing_Soccer::ledSetup (uint8_t x, uint8_t p, uint8_t n) {
   leds[x].port = portOutputRegister(digitalPinToPort(p));
   leds[x].mask = digitalPinToBitMask(p);
@@ -1138,7 +265,7 @@ void PeanutKing_Soccer::ledUpdate(uint8_t x) {
 
 
 //                                  LCD LIBRARY
-// =================================================================================
+// ================================================================
 
 void PeanutKing_Soccer::lcdSetup (void) {
   // SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
@@ -1195,10 +322,8 @@ void PeanutKing_Soccer::lcdClear(void) {
 }
 
 void PeanutKing_Soccer::setCursor(uint8_t col, uint8_t row) {
-  int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-  if ( row > LCD_lineNum ) {
-    row = LCD_lineNum-1;    // we count rows starting w/0
-  }
+  static const uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
+  if ( row > 2 )  row = 1;
   send(LCD_SETDDRAMADDR | (col + row_offsets[row]), 0);   // **********send**********
 }
 

@@ -5,6 +5,8 @@
 #######################################
 
 PeanutKing_Soccer	KEYWORD1
+PeanutKing_Soccer_V1	KEYWORD1
+PeanutKing_Soccer_V2	KEYWORD1
 
 #######################################
 # Methods and Functions 
@@ -22,6 +24,7 @@ compoundEyeRead		KEYWORD2
 ultrasonicRead		KEYWORD2
 goundColorRead		KEYWORD2
 colorSenseRead		KEYWORD2
+floorColorRead		KEYWORD2
 printSensors		KEYWORD2
 
 init			KEYWORD2
@@ -29,16 +32,13 @@ bluetoothSend		KEYWORD2
 enableScanning		KEYWORD2
 debug			KEYWORD2
 lcdMenu			KEYWORD2
+printSpace		KEYWORD2
 
 setHome			KEYWORD2
 motorSet		KEYWORD2
 move			KEYWORD2
 moveSmart		KEYWORD2
 motorStop		KEYWORD2
-
-printSpace		KEYWORD2
-lcdPrintSpace		KEYWORD2
-
 buttons			KEYWORD2
 motorControl		KEYWORD2
 compoundEyes		KEYWORD2
@@ -51,6 +51,8 @@ ledUpdate		KEYWORD2
 lcdClear		KEYWORD2
 setCursor		KEYWORD2
 setScreen		KEYWORD2
+
+bluetoothRemote		KEYWORD2
 
 #######################################
 # Structures

@@ -1,8 +1,7 @@
-#include <Arduino.h>
-#include <PeanutKing_Soccer.h>
+#include <PeanutKing_Soccer_V2.h>
 
 // create soccer robot object
-static PeanutKing_Soccer robot = PeanutKing_Soccer(3);
+static PeanutKing_Soccer_V2 robot = PeanutKing_Soccer_V2();
 
 void setup() {
   // initialize soccer robot
