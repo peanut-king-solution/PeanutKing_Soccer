@@ -12,6 +12,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
   const uint8_t
     tcsblPin,
     ledPin,
+    actledPin,
     buttonPin[3],
     pwmPin[4],
     dirPin[4],
@@ -22,6 +23,9 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     tcsSxPin[4],
     tcsRxPin[4],
     irPin[12];
+    
+  const uint8_t
+    numLEDs     = 8;       // Number of RGB LEDs in strip
     
   // Variables =======================================================================
   bool

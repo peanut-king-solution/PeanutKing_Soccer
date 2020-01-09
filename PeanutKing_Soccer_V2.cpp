@@ -5,7 +5,7 @@ PeanutKing_Soccer_V2* V2bot = NULL;
 PeanutKing_Soccer_V2::PeanutKing_Soccer_V2(void) :
   tcsblPin(32),
   ledPin  (33),
-
+  actledPin(30),
   buttonPin{42, 47, 48},
 
   pwmPin   { 5,  4,  3,  2},
@@ -60,6 +60,9 @@ void PeanutKing_Soccer_V2::init(uint8_t mode) {
   for (uint8_t i=0; i<3; i++)
     pinMode(buttonPin[i], INPUT);
   
+  pinMode(actledPin, INPUT);
+  digitalWrite(actledPin, HIGH);
+  
   lcdSetup();
   
   ledSetup(0, ledPin, numLEDs);
@@ -93,8 +96,8 @@ void PeanutKing_Soccer_V2::init(uint8_t mode) {
   TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
   sei();    //allow interrupts
   
-  while ( compassRead() == 400 );
-  
+  //while ( compassRead() == 400 );
+  delay(10);
 }
 
 //                                  Sensor Read
@@ -118,7 +121,7 @@ void PeanutKing_Soccer_V2::buttons(void) {
   static bool lastButton[3] = {false};
 
   for (uint8_t i=0; i<3; i++) {
-    button[i] = rawButton(i);
+    button[i] = rawButton(buttonPin[i]);
     buttonPressed[i] = ( button[i] && !lastButton[i] );
     buttonReleased[i] = ( !button[i] && lastButton[i] );  
 
@@ -499,13 +502,11 @@ void PeanutKing_Soccer_V2::lcdMenu(void) {
     break;
     case 1:
       setScreen(12, 0, (int16_t)compass);
-      print("  ");
     break;
     case 2:
       setScreen(5, 1, maxEye);
       print(" ");
       setScreen(10, 1, eye[maxEye]);
-      print("  ");
     break;
     case 3:
       setScreen(0, 1, ultrasonic[0]);
@@ -704,7 +705,6 @@ void PeanutKing_Soccer_V2::btTest(void) {
 }
 
 uint8_t PeanutKing_Soccer_V2::pressureTest(void) {
-
   compoundEyes();
   int16_t direct, speed = 180,
     eyeAngle = eyeAngle,
@@ -773,10 +773,6 @@ uint8_t PeanutKing_Soccer_V2::pressureTest(void) {
   //ledTest();
 }
 
-void collisionTest(void) {
-  
-  
-}
 
 void PeanutKing_Soccer_V2::bluetoothRemote(void) {
   static int btState = 0;
@@ -788,7 +784,9 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
     switch(btState) {
       case 0:
         if (v == 'A')
-          btState++;
+          btState = 1;
+        else if (v == 'B')
+          btState = 11;
       break;
       case 1:
         if (v != 'D')
@@ -812,12 +810,18 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           btState=0;
         }
       break;
+      case 11:
+        for (uint8_t i=0; i<10; i++)
+          btButton[i] = false;
+        btButton[v] = true;
+        btState=0;
+      break;
     }
   }
+  
   // send data
-  /*
   if (Serial1.availableForWrite() > 50) {
-    btTxBuffer[0] = 'c';
+    btTxBuffer[0] = 'C';
     btTxBuffer[1] = compass & 0xff;
     btTxBuffer[2] = compass >> 8;
     btTxBuffer[3] = 'U';
@@ -826,9 +830,9 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
     btTxBuffer[9] = maxEye;
     btTxBuffer[11] = eye[maxEye] & 0xff;
     btTxBuffer[12] = eye[maxEye] >> 8;
-    Serial1.write(btTxBuffer, 13);
+    btTxBuffer[13] = 'Z';
+    Serial1.write(btTxBuffer, 14);
   }
-  */
   moveSmart(btDegree, btDistance);
 }
 

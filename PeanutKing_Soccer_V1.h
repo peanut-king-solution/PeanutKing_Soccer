@@ -11,13 +11,6 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
  public:
   PeanutKing_Soccer_V1(void);
 
-
-  //--------COMPASS---------
-  const int8_t  compass_address = 8;
-  const uint8_t GET_READING = 0x55;
-  const uint8_t SET_HOME    = 0x54;
-  const uint8_t NUMLEDS = 1;               // Use total of 1 LED
-
   // Pin Allocation ==================================================================
   const uint8_t
     ledPin,
@@ -31,6 +24,9 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
     tcsSxPin[4],
     tcsRxPin[3],
     irPin[9];
+
+  const uint8_t
+    numLEDs     = 8;       // Number of RGB LEDs in strip
     
   // ======================     VARIABLES    ======================
   uint8_t ROBOT_VERSION = 2;
@@ -63,7 +59,6 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
     colorRGB[4];
   hsv
     colorHSV[4];
-  
   
   
   // ==================   METHOD DECLARATIONS   ===================

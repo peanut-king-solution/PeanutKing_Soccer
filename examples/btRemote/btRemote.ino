@@ -7,5 +7,6 @@ void setup() {
 }
 
 void loop() {
+  robot.lcdMenu();
   robot.bluetoothRemote();
 }

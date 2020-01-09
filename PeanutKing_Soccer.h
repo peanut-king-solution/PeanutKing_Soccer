@@ -1,4 +1,3 @@
-
 #ifndef PeanutKing_Soccer_H
 #define PeanutKing_Soccer_H
 
@@ -79,27 +78,6 @@ typedef enum {
   yellow,   cyan,    magenta
 } color;
 
-enum testUnit {
-  testLED = 1,
-  testMotor,
-  testCompass,
-  testUltrasonic,
-  testCompoundeye,
-  testColor,
-  testBT,
-  
-  testAll = 99,
-};
-
-enum pressureTestStatus {
-  chaseball,
-  goal,
-  gohome,
-  gohome2,
-  goleft,
-  goright,
-  gofront
-};
 
 const uint16_t
   ALLIOs       = 0xffff,
@@ -127,10 +105,32 @@ const uint8_t
 
 const float pi = 3.1415926535897;
 
+typedef enum {
+  testLED = 1,
+  testMotor,
+  testCompass,
+  testUltrasonic,
+  testCompoundeye,
+  testColor,
+  testBT,
+  
+  testAll = 99,
+} testUnit;
+
+typedef enum {
+  chaseball,
+  goal,
+  gohome,
+  gohome2,
+  goleft,
+  goright,
+  gofront
+} pressureTestStatus;
 
 
 class PeanutKing_Soccer {
  public:
+  // Constant  ===========================================================
   const int8_t 
     PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
@@ -145,16 +145,15 @@ class PeanutKing_Soccer {
     LCD_displaycontrol = 0x04,
     // Initialize to default text direction (for roman languages)
     LCD_displaymode = 0x02,
-    numLEDs     = 8,       // Number of RGB LEDs in strip
     GET_READING = 0x55,
     SET_HOME    = 0x54;
-    
   
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
   
   // Variables ===========================================================
   bool
+    btButton[10],
     autoScanEnabled   = true,
     motorEnabled      = true,
     motorBrakeEnabled = true,
