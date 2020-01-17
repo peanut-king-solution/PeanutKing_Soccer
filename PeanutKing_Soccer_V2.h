@@ -71,7 +71,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     motorControl(float,float,float),
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
-    moveSmart(uint16_t , int16_t),
+    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
     motorStop(void),
     
     buttons(void),
@@ -86,7 +86,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     floorColorReadRaw(uint8_t, uint8_t = black),
     floorColorRead(uint8_t);
   uint16_t
-    compoundEyeRead(uint8_t),
+    compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
     compassRead(void);
     

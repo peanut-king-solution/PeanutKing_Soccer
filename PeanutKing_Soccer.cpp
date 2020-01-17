@@ -142,10 +142,13 @@ void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, char string[]) {
 
 void PeanutKing_Soccer::setScreen(uint8_t col, uint8_t row, int16_t numbers, uint8_t digits) {
   setCursor(col, row);
-  for ( int i=1; i<digits; i++ ) {
-    if ( numbers < pow(10, i) )   print(" ");
+  if (numbers>=0) {
+    for ( int i=1; i<digits; i++ ) {
+      if ( numbers < pow(10, i) )   print(" ");
+    }
   }
   print(numbers);
+  print(" ");
 }
 
 void PeanutKing_Soccer::printSpace(uint32_t data, uint8_t digit) {
@@ -352,7 +355,9 @@ size_t PeanutKing_Soccer::print(long n, int base)
     return write(n);
   } else if (base == 10) {
     if (n < 0) {
-      int t = print('-');
+      char v[1] = "-";
+      
+      int t = print(v);
       n = -n;
       return printNumber(n, 10) + t;
     }

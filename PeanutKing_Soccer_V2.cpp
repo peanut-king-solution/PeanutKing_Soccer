@@ -286,12 +286,12 @@ void PeanutKing_Soccer_V2::move(int16_t speed_X, int16_t speed_Y) {
 }
 
 // motor move + compass as reference
-void PeanutKing_Soccer_V2::moveSmart(uint16_t angular_direction, int16_t speed) {
-  int16_t c = compassRead();
+void PeanutKing_Soccer_V2::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
+  int16_t c = compassRead()-angle;
   int16_t rotation = c < 180 ? -c : 360 - c;
   
   //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
-  rotation*=0.7;
+  rotation = rotation * (precision+3)/12;
   motorControl(angular_direction, speed, rotation);
 }
 
@@ -444,7 +444,7 @@ void PeanutKing_Soccer_V2::lcdMenu(void) {
     lcdClear();
     switch(page) {
       case 0:
-        setScreen(0, 0, "0 Debug");
+        setScreen(0, 0, "Press A To Start");
       break;
       case 1:
         setScreen(0, 0, "1 CompassUP");
@@ -510,9 +510,9 @@ void PeanutKing_Soccer_V2::lcdMenu(void) {
     break;
     case 3:
       setScreen(0, 1, ultrasonic[0]);
-      setScreen(4, 1, ultrasonic[0]);
-      setScreen(8, 1, ultrasonic[0]);
-      setScreen(12, 1, ultrasonic[0]);
+      setScreen(4, 1, ultrasonic[1]);
+      setScreen(8, 1, ultrasonic[2]);
+      setScreen(12, 1, ultrasonic[3]);
     break;
     case 4:
       setScreen(0, 1, isWhite[0]);
