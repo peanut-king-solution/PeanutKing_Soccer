@@ -43,12 +43,12 @@ void loop() {
   robot.lcdClear();
   robot.ledShow(255, 0, 0, 0, 0);
   robot.ledUpdate();
-  robot.enableScanning(true, ULTRASONIC, true);
+  robot.enableScanning(true, ULTRASONIC, false);
   while ( !robot.buttTrigRead(1) ) {
-    robot.setScreen(0, 1, robot.ultrasonic[0]);
-    robot.setScreen(0, 1, robot.ultrasonic[1]);
+    robot.setScreen(0, 0, robot.ultrasonic[0]);
+    robot.setScreen(8, 0, robot.ultrasonic[1]);
     robot.setScreen(0, 1, robot.ultrasonic[2]);
-    robot.setScreen(0, 1, robot.ultrasonic[3]);
+    robot.setScreen(8, 1, robot.ultrasonic[3]);
     delay(80);
   }
   

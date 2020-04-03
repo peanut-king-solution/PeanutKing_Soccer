@@ -1,29 +1,57 @@
 #include <PeanutKing_Soccer_V2.h>
 static PeanutKing_Soccer_V2 robot = PeanutKing_Soccer_V2();
 
+// Attributes =======================================
 byte 
-  Attack = 5,
-  Defend = 10,
-  MovingSpeed  = 5,
-  BallPossession = 5,
-  Precision = 5;
+  Attack = 10,              // Sensitivity to the ball
+  Defend = 9,              // Closenest to the goal
+  MovingSpeed  = 4,         // Speed
+  BallPossession = 5,       // Slow when close to the ball
+  Precision = 5;            // Spinning speed for compass compliment
 
-//  Do not modifiy
+
+//  Do not modifiy ================================
 void setup() {
   robot.init();
   robot.enableScanning(true, ALLSENSORS, true);
-  robot.EYEBOUNDARY = 120-Attack*10;
+  robot.EYEBOUNDARY = 10 + (10-robot.btAttributes[0]) * 20;
+}
+
+static bool outside[4];
+
+static int
+  attackSpeed = 80 + robot.btAttributes[2]*16,
+  defendSpeed = 50 + robot.btAttributes[2]*12,
+  BallPossessionSpeed = attackSpeed-robot.btAttributes[3]*4,
+  homeX = 0,
+  homeY = (10-robot.btAttributes[1]) * 8;
+
+
+bool zoneControl(uint16_t moveAngle) {
+  uint8_t quadrant;
+  if (moveAngle < 45 || moveAngle > 315)
+    quadrant = front;
+  else if (moveAngle < 135)
+    quadrant = right;
+  else if (moveAngle < 225)
+    quadrant = back;
+  else
+    quadrant = left;
+
+  if (quadrant==back || quadrant==front)
+    robot.ultrasonicRead(quadrant);
+  
+  if ( robot.ultrasonic[quadrant]>31 )
+    outside[quadrant] = false;
+  else {
+    robot.whiteLineCheck(quadrant);
+    if ( robot.isWhite[quadrant] )
+      outside[quadrant] = true;
+  }
+  return outside[quadrant];
 }
 
 void strategy(void) {
-  static bool outside[4];
-  
-  static int
-    attackSpeed = 80 + MovingSpeed*10,
-    defendSpeed = 50 + MovingSpeed*8,
-    homeX = 0,
-    homeY = 80 - Defend*8;
-    
   int16_t 
     direct   = 0,
     speed    = attackSpeed,
@@ -40,18 +68,31 @@ void strategy(void) {
   eyeAngle = robot.eyeAngle;
   
   if ( reading > robot.EYEBOUNDARY ) {
-    for ( int i=1; i<3; i++ ) {
-      robot.ultrasonicRead(i);
-      robot.whiteLineCheck(i);
-      if ( robot.isWhite[i] )
-        outside[i] = true;
-      else if ( robot.ultrasonic[i]>32 )
-        outside[i] = false;
+    speed = reading>500 ? BallPossessionSpeed : attackSpeed;
+
+    robot.ultrasonicRead(left);
+    robot.ultrasonicRead(right);
+    //rotation = (robot.ultrasonic[right] - robot.ultrasonic[left])/6;
+    
+    if (eyeAngle<135)
+      direct = eyeAngle*1.5;
+    else if (eyeAngle>225)
+      direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
+    else {
+      if (robot.ultrasonic[left] > robot.ultrasonic[right])
+        direct = eyeAngle*1.5;
+      else
+        direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
     }
     
-    rotation = (robot.ultrasonic[right] - robot.ultrasonic[left])/6;
-    speed = reading>700 ? attackSpeed-BallPossession*4 : attackSpeed;
-    
+    if ( zoneControl(direct) )
+      speed = 0;
+    /*
+    if ( outside[front] && (eyeAngle<100 || eyeAngle>260) )
+      speed = 0;
+    else if ( outside[back]  && (eyeAngle>270 && eyeAngle>90) )
+      speed = 0;
+    else 
     if ( outside[left] ) {
       if (eyeAngle<120)
         direct = eyeAngle*1.5;
@@ -76,28 +117,15 @@ void strategy(void) {
       else
         direct = eyeAngle*1.5;
     }
-    else {
-      for ( int i=0; i<=4; i+=3 ) {
-        robot.ultrasonicRead(i);
-        robot.whiteLineCheck(i);
-        if ( robot.isWhite[i] )
-          outside[i] = true;
-        else if ( robot.ultrasonic[i]>32 )
-          outside[i] = false;
-      }
-      if ( outside[front] && (eyeAngle<100 || eyeAngle>260) )
-        speed = 0;
-      else if ( outside[back]  && (eyeAngle>270 && eyeAngle>90) )
-        speed = 0;
-      else if (eyeAngle<180)
-        direct = eyeAngle*1.5;
-      else
-        direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
-    }
+    */
   }
   else {
-    for (uint8_t i=0; i<4; i++ )
+    outside[front] = false;
+    for (uint8_t i=1; i<4; i++ ) {
       robot.ultrasonicRead(i);
+      if ( robot.ultrasonic[i]>30 )
+        outside[i] = false;
+    }
 
     y = robot.ultrasonic[back] - 12 - homeY;
     x = (robot.ultrasonic[left] - robot.ultrasonic[right])/2 - homeX;
@@ -117,14 +145,9 @@ void strategy(void) {
     else {
       direct = 0;
       speed = 0;
-      for (uint8_t i=0; i<4; i++ )
-        outside[i] = false;
     }
   }
-  if ( speed == 0 )
-    robot.motorStop();
-  else
-    robot.moveSmart(direct,  speed, rotation, Precision);
+  robot.moveSmart(direct,  speed, rotation, robot.btAttributes[4]);
 }
 
 
@@ -146,11 +169,19 @@ void loop() {
   else {
     robot.lcdMenu();
   }
+
+  robot.bluetoothAttributes();
+  attackSpeed = 80 + robot.btAttributes[2]*16;
+  defendSpeed = 50 + robot.btAttributes[2]*12;
+  BallPossessionSpeed = attackSpeed-robot.btAttributes[3]*4;
+  homeX = 0;
+  homeY = (10-robot.btAttributes[1]) * 8;
   
+  /*
   if (Serial1.available()) {
-   if ( millis() - bttimer > 100 ) {
+    if ( millis() - bttimer > 100 ) {
       Serial1.println(robot.compass);
       bttimer = millis();
     }
-  }
+  }*/
 }

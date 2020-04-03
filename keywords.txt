@@ -25,6 +25,7 @@ ultrasonicRead		KEYWORD2
 goundColorRead		KEYWORD2
 colorSenseRead		KEYWORD2
 floorColorRead		KEYWORD2
+whiteLineCheck		KEYWORD2
 printSensors		KEYWORD2
 
 init			KEYWORD2

@@ -127,6 +127,13 @@ typedef enum {
   gofront
 } pressureTestStatus;
 
+typedef enum {
+  Idle = 0,
+  Joystick = 1,
+  PadButton,
+  ButtonDef,
+  Attributes,
+} btDataType;
 
 class PeanutKing_Soccer {
  public:
@@ -160,6 +167,10 @@ class PeanutKing_Soccer {
     ledEnabled        = false,
     ledFlashEnabled   = false;
   uint8_t
+    btButtonIndex,
+    btButtonCode,
+    btButtonFunction[4],
+    btAttributes[5]  = {5,5,5,5,5},
     btTxBuffer[50],
     btRxBuffer[50]; //store at most the most updated 100 values from BT
   uint16_t
@@ -169,7 +180,8 @@ class PeanutKing_Soccer {
     systemTime,      //a reference 100Hz clock, 0-100 every second
     LCD_backlightval,
     btDegree,
-    btDistance;
+    btDistance,
+    btRotate;
   ledType
     leds[2];
   uint32_t
@@ -180,7 +192,8 @@ class PeanutKing_Soccer {
   hsv
     rgb2hsv(rgb in);
   virtual void 
-    bluetoothRemote(void);
+    bluetoothRemote(void),
+    bluetoothAttributes(void);
   void
     enableScanning(bool = true, uint16_t = ALLSENSORS, bool = false),
     bluetoothSend(char[]),

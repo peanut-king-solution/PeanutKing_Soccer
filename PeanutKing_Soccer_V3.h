@@ -1,15 +1,15 @@
 #include "PeanutKing_Soccer.h"
 
-#ifndef PeanutKing_Soccer_V2_H
-#define PeanutKing_Soccer_V2_H
+#ifndef PeanutKing_Soccer_V3_H
+#define PeanutKing_Soccer_V3_H
 
 // 1. userdefinebutton set of movement
 // 2. attributes
 
 
-class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
+class PeanutKing_Soccer_V3: public PeanutKing_Soccer {
  public:
-  PeanutKing_Soccer_V2(void);
+  PeanutKing_Soccer_V3(void);
 
   // Pin Allocation ==================================================================
   const uint8_t
@@ -42,7 +42,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
   uint8_t 
     maxEye,
     minEye,
-    groundColor[4];  //color sensor 
+    groundColor[4];  //color sensor
   uint16_t
     compass,
     eyeAngle,
@@ -67,7 +67,6 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     btTest(void),
     collisionTest(void),
     bluetoothRemote(void),
-    bluetoothAttributes(void),
     
     init(uint8_t = 0),
     debug(uint16_t),
