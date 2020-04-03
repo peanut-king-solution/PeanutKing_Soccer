@@ -54,6 +54,7 @@ setCursor		KEYWORD2
 setScreen		KEYWORD2
 
 bluetoothRemote		KEYWORD2
+bluetoothAttributes	KEYWORD2
 
 #######################################
 # Structures
