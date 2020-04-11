@@ -13,7 +13,7 @@
             "intelliSenseMode": "msvc-x64",
             "browse": {
                 "path": [
-                    "C:\\Program Files (x86)\\Arduino\\hardware"
+                    "C:/Program Files (x86)/Arduino/hardware"
                 ]
             }
         }

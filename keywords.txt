@@ -7,6 +7,7 @@
 PeanutKing_Soccer	KEYWORD1
 PeanutKing_Soccer_V1	KEYWORD1
 PeanutKing_Soccer_V2	KEYWORD1
+PeanutKing_Soccer_V3	KEYWORD1
 
 #######################################
 # Methods and Functions 
@@ -119,4 +120,10 @@ ALLOUTPUTs		LITERAL1
 LED			LITERAL1
 MOTOR			LITERAL1
 LCDSCREEN		LITERAL1
+
+
+#######################################
+# V3
+#######################################
+
 

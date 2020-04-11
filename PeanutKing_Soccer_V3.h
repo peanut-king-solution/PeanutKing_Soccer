@@ -6,11 +6,47 @@
 // 1. userdefinebutton set of movement
 // 2. attributes
 
-
 class PeanutKing_Soccer_V3: public PeanutKing_Soccer {
  public:
   PeanutKing_Soccer_V3(void);
 
+  // functions =======================================================================
+  // get sensor reading
+  bool
+    buttonRead(uint8_t),
+    buttTrigRead(uint8_t),
+    whiteLineCheck(uint8_t);
+  uint8_t 
+    floorColorReadRaw(uint8_t, uint8_t = black),
+    floorColorRead(uint8_t);
+  uint16_t
+    compoundEyeRead(uint8_t = 13),
+    ultrasonicRead(uint8_t),
+    compassRead(void);
+
+    
+  void 
+    lcdMenu(void),
+    testProgram(void),
+    ledTest(uint8_t = STATESET),
+    btTest(void),
+    collisionTest(void),
+    bluetoothRemote(void),
+    
+    init(uint8_t = 0),
+    debug(uint16_t),
+    autoScanning(void),
+    motorControl(float,float,float),
+    motorSet(uint8_t, int16_t),
+    move(int16_t, int16_t),
+    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
+    motorStop(void),
+    
+    buttons(void),
+    compoundEyes(void);
+    
+
+  
   // Pin Allocation ==================================================================
   const uint8_t
     tcsblPin,
@@ -54,44 +90,7 @@ class PeanutKing_Soccer_V3: public PeanutKing_Soccer {
   hsv
     colorHSV[4];
     
-    
-  // functions =======================================================================
-  // testing
-  uint8_t
-    pressureTest(void),
-    motorTest(void);
-  void 
-    lcdMenu(void),
-    testProgram(void),
-    ledTest(uint8_t = STATESET),
-    btTest(void),
-    collisionTest(void),
-    bluetoothRemote(void),
-    
-    init(uint8_t = 0),
-    debug(uint16_t),
-    autoScanning(void),
-    motorControl(float,float,float),
-    motorSet(uint8_t, int16_t),
-    move(int16_t, int16_t),
-    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
-    motorStop(void),
-    
-    buttons(void),
-    compoundEyes(void);
-    
-  // get sensor reading
-  bool
-    buttonRead(uint8_t),
-    buttTrigRead(uint8_t),
-    whiteLineCheck(uint8_t);
-  uint8_t 
-    floorColorReadRaw(uint8_t, uint8_t = black),
-    floorColorRead(uint8_t);
-  uint16_t
-    compoundEyeRead(uint8_t = 13),
-    ultrasonicRead(uint8_t),
-    compassRead(void);
+
     
 };
 

@@ -81,6 +81,10 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     buttons(void),
     compoundEyes(void);
     
+  void
+    Chase(int&, int&, int&),
+    Back(int&, int&, int&);
+
   // get sensor reading
   bool
     buttonRead(uint8_t),

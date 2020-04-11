@@ -133,6 +133,7 @@ typedef enum {
   PadButton,
   ButtonDef,
   Attributes,
+  EndOfData = 26,
 } btDataType;
 
 class PeanutKing_Soccer {
@@ -179,9 +180,9 @@ class PeanutKing_Soccer {
   int16_t
     systemTime,      //a reference 100Hz clock, 0-100 every second
     LCD_backlightval,
-    btDegree,
-    btDistance,
-    btRotate;
+    btDegree = 0,
+    btDistance = 0,
+    btRotate = 0;
   ledType
     leds[2];
   uint32_t
@@ -223,7 +224,10 @@ class PeanutKing_Soccer {
     ledSetup(uint8_t, uint8_t, uint8_t),
     lcdSetup(void),
     lcdClear(void),
-    setCursor(uint8_t col, uint8_t row),
+    setCursor(uint8_t col, uint8_t row);
+    
+  /* LCD Library */
+  void
     send(uint8_t value, uint8_t mode),
     write4bits(uint8_t value),
     expanderWrite(uint8_t _data);

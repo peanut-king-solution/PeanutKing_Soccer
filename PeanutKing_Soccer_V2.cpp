@@ -811,6 +811,7 @@ void PeanutKing_Soccer_V2::bluetoothAttributes(void) {
 
 void PeanutKing_Soccer_V2::bluetoothRemote(void) {
   static btDataType btDataHeader = Idle;
+  static uint32_t btSendTimer = 0;
   static uint8_t btState = 0, len = 0;
   static String deg = "", dis = "", buttonVal = "";
   static float speed = 1.0;
@@ -832,6 +833,11 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
             break;
           case 'C':
             btDataHeader = ButtonDef;
+            break;
+          case 'D':
+            break;
+          case 'Z':
+            btDataHeader = EndOfData;
             break;
         }
         btState = 1;
@@ -877,32 +883,6 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           //Serial.print(btDistance);
           //Serial.println(' ');
           //List<String> functionList = ['Accel', 'Back', 'Chase', 'Auto', 'L-Trun', 'R-Trun', 'Front', 'Left', 'Right', 'Back'];
-          
-          if ( btButtonCode==3 || btButtonCode==6 ) {
-            btRotate = 0;
-            speed = 1.0;
-          }
-          else {
-            switch (btButtonFunction[btButtonIndex]) {
-              case 0:
-                speed = 2.0;
-                break;
-              case 1:
-                break;
-              case 2:
-                break;
-              case 3:
-                break;
-              case 4:
-                btRotate = -50;
-                break;
-              case 5:
-                btRotate =  50;
-                break;
-              case 6:
-                break;
-            }
-          }
         }
         break;
       case ButtonDef:
@@ -922,29 +902,165 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           btDataHeader = Idle;
         }
         break;
-      
+
     }
   }
-  
-  // Send Data
-  if (Serial1.availableForWrite() > 50) {
-    btTxBuffer[0] = 'C';
-    btTxBuffer[1] = compass & 0xff;
-    btTxBuffer[2] = compass >> 8;
-    btTxBuffer[3] = 'U';
-    btTxBuffer[4] = ultrasonic[0] > 255 ? 255 : ultrasonic[0];
-    btTxBuffer[8] = 'E';
-    btTxBuffer[9] = maxEye;
-    btTxBuffer[11] = eye[maxEye] & 0xff;
-    btTxBuffer[12] = eye[maxEye] >> 8;
-    btTxBuffer[13] = 'Z';
-    Serial1.write(btTxBuffer, 14);
+  if (btDataHeader == EndOfData) {
+    btDataHeader = Idle;
+    if ( btButtonCode==3 || btButtonCode==6 ) {
+      speed = 1.0;
+    }
+    else {
+      switch (btButtonFunction[btButtonIndex]) {
+        case 0:   // Accel
+          speed = 2.0;
+          break;
+        case 1:   // Back
+          Back(btDegree, btDistance, btRotate);
+          break;
+        case 2:   // Chase
+          Chase(btDegree, btDistance, btRotate);
+          break;
+        case 3:   // Auto
+          break;
+        case 4:
+          btRotate --;
+          break;
+        case 5:
+          btRotate ++;
+          break;
+        case 6:   // Front
+          break;
+      }
+    }
+    // Execute
+    moveSmart(btDegree, btDistance*speed, btRotate);
   }
-
-  // Execute
-  //moveSmart();
-  motorControl(btDegree, btDistance*speed, btRotate);
+  // Send Data
+  if (millis() - btSendTimer > 100) {
+    if (Serial1.availableForWrite() > 50) {
+      btTxBuffer[0] = 'C';
+      btTxBuffer[1] = compass & 0xff;
+      btTxBuffer[2] = compass >> 8;
+      btTxBuffer[3] = 'U';
+      btTxBuffer[4] = ultrasonic[0] > 255 ? 255 : ultrasonic[0];
+      btTxBuffer[8] = 'E';
+      btTxBuffer[9] = maxEye;
+      btTxBuffer[11] = eye[maxEye] & 0xff;
+      btTxBuffer[12] = eye[maxEye] >> 8;
+      btTxBuffer[13] = 'Z';
+      Serial1.write(btTxBuffer, 14);
+    }
+    btSendTimer = millis();
+  }
 }
+
+//                                  strategy
+// =================================================================================
+void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
+  static bool outside[4];
+  int16_t 
+    BallPossessionSpeed = 100,
+    attackSpeed = 150,
+    eyeAngle = eyeAngle,
+    MaxEye  = 0,
+    reading = eye[maxEye];
+
+  uint8_t quadrant;
+  
+    speed    = 100;
+  if ( reading > EYEBOUNDARY ) {
+    speed = reading > 500 ? BallPossessionSpeed : attackSpeed;
+    //rotation = (ultrasonic[right] - ultrasonic[left])/6;
+    
+    if (eyeAngle<135)
+      direct = eyeAngle*1.5;
+    else if (eyeAngle>225)
+      direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
+    else {
+      if (ultrasonic[left] > ultrasonic[right])
+        direct = eyeAngle*1.5;
+      else
+        direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
+    }
+    
+    uint16_t moveAngle = direct;
+    if (moveAngle < 45 || moveAngle > 315)
+      quadrant = front;
+    else if (moveAngle < 135)
+      quadrant = right;
+    else if (moveAngle < 225)
+      quadrant = back;
+    else
+      quadrant = left;
+
+    if ( ultrasonic[quadrant]>31 )
+      outside[quadrant] = false;
+    else {
+      whiteLineCheck(quadrant);
+      if ( isWhite[quadrant] )
+        outside[quadrant] = true;
+    }
+    if ( outside[quadrant] )
+      speed = 0;
+    /*
+    if ( outside[front] && (eyeAngle<100 || eyeAngle>260) )
+      speed = 0;
+    else if ( outside[back]  && (eyeAngle>270 && eyeAngle>90) )
+      speed = 0;
+    else 
+    if ( outside[left] ) {
+      if (eyeAngle<120)
+        direct = eyeAngle*1.5;
+      else if (eyeAngle>300)
+        direct = 0;
+      else if (eyeAngle>265)
+        speed = 0;
+      else if (eyeAngle>195)
+        direct = 180;
+      else
+        direct = 360 - (360-eyeAngle)*1.5;
+    }
+    else if ( outside[right] ) {
+      if (eyeAngle>240)
+        direct = 360 - (360-eyeAngle)*1.5;
+      else if (eyeAngle<60)
+        direct = 0;
+      else if (eyeAngle<95)
+        speed = 0;
+      else if (eyeAngle<165)
+        direct = 180;
+      else
+        direct = eyeAngle*1.5;
+    }
+    */
+  }
+}
+
+void PeanutKing_Soccer_V2::Back(int& direct, int& speed, int& rotation) {
+  int16_t
+    y = ultrasonic[back] - 12,
+    x = (ultrasonic[left] - ultrasonic[right])/2;
+
+  if ( abs(x) > 50 || ultrasonic[left]+ultrasonic[right]<130 )
+    y -= 25;
+  speed = 80;
+  if ( y > 30 )
+    direct = atan( (float)x/y)*180+180;
+  else if ( x > 4 )
+    direct = 270;
+  else if ( x < -4 )
+    direct = 90;
+  else if ( y > 4 )
+    direct = 180;
+  else if ( y < -4 )
+    direct = 0;
+  else {
+    direct = 0;
+    speed = 0;
+  }
+}
+
 
 //                                  ???
 // =================================================================================
