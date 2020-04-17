@@ -11,6 +11,29 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
  public:
   PeanutKing_Soccer_V1(void);
 
+  // ==================   METHOD DECLARATIONS   ===================
+
+  void init(uint8_t);
+  bool buttonPress(uint8_t);
+  bool
+    buttonRead(uint8_t);//0,1,2 White,Left
+    
+  uint16_t
+    compoundEyeRead(uint8_t),
+    ultrasonicRead(uint8_t),
+    compassRead(void);
+    
+  void Testing (void);
+  void motorControl(uint8_t, uint8_t speed = 2);
+  void motors(int16_t a, int16_t b, int16_t c);
+  void moveSmart(int spd, float angle);
+    
+  color whiteLine(uint8_t);
+
+  int mapSpeed(float); //helper function of motorControl, can be only called in this .h file
+  void motors0(int16_t, int16_t, int16_t);
+  void motorControl(uint16_t, uint16_t);
+  
   // Pin Allocation ==================================================================
   const uint8_t
     ledPin,
@@ -59,32 +82,6 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
     colorRGB[4];
   hsv
     colorHSV[4];
-  
-  
-  // ==================   METHOD DECLARATIONS   ===================
-
-  void init(uint8_t);
-  bool buttonPress(uint8_t);
-  bool
-    buttonRead(uint8_t);//0,1,2 White,Left
-    
-  uint16_t
-    compoundEyeRead(uint8_t),
-    ultrasonicRead(uint8_t),
-    compassRead(void);
-    
-  void Testing (void);
-  void motorControl(uint8_t, uint8_t speed = 2);
-  void motors(int16_t a, int16_t b, int16_t c);
-  void moveSmart(int spd, float angle);
-    
-  color whiteLine(uint8_t);
-
-  int mapSpeed(float); //helper function of motorControl, can be only called in this .h file
-  void motors0(int16_t, int16_t, int16_t);
-  void motorControl(uint16_t, uint16_t);
-
-
 };
 
 #endif

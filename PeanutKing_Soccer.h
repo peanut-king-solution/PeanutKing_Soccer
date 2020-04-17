@@ -210,7 +210,7 @@ class PeanutKing_Soccer {
     setScreen(uint8_t, uint8_t, int16_t, uint8_t digits = 3);
     
   //protected:
-  // sensors raw data
+  /* Sensors RAW Data  */
   bool
     rawButton(uint8_t);
   uint8_t 
@@ -225,7 +225,7 @@ class PeanutKing_Soccer {
     lcdSetup(void),
     lcdClear(void),
     setCursor(uint8_t col, uint8_t row);
-    
+
   /* LCD Library */
   void
     send(uint8_t value, uint8_t mode),
