@@ -930,6 +930,10 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           Chase(btDegree, btDistance, btRotate);
           break;
         case 3:   // Auto
+          if ( eye[maxEye] > EYEBOUNDARY ) {
+            Chase(btDegree, btDistance, btRotate);
+          }
+          Back(btDegree, btDistance, btRotate);
           break;
         case 4:
           btAngle = compass;
@@ -992,8 +996,7 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
 
   uint8_t quadrant;
   
-    speed    = 100;
-  if ( reading > EYEBOUNDARY ) {
+  speed    = 100;
     speed = reading > 500 ? BallPossessionSpeed : attackSpeed;
     //rotation = (ultrasonic[right] - ultrasonic[left])/6;
     
@@ -1058,7 +1061,6 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
         direct = eyeAngle*1.5;
     }
     */
-  }
 }
 
 void PeanutKing_Soccer_V2::Back(int& direct, int& speed, int& rotation) {
