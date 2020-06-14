@@ -1,7 +1,7 @@
 #include "PeanutKing_Soccer.h"
 
 
-PeanutKing_Soccer::PeanutKing_Soccer() {
+PeanutKing_Soccer::PeanutKing_Soccer(void) {
 }
 
 uint16_t PeanutKing_Soccer::sort(uint16_t a[], uint8_t size) {
@@ -17,8 +17,8 @@ uint16_t PeanutKing_Soccer::sort(uint16_t a[], uint8_t size) {
   return a[(size-1)/2];
 }
 
-hsv PeanutKing_Soccer::rgb2hsv(rgb in) {
-  hsv      out;
+hsv_t PeanutKing_Soccer::rgb2hsv(rgb_t in) {
+  hsv_t      out;
   int16_t  min, max, delta;
 
   min = in.r < in.g ? in.r : in.g;
@@ -114,7 +114,7 @@ uint8_t PeanutKing_Soccer::rawMonoColor(uint8_t out) {
   return temp;
 }
 
-// Bluetooth ---------------------------------------------------
+// Bluetooth ------------------------------------------------------
 void PeanutKing_Soccer::bluetoothSend(char string[]) {
 // send char
   Serial1.write(string, sizeof(string));

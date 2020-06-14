@@ -54,13 +54,13 @@ typedef struct {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-} rgb;
+} rgb_t;
 
 typedef struct {
   uint16_t h;
   uint8_t s;
   uint8_t v;
-} hsv;
+} hsv_t;
 
 typedef struct {
   volatile uint8_t *port;
@@ -68,7 +68,7 @@ typedef struct {
   uint8_t numLEDs;
   uint8_t numBytes;
   uint8_t *pixels;     // Holds LED color values (3 or 4 bytes each)
-} ledType;
+} led_t;
 
 typedef enum { front = 0, left, right, back } sensorNum;
 
@@ -138,63 +138,23 @@ typedef enum {
 
 class PeanutKing_Soccer {
  public:
-  // Constant  ===========================================================
-  const int8_t 
-    PAGEUPPERLIMIT = 6,
-    PAGELOWERLIMIT = 0;
-  
-  const int8_t  compass_address = 8;
-
-  const uint8_t
-    LCD_Addr    = 0x38,
-    LCD_displayfunction = 0x08,
-    
-    // turn the display on with no cursor or blinking default
-    LCD_displaycontrol = 0x04,
-    // Initialize to default text direction (for roman languages)
-    LCD_displaymode = 0x02,
-    GET_READING = 0x55,
-    SET_HOME    = 0x54;
-  
+  // Constructor 
   PeanutKing_Soccer(void);
   PeanutKing_Soccer(uint8_t);
-  
-  // Variables ===========================================================
-  bool
-    btButton[10],
-    autoScanEnabled   = true,
-    motorEnabled      = true,
-    motorBrakeEnabled = true,
-    ledEnabled        = false,
-    ledFlashEnabled   = false;
-  uint8_t
-    btButtonIndex,
-    btButtonCode,
-    btButtonFunction[4],
-    btAttributes[5]  = {5,5,5,5,5},
-    btTxBuffer[50],
-    btRxBuffer[50]; //store at most the most updated 100 values from BT
-  uint16_t
-    EYEBOUNDARY = 20,
-    autoScanSensors = ALLSENSORS;
-  int16_t
-    systemTime,      //a reference 100Hz clock, 0-100 every second
-    LCD_backlightval,
-    btDegree = 0,
-    btDistance = 0,
-    btRotate = 0;
-  ledType
-    leds[2];
-  uint32_t
-    sysTicks = 0;
-  
-  // functions ============================================================
-  uint16_t sort(uint16_t a[], uint8_t size);
-  hsv
-    rgb2hsv(rgb in);
+
+/* =============================================================================
+ *                              Functions
+ * ============================================================================= */
+
+  uint16_t 
+    sort(uint16_t a[], uint8_t size);
+  hsv_t
+    rgb2hsv(rgb_t in);
+    /*
   virtual void 
     bluetoothRemote(void),
     bluetoothAttributes(void);
+    */
   void
     enableScanning(bool = true, uint16_t = ALLSENSORS, bool = false),
     bluetoothSend(char[]),
@@ -209,7 +169,8 @@ class PeanutKing_Soccer {
     setScreen(uint8_t, uint8_t, char[] ),
     setScreen(uint8_t, uint8_t, int16_t, uint8_t digits = 3);
     
-  //protected:
+
+//protected:
   /* Sensors RAW Data  */
   bool
     rawButton(uint8_t);
@@ -236,6 +197,59 @@ class PeanutKing_Soccer {
     print(long, int = DEC),
     print(const char *),
     write(uint8_t);
+
+  // Constant  ===========================================================
+  const int8_t 
+    PAGEUPPERLIMIT = 6,
+    PAGELOWERLIMIT = 0;
+  
+  const int8_t  compass_address = 8;
+
+  const uint8_t
+    LCD_Addr    = 0x38,
+    LCD_displayfunction = 0x08,
+    // turn the display on with no cursor or blinking default
+    LCD_displaycontrol = 0x04,
+    // Initialize to default text direction (for roman languages)
+    LCD_displaymode = 0x02,
+    GET_READING = 0x55,
+    SET_HOME    = 0x54;
+  
+  
+
+  // Sensor Reading ======================================================
+
+
+
+  // Variables ===========================================================
+  bool
+    btButton[10],
+    autoScanEnabled   = true,
+    motorEnabled      = true,
+    motorBrakeEnabled = true,
+    ledEnabled        = false,
+    ledFlashEnabled   = false;
+  uint8_t
+    btButtonIndex,
+    btGestureCode,
+    btButtonFunction[4],
+    btAttributes[5]  = {5,5,5,5,5},
+    btTxBuffer[50],
+    btRxBuffer[50]; //store at most the most updated 100 values from BT
+  uint16_t
+    EYEBOUNDARY = 20,
+    LCD_backlightval,
+    systemTime,      //a reference 100Hz clock, 0-100 every second
+    autoScanSensors = ALLSENSORS;
+  int16_t
+    btDegree = 0,
+    btDistance = 0,
+    btRotate = 0;
+  led_t
+    leds[2];
+  uint32_t
+    sysTicks = 0;
+  
 };
 
 #endif

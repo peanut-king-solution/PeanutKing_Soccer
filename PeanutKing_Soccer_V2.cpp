@@ -1,6 +1,6 @@
 #include "PeanutKing_Soccer_V2.h"
 
-PeanutKing_Soccer_V2* V2bot = NULL;
+static PeanutKing_Soccer_V2* V2bot = NULL;
 
 PeanutKing_Soccer_V2::PeanutKing_Soccer_V2(void) :
   tcsblPin(32),
@@ -215,7 +215,7 @@ uint8_t PeanutKing_Soccer_V2::floorColorRead(uint8_t pin_no) {
   floorColorReadRaw(pin_no);
   //colorRGB[pin_no].b *= 1.15;
   
-  hsv& op = colorHSV[pin_no];
+  hsv_t& op = colorHSV[pin_no];
   op = rgb2hsv(colorRGB[pin_no]);
   
   isWhite[pin_no] = ( op.s < 10 && op.v > 85 );
@@ -236,8 +236,11 @@ bool PeanutKing_Soccer_V2::whiteLineCheck(uint8_t pin_no) {
 }
 
 
-//                                  Motors
-// =================================================================================
+
+/* =============================================================================
+ *                                  Motors
+ * ============================================================================= */
+
 // simple motor turn, motor_no cannot add, one by one 
 void PeanutKing_Soccer_V2::motorSet(uint8_t motor_no, int16_t speed) {
   //static int16_t previousSpeed[4] = {0,0,0,0};
@@ -419,8 +422,9 @@ void PeanutKing_Soccer_V2::autoScanning(void) {
 }
 
 
-//                                  TESTING
-// =================================================================================
+/* =============================================================================
+ *                                  Testing
+ * ============================================================================= */
 void PeanutKing_Soccer_V2::lcdMenu(void) {
   static uint32_t lcdTime = 0;
   static int8_t page = 0;
@@ -809,18 +813,23 @@ void PeanutKing_Soccer_V2::bluetoothAttributes(void) {
 }
 
 
+
+
+/* ===============================================================================
+ *                                  Advance Control
+ * =============================================================================== */
+
 void PeanutKing_Soccer_V2::bluetoothRemote(void) {
   static btDataType btDataHeader = Idle;
   static uint32_t btSendTimer = 0;
   static uint8_t btState = 0, len = 0;
+  static int btAngle = 0;
   static String deg = "", dis = "", buttonVal = "";
   static float speed = 1.0;
   
-  btButtonCode = 0;
-
   if (Serial1.available()) {
     char v = Serial1.read();
-    Serial.print(v);
+    //Serial.print(v);
     
     switch (btDataHeader) {
       case Idle:
@@ -848,20 +857,22 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
             if (v != 'D')
               deg += v;
             else {
-              btDegree = deg.toInt();
+              int temp = deg.toInt();
+              if (temp<360)
+                btDegree = temp;
               deg = "";
               btState++;
-              //Serial.print(btDegree);
-              //Serial.print(' ');
+              //Serial.print(btDegree); Serial.print(' ');
             }
           break;
           case 2:
             if (v != '.')
               dis += v;
             else {
-              btDistance = dis.toInt();
-              //Serial.print(btDistance);
-              ///Serial.println(' ');
+              int temp = dis.toInt();
+              if (temp<=100)
+                btDistance = temp;
+              //Serial.print(btDistance); Serial.println(' ');
               dis = "";
               btState=0;
               btDataHeader = Idle;
@@ -875,13 +886,11 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           len ++;
         }
         else if (len==1) {
-          btButtonCode = v-'0';
-          len ++;
+          btGestureCode = v-'0';
           len = 0;
           btDataHeader = Idle;
           //Serial.print("buttun pressed ");
-          //Serial.print(btDistance);
-          //Serial.println(' ');
+          //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
           //List<String> functionList = ['Accel', 'Back', 'Chase', 'Auto', 'L-Trun', 'R-Trun', 'Front', 'Left', 'Right', 'Back'];
         }
         break;
@@ -902,15 +911,14 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           btDataHeader = Idle;
         }
         break;
-
     }
   }
   if (btDataHeader == EndOfData) {
     btDataHeader = Idle;
-    if ( btButtonCode==3 || btButtonCode==6 ) {
-      speed = 1.0;
-    }
-    else {
+    Serial.print("buttun pressed ");
+    Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
+
+    if ( btGestureCode==0 || btGestureCode==4 ) {
       switch (btButtonFunction[btButtonIndex]) {
         case 0:   // Accel
           speed = 2.0;
@@ -924,17 +932,32 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
         case 3:   // Auto
           break;
         case 4:
-          btRotate --;
+          btAngle = compass;
+          btRotate = -40;
           break;
         case 5:
-          btRotate ++;
+          btAngle = compass;
+          btRotate = 40;
           break;
         case 6:   // Front
           break;
       }
     }
+    else { // if ( btGestureCode==3 || btGestureCode==6 )
+      speed = 1.0;
+      btRotate = 0;
+    }
     // Execute
-    moveSmart(btDegree, btDistance*speed, btRotate);
+    /*
+      Serial.print(btDegree); Serial.print(' ');
+      Serial.print(btDistance); Serial.print(' ');
+      Serial.print(btRotate); Serial.println(' ');
+    */
+    if ( btRotate==0 ) {
+      moveSmart(btDegree, btDistance*speed, btAngle);
+    }
+    else
+      motorControl(0, 0, btRotate);
   }
   // Send Data
   if (millis() - btSendTimer > 100) {
@@ -954,6 +977,7 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
     btSendTimer = millis();
   }
 }
+
 
 //                                  strategy
 // =================================================================================

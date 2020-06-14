@@ -49,7 +49,7 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
     irPin[9];
 
   const uint8_t
-    numLEDs     = 8;       // Number of RGB LEDs in strip
+    numLEDs     = 1;       // Number of RGB LEDs in strip
     
   // ======================     VARIABLES    ======================
   uint8_t ROBOT_VERSION = 2;
@@ -76,11 +76,11 @@ class PeanutKing_Soccer_V1: public PeanutKing_Soccer {
     eye[13];         // 12 ir reading , can be 16, depends on version number
   int16_t
     ultrasonic[4];       //4 ultrasonic reading
-  ledType
+  led_t
     leds[2];
-  rgb
+  rgb_t
     colorRGB[4];
-  hsv
+  hsv_t
     colorHSV[4];
 };
 

@@ -75,7 +75,7 @@ color PeanutKing_Soccer_V1::whiteLine(uint8_t pin) {
     g[TCSARRAYCOUNT],
     b[TCSARRAYCOUNT];
     
-  rgb rgbData;
+  rgb_t rgbData;
   
   for (uint8_t i=0; i<TCSARRAYCOUNT; i++) {
     digitalWrite(tcsSxPin[2], LOW);
@@ -114,7 +114,7 @@ color PeanutKing_Soccer_V1::whiteLine(uint8_t pin) {
   rgbData.g = constrain(rgbData.g,  0, 1);
   rgbData.b = constrain(rgbData.b,  0, 1);
   
-  hsv hsvData = rgb2hsv(rgbData);
+  hsv_t hsvData = rgb2hsv(rgbData);
   /*
   Serial.print("hsv ");
   Serial.print(hsvData.h, 0); 

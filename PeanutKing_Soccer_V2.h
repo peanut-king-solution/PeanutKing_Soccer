@@ -24,6 +24,22 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
     compassRead(void);
+    
+  void 
+    init(uint8_t = 0),
+    lcdMenu(void),
+    debug(uint16_t),
+    autoScanning(void),
+    motorControl(float,float,float),
+    motorSet(uint8_t, int16_t),
+    motorStop(void),
+    
+    move(int16_t, int16_t),
+    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
+    buttons(void),
+    compoundEyes(void);
+
+  // Advance Control 
   void
     Chase(int&, int&, int&),
     Back(int&, int&, int&),
@@ -31,27 +47,15 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     bluetoothAttributes(void);
     
   // testing
+  void
+    ledTest(uint8_t = STATESET),
+    testProgram(void),
+    btTest(void),
+    collisionTest(void);
   uint8_t
     pressureTest(void),
     motorTest(void);
-  void 
-    lcdMenu(void),
-    testProgram(void),
-    ledTest(uint8_t = STATESET),
-    btTest(void),
-    collisionTest(void),
     
-    init(uint8_t = 0),
-    debug(uint16_t),
-    autoScanning(void),
-    motorControl(float,float,float),
-    motorSet(uint8_t, int16_t),
-    move(int16_t, int16_t),
-    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
-    motorStop(void),
-    
-    buttons(void),
-    compoundEyes(void);
 
   // Pin Allocation ==================================================================
   const uint8_t
@@ -91,9 +95,9 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     eye[13];         // 12 ir reading , can be 16, depends on version number
   int16_t
     ultrasonic[4];       //4 ultrasonic reading
-  rgb
+  rgb_t
     colorRGB[4];
-  hsv
+  hsv_t
     colorHSV[4];
     
 };

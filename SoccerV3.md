@@ -48,14 +48,17 @@ plus controlled by xsonic stm32
 
 input length : 8
 output length: 32
+
 ---
 
 ### 3. Compass BMX055
 length: 2 byte
 Commands: set zero, calibrate, 6/9 dof switching
+
 ---
 ### 4. Arduino V3 Library
 Advanced control library p5
+
 ---
 ## protocol Draft (v3.0)
 format: (sensor)(cmd)(- optional)
@@ -76,6 +79,7 @@ set parameter: (sensor)(cmdSetParameter)(parameter name)(value)
 Commands
 'T' - cmdTransmit
 'R' - cmdReceive
+'P' - cmdParameter
 
 Inputs
 'C' - Compass

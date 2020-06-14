@@ -61,12 +61,12 @@ bluetoothAttributes	KEYWORD2
 # Structures
 #######################################	
 
-rgb			KEYWORD3
-hsv			KEYWORD3
+rgb_t			KEYWORD3
+hsv_t			KEYWORD3
 ledType			KEYWORD3
 ledColor		KEYWORD3
 sensorNum		KEYWORD3
-color			KEYWORD3
+color_t			KEYWORD3
 
 
 #######################################
