@@ -292,13 +292,27 @@ void PeanutKing_Soccer_V2::move(int16_t speed_X, int16_t speed_Y) {
 
 // motor move + compass as reference
 void PeanutKing_Soccer_V2::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
-  int16_t c = compassRead() - angle;
+  if (angle >= 360) angle = 0;
+
+  int16_t c = compassRead();
+  c -= angle;
   int16_t rotation = c < 180 ? -c : 360 - c;
   
+  Serial.print("angle = "); Serial.println(angle);
+  Serial.print("c = "); Serial.println(c);
+  Serial.print("rotation = "); Serial.println(rotation);
+
   //speed - 50
   //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
   rotation = rotation * (precision+3)/12;
-  if ( speed==0 && abs(rotation)>10 ) rotation = rotation < 35 ? 35 : rotation;
+  if ( speed==0 ) {
+    if (rotation>10) {
+      rotation = rotation < 35 ? 35 : rotation;
+    }
+    if (rotation<-10) {
+      rotation = rotation >-35 ?-35 : rotation;
+    }
+  }
   motorControl(angular_direction, speed, rotation);
 }
 
@@ -783,7 +797,7 @@ uint8_t PeanutKing_Soccer_V2::pressureTest(void) {
 
 void PeanutKing_Soccer_V2::bluetoothAttributes(void) {
   static btDataType btDataHeader = Idle;
-  static uint8_t btState = 0, len = 0;
+  static uint8_t len = 0;
 
   if (Serial1.available()) {
     char v = Serial1.read();
@@ -796,7 +810,6 @@ void PeanutKing_Soccer_V2::bluetoothAttributes(void) {
             btDataHeader = Attributes;
             break;
         }
-        btState = 1;
         break;
       case Attributes:
         if (len<5) {
@@ -833,6 +846,8 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
     
     switch (btDataHeader) {
       case Idle:
+      case EndOfData:
+      case DemoMode:
         switch (v) {
           case 'A':
             btDataHeader = Joystick;
@@ -844,9 +859,13 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
             btDataHeader = ButtonDef;
             break;
           case 'D':
+            btDataHeader = Attributes;
             break;
           case 'Z':
             btDataHeader = EndOfData;
+            break;
+          case 'Y':
+            btDataHeader = DemoMode;
             break;
         }
         btState = 1;
@@ -911,6 +930,17 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           btDataHeader = Idle;
         }
         break;
+      case Attributes:
+        if (len<5) {
+          btAttributes[len] = v-'0';//code.toInt();
+          len ++;
+        }
+        else {
+          EYEBOUNDARY = 10 + (10-btAttributes[0]) * 20;
+          len = 0;
+          btDataHeader = Idle;
+        }
+        break;
     }
   }
   if (btDataHeader == EndOfData) {
@@ -963,6 +993,14 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
     else
       motorControl(0, 0, btRotate);
   }
+  else if (btDataHeader == DemoMode) {
+    if ( eye[maxEye] > EYEBOUNDARY ) {
+      Chase(btDegree, btDistance, btRotate);
+    }
+    Back(btDegree, btDistance, btRotate);
+    moveSmart(btDegree, btDistance*speed, btAngle);
+  }
+
   // Send Data
   if (millis() - btSendTimer > 100) {
     if (Serial1.availableForWrite() > 50) {
@@ -987,16 +1025,21 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
 // =================================================================================
 void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
   static bool outside[4];
+
+  //  attack
+  //  Defend
+  //  MovingSpeed
+  //  BallPossession
+  //  Precision
+
   int16_t 
-    BallPossessionSpeed = 100,
-    attackSpeed = 150,
-    eyeAngle = eyeAngle,
-    MaxEye  = 0,
+    attackSpeed = 80 + btAttributes[2]*16,                // 150
+    defendSpeed = 50 + btAttributes[2]*12,
+    BallPossessionSpeed = attackSpeed-btAttributes[3]*4,  // 100
     reading = eye[maxEye];
 
   uint8_t quadrant;
   
-  speed    = 100;
     speed = reading > 500 ? BallPossessionSpeed : attackSpeed;
     //rotation = (ultrasonic[right] - ultrasonic[left])/6;
     
@@ -1064,13 +1107,21 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
 }
 
 void PeanutKing_Soccer_V2::Back(int& direct, int& speed, int& rotation) {
+  //  attack
+  //  Defend
+  //  MovingSpeed
+  //  BallPossession
+  //  Precision
+
+  int16_t 
+    defendSpeed = 50 + btAttributes[2]*12;          // 80
+  speed = defendSpeed;
   int16_t
-    y = ultrasonic[back] - 12,
+    y = ultrasonic[back] - (11 - btAttributes[2]) * 8,
     x = (ultrasonic[left] - ultrasonic[right])/2;
 
   if ( abs(x) > 50 || ultrasonic[left]+ultrasonic[right]<130 )
     y -= 25;
-  speed = 80;
   if ( y > 30 )
     direct = atan( (float)x/y)*180+180;
   else if ( x > 4 )

@@ -46,7 +46,6 @@
 #define LCD_SETDDRAMADDR 0x80
 
 #define LCD_FUNCTIONSET 0x20    // B00100000
-  
 
 #define DEBUGMODE       1
 
@@ -77,7 +76,6 @@ typedef enum {
   red,      green,   blue, 
   yellow,   cyan,    magenta
 } color;
-
 
 const uint16_t
   ALLIOs       = 0xffff,
@@ -134,6 +132,7 @@ typedef enum {
   ButtonDef,
   Attributes,
   EndOfData = 26,
+  DemoMode = 25,
 } btDataType;
 
 class PeanutKing_Soccer {
