@@ -296,6 +296,7 @@ void PeanutKing_Soccer_V2::moveSmart(uint16_t angular_direction, int16_t speed, 
 
   int16_t c = compassRead();
   c -= angle;
+  if (c<0) c+=360;
   int16_t rotation = c < 180 ? -c : 360 - c;
   
   Serial.print("angle = "); Serial.println(angle);
@@ -305,14 +306,7 @@ void PeanutKing_Soccer_V2::moveSmart(uint16_t angular_direction, int16_t speed, 
   //speed - 50
   //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
   rotation = rotation * (precision+3)/12;
-  if ( speed==0 ) {
-    if (rotation>10) {
-      rotation = rotation < 35 ? 35 : rotation;
-    }
-    if (rotation<-10) {
-      rotation = rotation >-35 ?-35 : rotation;
-    }
-  }
+
   motorControl(angular_direction, speed, rotation);
 }
 
@@ -859,7 +853,7 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
             btDataHeader = ButtonDef;
             break;
           case 'D':
-            btDataHeader = Attributes;
+            //btDataHeader = Attributes;
             break;
           case 'Z':
             btDataHeader = EndOfData;
@@ -879,6 +873,7 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
               int temp = deg.toInt();
               if (temp<360)
                 btDegree = temp;
+                
               deg = "";
               btState++;
               //Serial.print(btDegree); Serial.print(' ');
@@ -891,6 +886,7 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
               int temp = dis.toInt();
               if (temp<=100)
                 btDistance = temp;
+                
               //Serial.print(btDistance); Serial.println(' ');
               dis = "";
               btState=0;
@@ -945,9 +941,17 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
   }
   if (btDataHeader == EndOfData) {
     btDataHeader = Idle;
-    Serial.print("buttun pressed ");
-    Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
+    //Serial.print("buttun pressed ");
+    //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
 
+    setScreen(0, 0, "Deg ");
+    setScreen(4, 0, btDegree);
+    setScreen(0, 1, "Dist");
+    setScreen(4, 1, btDistance);
+    
+    setScreen(12, 0, maxEye);
+
+    setScreen(12, 1, eye[maxEye] );
     if ( btGestureCode==0 || btGestureCode==4 ) {
       switch (btButtonFunction[btButtonIndex]) {
         case 0:   // Accel
@@ -960,10 +964,16 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
           Chase(btDegree, btDistance, btRotate);
           break;
         case 3:   // Auto
-          if ( eye[maxEye] > EYEBOUNDARY ) {
+          if ( eye[maxEye] > 30 ) {
             Chase(btDegree, btDistance, btRotate);
           }
-          Back(btDegree, btDistance, btRotate);
+          else
+          {
+            btDistance = 0;
+            btDegree = 0;
+          }
+          
+          //Back(btDegree, btDistance, btRotate);
           break;
         case 4:
           btAngle = compass;
@@ -978,6 +988,9 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
       }
     }
     else { // if ( btGestureCode==3 || btGestureCode==6 )
+      if (btRotate ==-40 || btRotate ==40) {
+          btAngle = compass;
+      }
       speed = 1.0;
       btRotate = 0;
     }
@@ -988,18 +1001,19 @@ void PeanutKing_Soccer_V2::bluetoothRemote(void) {
       Serial.print(btRotate); Serial.println(' ');
     */
     if ( btRotate==0 ) {
-      moveSmart(btDegree, btDistance*speed, btAngle);
+      moveSmart(btDegree, btDistance*speed*0.7, btAngle);
     }
     else
       motorControl(0, 0, btRotate);
   }
+  /*
   else if (btDataHeader == DemoMode) {
     if ( eye[maxEye] > EYEBOUNDARY ) {
       Chase(btDegree, btDistance, btRotate);
     }
-    Back(btDegree, btDistance, btRotate);
+    //Back(btDegree, btDistance, btRotate);
     moveSmart(btDegree, btDistance*speed, btAngle);
-  }
+  }*/
 
   // Send Data
   if (millis() - btSendTimer > 100) {
@@ -1040,7 +1054,7 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
 
   uint8_t quadrant;
   
-    speed = reading > 500 ? BallPossessionSpeed : attackSpeed;
+    speed = 120;//reading > 500 ? BallPossessionSpeed : attackSpeed;
     //rotation = (ultrasonic[right] - ultrasonic[left])/6;
     
     if (eyeAngle<135)
@@ -1054,6 +1068,7 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
         direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
     }
     
+    /*
     uint16_t moveAngle = direct;
     if (moveAngle < 45 || moveAngle > 315)
       quadrant = front;
@@ -1073,7 +1088,6 @@ void PeanutKing_Soccer_V2::Chase(int& direct, int& speed, int& rotation) {
     }
     if ( outside[quadrant] )
       speed = 0;
-    /*
     if ( outside[front] && (eyeAngle<100 || eyeAngle>260) )
       speed = 0;
     else if ( outside[back]  && (eyeAngle>270 && eyeAngle>90) )

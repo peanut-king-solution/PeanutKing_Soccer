@@ -1,5 +1,6 @@
 {
     "C_Cpp.errorSquiggles": "Disabled",
     "editor.tabSize": 2,
-    "editor.detectIndentation": false
+    "editor.detectIndentation": false,
+    // "workbench.colorTheme": "Snazzy Operator",
 }
