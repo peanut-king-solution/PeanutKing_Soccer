@@ -23,7 +23,8 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
   uint16_t
     compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
-    compassRead(void);
+    compassRead(void),
+    whiteLineCal(uint16_t calVal, uint8_t pin_no = 0);
     
   void 
     init(uint8_t = 0),
