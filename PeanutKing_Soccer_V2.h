@@ -91,7 +91,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     minEye,
     groundColor[4];  //color sensor 
   uint16_t
-    whiteLineThreshold = 600;
+    whiteLineThreshold = 600,
     compass,
     eyeAngle,
     eye[13];         // 12 ir reading , can be 16, depends on version number
