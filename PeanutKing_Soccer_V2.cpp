@@ -230,9 +230,14 @@ uint8_t PeanutKing_Soccer_V2::floorColorRead(uint8_t pin_no) {
   else                                 return magenta;
 }
 
+
+bool PeanutKing_Soccer_V2::whiteLineCal(uint16_t calVal) {
+  whiteLineThreshold = calVal;
+}
+
 bool PeanutKing_Soccer_V2::whiteLineCheck(uint8_t pin_no) {
-  floorColorRead(pin_no);
-  return isWhite[pin_no];
+  floorColorReadRaw(pin_no);
+  return ((colorRGB[pin_no].r + colorRGB[pin_no].g + colorRGB[pin_no].b) > whiteLineThreshold);
 }
 
 
