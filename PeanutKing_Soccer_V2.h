@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2020 PeanutKing Solution
+ *
+ * @file        PeanutKing_Soccer_V2.h
+ * @summary     Soccer Robot Library
+ * @version     1.0
+ * @author      Jack Kwok
+ * @data        1 August 2020
+ */
+
+
+
 #include "PeanutKing_Soccer.h"
 
 #ifndef PeanutKing_Soccer_V2_H
@@ -101,7 +113,7 @@ class PeanutKing_Soccer_V2: public PeanutKing_Soccer {
     colorRGB[4];
   hsv_t
     colorHSV[4];
-
+    
 };
 
 #endif

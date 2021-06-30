@@ -1,6 +1,6 @@
-#include <PeanutKing_Soccer_V2.h>
+#include <PeanutKingSoccerV2.h>
 
-PeanutKing_Soccer_V2 robot = PeanutKing_Soccer_V2();
+PeanutKingSoccerV2 robot = PeanutKingSoccerV2();
 
 void setup() {
   robot.init();

@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2020 PeanutKing Solution
+ *
+ * @file        PeanutKing_Soccer_V2.cpp
+ * @summary     Soccer Robot Library
+ * @version     1.0
+ * @author      Jack Kwok
+ * @data        1 August 2020
+ */
+
+
+
 #include "PeanutKing_Soccer_V2.h"
 
 static PeanutKing_Soccer_V2* V2bot = NULL;
@@ -27,12 +39,13 @@ PeanutKing_Soccer_V2::PeanutKing_Soccer_V2(void) :
   }
 }
 
+/*
 ISR (TIMER1_COMPA_vect) {
   if (V2bot != NULL ) {
     V2bot->autoScanning();
   }
 }
-
+*/
 
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
@@ -229,7 +242,6 @@ uint8_t PeanutKing_Soccer_V2::floorColorRead(uint8_t pin_no) {
   else if ( op.h < 250 )               return blue;
   else                                 return magenta;
 }
-
 
 uint16_t PeanutKing_Soccer_V2::whiteLineCal(uint16_t calVal, uint8_t pin_no) {
   whiteLineThreshold = calVal;

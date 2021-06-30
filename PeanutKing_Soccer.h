@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2020 PeanutKing Solution
+ *
+ * @file        PeanutKing_Soccer.h
+ * @summary     Soccer Robot Library
+ * @version     1.0
+ * @author      Jack Kwok
+ * @data        1 August 2020
+ */
+
+
 #ifndef PeanutKing_Soccer_H
 #define PeanutKing_Soccer_H
 
@@ -50,9 +61,9 @@
 #define DEBUGMODE       1
 
 typedef struct {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
+  uint16_t r;
+  uint16_t g;
+  uint16_t b;
 } rgb_t;
 
 typedef struct {
@@ -60,6 +71,12 @@ typedef struct {
   uint8_t s;
   uint8_t v;
 } hsv_t;
+
+typedef struct {
+  uint16_t h;
+  uint8_t s;
+  uint8_t l;
+} hsl_t;
 
 typedef struct {
   volatile uint8_t *port;
@@ -168,6 +185,7 @@ class PeanutKing_Soccer {
     setScreen(uint8_t, uint8_t, char[] ),
     setScreen(uint8_t, uint8_t, int16_t, uint8_t digits = 3);
     
+  
 
 //protected:
   /* Sensors RAW Data  */
@@ -213,12 +231,8 @@ class PeanutKing_Soccer {
     LCD_displaymode = 0x02,
     GET_READING = 0x55,
     SET_HOME    = 0x54;
-  
-  
 
   // Sensor Reading ======================================================
-
-
 
   // Variables ===========================================================
   bool
@@ -228,6 +242,8 @@ class PeanutKing_Soccer {
     motorBrakeEnabled = true,
     ledEnabled        = false,
     ledFlashEnabled   = false;
+
+
   uint8_t
     btButtonIndex,
     btGestureCode,

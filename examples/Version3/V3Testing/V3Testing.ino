@@ -48,16 +48,16 @@ void loop() {
   }
 }
 
-void singleSensorTest (void) {
-  robot.I2CSensorRead(robot.topBoardAddr,Ultrasonic,8);
-  for(int i=0; i<8; i++) {
-    char c = robot.rxBuff[i];
-    //Serial.print(c);
-    Serial.print(robot.rxBuff[i]);
-    Serial.print(' ');
-  }
-  Serial.println();
-}
+//void singleSensorTest (void) {
+//  robot.I2CSensorRead(robot.topBoardAddr,Ultrasonic,8);
+//  for(int i=0; i<8; i++) {
+//    char c = robot.rxBuff[i];
+//    //Serial.print(c);
+//    Serial.print(robot.rxBuff[i]);
+//    Serial.print(' ');
+//  }
+//  Serial.println();
+//}
 
     
 void i2cTest (void) {
