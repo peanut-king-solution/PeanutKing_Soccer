@@ -1,9 +1,9 @@
-#include <PeanutKing_Soccer_V3.h>
-static PeanutKing_Soccer_V3 robot = PeanutKing_Soccer_V3();
+#include <PeanutKingSoccerV3.h>
+static PeanutKingSoccerV3 robot = PeanutKingSoccerV3();
 
 void setup() {
   robot.init();
-  robot.enableScanning(true, ALLSENSORS, false);
+//  robot.enableScanning(true, ALLSENSORS, false);
 }
 
 long timer = 0;
@@ -12,7 +12,6 @@ byte cmd = 0x55;
 int i=0;
 
 void loop() {
-  
   if (millis() - timer > 1000){
     timer = millis();
     robot.dataFetch();
@@ -48,28 +47,19 @@ void loop() {
   }
 }
 
-//void singleSensorTest (void) {
+void singleSensorTest (void) {
 //  robot.I2CSensorRead(robot.topBoardAddr,Ultrasonic,8);
-//  for(int i=0; i<8; i++) {
-//    char c = robot.rxBuff[i];
-//    //Serial.print(c);
-//    Serial.print(robot.rxBuff[i]);
-//    Serial.print(' ');
-//  }
-//  Serial.println();
-//}
-
-    
-void i2cTest (void) {
-  Wire.beginTransmission(10);
-  Wire.write(cmd);
-  Wire.endTransmission();
-  Wire.requestFrom(10, 3);
-  i=0;
-  while (Wire.available()) {
-    data[i] = Wire.read();
-    i++;
+  for(int i=0; i<8; i++) {
+    char c = robot.rxBuff[i];
+    //Serial.print(c);
+    Serial.print(robot.rxBuff[i]);
+    Serial.print(' ');
   }
+  Serial.println();
+}
+
+
+void i2cTest (void) {
   Serial.print(data[0]);
   Serial.print(' ');
   Serial.print(data[1]);

@@ -1,5 +1,5 @@
-#include <PeanutKing_Soccer_V2.h>
-static PeanutKing_Soccer_V2 robot = PeanutKing_Soccer_V2();
+#include <PeanutKingSoccerV2.h>
+static PeanutKingSoccerV2 robot = PeanutKingSoccerV2();
 
 // Attributes =======================================
 byte 
