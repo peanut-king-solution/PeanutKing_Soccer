@@ -321,7 +321,6 @@ void PeanutKingSoccerV2::init(void) {
   
   delay(1);
 
-
   cli();    //disable interrupts
 
   // uint8_t timer = digitalPinToTimer(pin);
