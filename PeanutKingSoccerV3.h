@@ -119,7 +119,7 @@ typedef struct {
 //   uint8_t *pixels;     // Holds LED color values (3 or 4 bytes each)
 // } led_t;
 
-typedef enum { front = 0, left, right, back } sensorNum;
+typedef enum { front = 0, left, right, back } sensorNum_t;
 
 typedef enum {
   black=0,  white,   grey,
