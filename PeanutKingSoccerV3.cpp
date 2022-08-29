@@ -16,8 +16,8 @@ PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
   actledPin(37),
   topBoardAddr(10),
   sensorBoardAddr(12),
+
   buttonPin{36, 35, 34},        // mainboard V3.3-3.4
-  //actLEC(37)
   pwmPin  { 4,  7, 10, 13},
   dirPin  { 2,  5,  8, 11},
   dir2Pin { 3,  6,  9, 12},
@@ -27,11 +27,17 @@ PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
   }
 }
 
-// ISR (TIMER1_COMPA_vect) {
-//   if (V3bot != NULL ) {
-//     V3bot->dataFetch();
-//   }
-// }
+ISR(TIMER1_COMPB_vect) {
+  if (V3bot != NULL) {
+    // V3bot->dataFetch();
+    
+    V3bot->buttons();
+    if (V3bot->button[0]==RELEASE || V3bot->button[0]==RELEASE_S || V3bot->button[0]==RELEASE_L) {
+      V3bot->motorEnabled = !V3bot->motorEnabled;
+      // digitalWrite(V3bot->actledPin, LOW);
+    }
+  }
+}
 
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
@@ -49,7 +55,7 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   for (uint8_t i=0; i<3; i++)
     pinMode(buttonPin[i], INPUT);
   
-  pinMode(actledPin, INPUT);
+  pinMode(actledPin, OUTPUT);
   digitalWrite(actledPin, HIGH);
   
   delay(10);
@@ -69,21 +75,22 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
 
   lcdSetup();
   
-  // cli();    //disable interrupts
-  // // Timer 1
-  // TCCR1A = 0x00;            // Normal mode, just as a Timer
-  // TCCR1B = 0;               // same for TCCR0B
-  // TCNT1 = 0;
-  
-  // TCCR1B |= (1 << WGM12);   // CTC mode; Clear Timer on Compare
-  // TCCR1B |= (1 << CS12);    // prescaler = 256
-  // // TCCR1B |= (1 << CS10) | (1 << CS12);    // prescaler = 1024
-
-  // // 50Hz
+  cli();    //disable interrupts
+  //   Timer 1
+  TCCR1A  = 0x00;           // Normal mode, just as a Timer
+  TCNT1   = 0;
+  OCR1A   = 624;             // 8 * 4 / 16 = 2us
   // OCR1A = 1250;       // =(16*10^6) / (125*256) -1 (must be <65536)
+  OCR1A   = 100;            // Hz = ?
   
-  // TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt
-  // sei();    //allow interrupts
+  TCCR1B = (1 << WGM12);    // CTC mode; Clear Timer on Compare
+  // TCCR1B |= (1 << CS11); // Set CS#1 bit for 8 prescaler for timer 1
+  TCCR1B |= (1 << CS10) | (1 << CS11);    // CLK i/o /64 (From Prescaler)  (must be <65536)
+  // TCCR1B |= (1 << CS12);    // prescaler = 256
+  // TCCR1B |= (1 << CS10) | (1 << CS12);    // prescaler = 1024
+  TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
+
+  sei();    //allow interrupts
   
   //while ( compassRead() == 400 );
 
