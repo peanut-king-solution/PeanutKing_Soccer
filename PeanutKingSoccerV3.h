@@ -155,15 +155,15 @@ typedef enum {
 //   gofront
 // } pressureTestStatus;
 
-// typedef enum {
-//   Idle = 0,
-//   Joystick = 1,
-//   PadButton,
-//   ButtonDef,
-//   Attributes,
-//   EndOfData = 26,
-//   DemoMode = 25,
-// } btDataType;
+typedef enum {
+  Idle = 0,
+  Joystick = 1,
+  PadButton,
+  ButtonDef,
+  Attributes,
+  EndOfData = 26,
+  DemoMode = 25,
+} btDataType;
 
 
 // motor,  + clockwise turn when positive value
@@ -303,9 +303,9 @@ class PeanutKingSoccerV3 {
     topBoardAddr,
     actledPin,
     buttonPin[3],
-    pwmPin[4],
-    dirPin[4],
-    dir2Pin[4],
+    inhPin[4],
+    in1Pin[4],
+    in2Pin[4],
     diagPin[4];
     
   const uint8_t

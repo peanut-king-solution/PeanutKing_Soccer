@@ -50,7 +50,7 @@ static IICIT *g_callback_object = nullptr; // Global pointer to class object
 static volatile bool g_rx_complete = false;
 
 IICIT::IICIT()
-    : m_speed(IICIT::Speed::INIT), m_comm_active(false), m_timeout(100),
+    : m_speed(IICIT::Speed::INIT), m_comm_active(false), m_timeout(5),
     m_state{State::IDLE}, m_status{STATUS_OK}, m_reset{true} {
   // Activate internal pullups for TWI
   // Required for 400KHz operation
