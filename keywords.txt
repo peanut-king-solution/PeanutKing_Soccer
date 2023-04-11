@@ -11,7 +11,8 @@ PeanutKingSoccerV3	KEYWORD1
 
 #######################################
 # Methods and Functions 
-#######################################	
+#######################################
+robot			KEYWORD2
 
 ledTest			KEYWORD2
 motorTest		KEYWORD2
@@ -90,7 +91,7 @@ white			LITERAL1
 grey			LITERAL1
 red			LITERAL1
 green			LITERAL1
-blue 			LITERAL1
+blue			LITERAL1
 yellow			LITERAL1
 cyan			LITERAL1
 magenta			LITERAL1

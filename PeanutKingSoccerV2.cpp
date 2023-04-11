@@ -246,6 +246,10 @@ PeanutKingSoccerV2::PeanutKingSoccerV2(void) :
   actledPin(30),
   buttonPin{42, 47, 48},
 
+  // inhPin  { 4,  7, 10, 13},
+  // in1Pin  { 2,  5,  8, 11},
+  // in2Pin  { 3,  6,  9, 12},
+
   pwmPin   { 5,  4,  3,  2},
   //dirPin[4]   = {22, 23, 24, 25},  // v2.1
   dirPin   {12, 10,  8,  6},  // v2.2

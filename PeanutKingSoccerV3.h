@@ -155,15 +155,15 @@ typedef enum {
 //   gofront
 // } pressureTestStatus;
 
-// typedef enum {
-//   Idle = 0,
-//   Joystick = 1,
-//   PadButton,
-//   ButtonDef,
-//   Attributes,
-//   EndOfData = 26,
-//   DemoMode = 25,
-// } btDataType;
+typedef enum {
+  Idle = 0,
+  Joystick = 1,
+  PadButton,
+  ButtonDef,
+  Attributes,
+  EndOfData = 26,
+  DemoMode = 25,
+} btDataType;
 
 
 // motor,  + clockwise turn when positive value
@@ -223,15 +223,21 @@ class PeanutKingSoccerV3 {
     buttTrigRead(uint8_t),
     whiteLineCheck(uint8_t);
   uint8_t 
-    floorColorReadRaw(uint8_t, uint8_t = black),
-    floorColorRead(uint8_t);
+    floorColorReadRaw(uint8_t, uint8_t = black);
   uint16_t
+    floorColorRead(uint8_t),
     compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
     compassRead(void),
-    whiteLineCal(uint16_t = 20, uint8_t = 0);
+    whiteLineCal(uint8_t = 0, uint16_t = 200);
 
-  void compoundEyeCal(float* calData);
+  void 
+    compoundEyeCal(float* calData);
+  uint16_t
+    ultrasonicRead3(void),
+    eyeReadShort(void),
+    getRedColor(uint8_t i);
+
   void
     actLED(bool),
     lcdMenu(void),
@@ -258,12 +264,13 @@ class PeanutKingSoccerV3 {
 
     motorControl(float,float,float),
     motorSet(uint8_t, int16_t),
+    motorUpdate(uint8_t),
     move(int16_t, int16_t),
     moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
     motorStop(void),
     buttons(void);
 
-  uint8_t buttons(uint8_t);
+  void timerLoop(void);
   uint8_t motorTest (void);
 
   void Chase(int& direct, int& speed, int& rotation);
@@ -303,9 +310,9 @@ class PeanutKingSoccerV3 {
     topBoardAddr,
     actledPin,
     buttonPin[3],
-    pwmPin[4],
-    dirPin[4],
-    dir2Pin[4],
+    inhPin[4],
+    in1Pin[4],
+    in2Pin[4],
     diagPin[4];
     
   const uint8_t
@@ -331,6 +338,9 @@ class PeanutKingSoccerV3 {
   uint16_t whiteLineThreshold[4] = {30, 30, 30, 30};
 
   buttonStatus_t button[3] = {NONE};
+
+  int16_t currentSpeed[4] = {0,0,0,0};
+  int16_t targetSpeed[4] = {0,0,0,0};
 
   rgb_t colorRGB[4];
   hsl_t colorHSL[4];
