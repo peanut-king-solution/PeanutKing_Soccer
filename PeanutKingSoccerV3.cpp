@@ -11,7 +11,6 @@
 #include "PeanutKingSoccerV3.h"
 
 static PeanutKingSoccerV3* V3bot = NULL;
-uint16_t tim1Count = 0;
 
 PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
   actledPin(37),
@@ -19,34 +18,38 @@ PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
   sensorBoardAddr(12),
 
   buttonPin{36, 35, 34},        // mainboard V3.3-3.4
-  inhPin  { 4,  7, 10, 13},
-  in1Pin  { 2,  5,  8, 11},
-  in2Pin  { 3,  6,  9, 12},
-  diagPin {50, 51, 53, 53} {
-  if (V3bot == NULL)  {
+  inhPin  { 4,  7, 10, 13},     // long high  timer 0 (controls pin 13, 4);
+  in1Pin  { 2,  5,  8, 11},     // timer 1 (controls pin 12, 11);
+  in2Pin  { 3,  6,  9, 12},     // timer 2 (controls pin 10, 9);
+  diagPin {50, 51, 53, 53} {    // timer 3 (controls pin 5, 3, 2);
+  if (V3bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
     V3bot = this;
   }
 }
 
 ISR(TIMER1_COMPB_vect) {
-  // tim1Count++;
-  
   if (V3bot != NULL) {
     V3bot->timerLoop();
   }
 }
 
 void PeanutKingSoccerV3::timerLoop(void) {
-    // dataFetch();
-    
+  // dataFetch();
+  tim1Count++;
+  
+  if (tim1Count%10 == 1) {
     buttons();
     if (button[0]==RELEASE || button[0]==RELEASE_S || button[0]==RELEASE_L) {
       motorEnabled = !motorEnabled;
       // digitalWrite(actledPin, LOW);
     }
+  }
+  
+  if (tim1Count%2 == 1) {
     for (uint8_t i=0; i<4; i++) {
       motorUpdate(i);
     }
+  }
 }
 
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
@@ -58,7 +61,7 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   for (uint8_t i=0; i<4; i++) {
     pinMode(inhPin[i],  OUTPUT);
     pinMode(in1Pin[i],  OUTPUT);
-    pinMode(in2Pin[i], OUTPUT);
+    pinMode(in2Pin[i],  OUTPUT);
     pinMode(diagPin[i], OUTPUT);
     digitalWrite(inhPin[i], HIGH);
     digitalWrite(diagPin[i], HIGH);
@@ -82,9 +85,10 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   // if ( gIIC->getStatus() != 0 ) {
   //   lcdScrHandle = gIIC->RegisterDevice(0x38, 1, IICIT::Speed::SLOW);
   // }
-  delay(2500);
+  delay(200);
 
   lcdSetup();
+  delay(200);
   cli();    //disable interrupts
   /*
   //   Timer 1
@@ -121,7 +125,7 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   // }
   // I2CSensorSend(senbrdHandle,LED_RGB,l,12);
 
-  delay(10);
+  delay(1500);
 }
 
 
@@ -223,9 +227,13 @@ void PeanutKingSoccerV3::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uin
   }
   _status = gIIC->Write(handle, txBuff, length+1);
   // I2CSend(addr, txBuff, length+1);
-}
+} 
 
 IICIT::status_t PeanutKingSoccerV3::LCDCallback(const IICIT::status_t status) {
+  return status;
+}
+
+IICIT::status_t PeanutKingSoccerV3::rxCpltCallback(const IICIT::status_t status) {
   return status;
 }
 
@@ -335,12 +343,12 @@ uint16_t PeanutKingSoccerV3::ultrasonicRead3(void) {
   const uint8_t ui[4] = {0, 3, 1, 2};
   //    0     3     1     2
   //  front left  right back
-  for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
-  I2CSensorRead(topbrdHandle, ULT_DATA+2, 6);
+  for (uint8_t i=0; i<8; i++)     rxBuff[i] = 0;
+  I2CSensorRead(topbrdHandle, ULT_DATA, 8);
   
-  for (uint8_t i=1; i<4; i++) { 
-    ultrasonic[i]  = rxBuff[ui[i]*2-2] & 0xff;
-    ultrasonic[i] |= rxBuff[ui[i]*2-1] << 8;
+  for (uint8_t i=0; i<4; i++) { 
+    ultrasonic[i]  = rxBuff[ui[i]*2] & 0xff;
+    ultrasonic[i] |= rxBuff[ui[i]*2+1] << 8;
   }
   return 1;
 }
@@ -468,19 +476,21 @@ void PeanutKingSoccerV3::motorSet(uint8_t mi, int16_t speed) {
   else if ( targetSpeed[mi]<0 ) {
     if      ( targetSpeed[mi]> -9 ) targetSpeed[mi] = 0;
     else if ( targetSpeed[mi]>-20 ) targetSpeed[mi] = -20;
-    else if ( targetSpeed[mi]<-256) targetSpeed[mi] = 256;
+    else if ( targetSpeed[mi]<-256) targetSpeed[mi] = -256;
   }
 }
 
 void PeanutKingSoccerV3::motorUpdate(uint8_t mi) {
   if ( !motorEnabled ) {
+    digitalWrite(in1Pin[mi], HIGH);
+    digitalWrite(in2Pin[mi], HIGH);
     targetSpeed[mi] = 0;
     currentSpeed[mi] = 0;
   } 
-
-  if (targetSpeed[mi] == 0) {
+  else if (targetSpeed[mi] == 0) {
     digitalWrite(in1Pin[mi], HIGH);
     digitalWrite(in2Pin[mi], HIGH);
+    currentSpeed[mi] = 0;
   }
   else {
     if      (targetSpeed[mi] > currentSpeed[mi]) currentSpeed[mi] += 1;
@@ -490,6 +500,8 @@ void PeanutKingSoccerV3::motorUpdate(uint8_t mi) {
       analogWrite(in2Pin[mi], currentSpeed[mi] );
     }
     else {
+      // digitalWrite(in1Pin[mi], HIGH);
+      // analogWrite(in2Pin[mi], 255 + currentSpeed[mi] );
       analogWrite(in1Pin[mi], -currentSpeed[mi] );
       digitalWrite(in2Pin[mi], LOW);
     }
@@ -875,7 +887,7 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
   
   if (Serial1.available()) {
     char v = Serial1.read();
-    //Serial.print(v);
+    // Serial.print(v);
     
     switch (btDataHeader) {
       case Idle:
@@ -915,7 +927,7 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
                 
               deg = "";
               btState++;
-              //Serial.print(btDegree); Serial.print(' ');
+              // Serial.print(btDegree); Serial.print(' ');
             }
           break;
           case 2:
@@ -1034,17 +1046,20 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
       btRotate = 0;
     }
     // Execute
-    /*
+    
       Serial.print(btDegree); Serial.print(' ');
       Serial.print(btDistance); Serial.print(' ');
       Serial.print(btRotate); Serial.println(' ');
-    */
-    if ( btRotate==0 ) {
-      moveSmart(btDegree, btDistance*speed*0.7, btAngle);
-    }
-    else
-      motorControl(0, 0, btRotate);
+    
+   
+    // if ( btRotate==0 ) {
+    //   moveSmart(btDegree, btDistance*speed*0.7, btAngle);
+    // }
+    // else
+    //   motorControl(0, 0, btRotate);
   }
+  motorControl(btDegree, btDistance, btRotate);
+
   /*
   else if (btDataHeader == DemoMode) {
     if ( eye[maxEye] > EYEBOUNDARY ) {

@@ -292,7 +292,7 @@ typedef enum {
 // 51  PG0 ( WR )  Digital pin 41
 // 70  PG2 ( ALE ) Digital pin 39
 // 50  PD7 ( T0 )  Digital pin 38
-// 52  PG1 ( RD )  Digital pin 40
+// 52  PG1 ( RD ) Digital pin 40
 
 // color
 // 41  PL6 Digital pin 43

@@ -6,17 +6,17 @@ void setup() {
 }
 
 void loop() {
-  robot.motorSet(0,-60); // motor 1, turn clockwise
-  robot.motorSet(1,-60); // motor 2, turn clockwise
-  robot.motorSet(2,-60); // motor 3, turn clockwise
-  robot.motorSet(3,-60); // motor 4, turn clockwise
+  robot.motorSet(0,-199); // motor 1, turn clockwise
+  robot.motorSet(1,-199); // motor 2, turn clockwise
+  robot.motorSet(2,-199); // motor 3, turn clockwise
+  robot.motorSet(3,-199); // motor 4, turn clockwise
 
   delay(1000);
 
-  robot.motorSet(0,60);  // motor 1, turn anti-clockwise
-  robot.motorSet(1,60);  // motor 2, turn anti-clockwise
-  robot.motorSet(2,60);  // motor 3, turn anti-clockwise
-  robot.motorSet(3,60);  // motor 4, turn anti-clockwise
+  robot.motorSet(0,199);  // motor 1, turn anti-clockwise
+  robot.motorSet(1,199);  // motor 2, turn anti-clockwise
+  robot.motorSet(2,199);  // motor 3, turn anti-clockwise
+  robot.motorSet(3,199);  // motor 4, turn anti-clockwise
 
   delay(1000);
 

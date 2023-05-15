@@ -248,6 +248,7 @@ class PeanutKingSoccerV3 {
   
   uint8_t colorReadAll(void);
   IICIT::status_t LCDCallback(const IICIT::status_t status);
+  IICIT::status_t rxCpltCallback(const IICIT::status_t status);
 
   void 
     init(uint8_t = 0),
@@ -362,6 +363,8 @@ class PeanutKingSoccerV3 {
     screenTicks = 0,
     sysTicks = 0;
     
+  uint16_t tim1Count = 0;
+
   // BT Variables ========================================================
   uint8_t
     btButtonIndex,
