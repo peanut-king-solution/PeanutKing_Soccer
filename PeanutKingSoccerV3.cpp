@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2022 PeanutKing Solution
+ * Copyright (c) 2023 PeanutKing Solution
  *
  * @file        PeanutKingSoccerV3.cpp
  * @summary     Soccer Robot V3 Library
- * @version     3.1
+ * @version     3.4.0
  * @author      Jack Kwok
- * @data        26 July 2022
- */
+ * @data        5 June 2023
+ */ 
 
 #include "PeanutKingSoccerV3.h"
 
@@ -34,7 +34,6 @@ ISR(TIMER1_COMPB_vect) {
 }
 
 void PeanutKingSoccerV3::timerLoop(void) {
-  // dataFetch();
   tim1Count++;
   
   if (tim1Count%10 == 1) {
@@ -56,7 +55,7 @@ void PeanutKingSoccerV3::timerLoop(void) {
 // External interrupt different settings depends on version number 
 void PeanutKingSoccerV3::init(uint8_t mode) {
   Serial.begin(115200);
-  Serial1.begin(9600);
+  Serial1.begin(115200);
 
   for (uint8_t i=0; i<4; i++) {
     pinMode(inhPin[i],  OUTPUT);
@@ -134,7 +133,6 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
  * ============================================================================= */
 void PeanutKingSoccerV3::dataFetch(void) {
   // int16_t temp;
-  // Serial.print("A: ");
   // for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
   // I2CSensorRead(8, ACC_RAW, 6);
   // for (uint8_t i=0; i<3; i++) {
@@ -173,6 +171,7 @@ void PeanutKingSoccerV3::dataFetch(void) {
     ultrasonic[i] |= rxBuff[2*i+1] << 8;
   }
 
+/*
   //sensorBoardAddr
   for (uint8_t i=0; i<27; i++)    rxBuff[i] = 0;
   I2CSensorRead(senbrdHandle, IR_RAW, 27);
@@ -181,6 +180,8 @@ void PeanutKingSoccerV3::dataFetch(void) {
     eye[i] |= rxBuff[2*i+1] << 8;
   }
   maxEye = rxBuff[24];
+*/
+  compoundEyeRead();
 
   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
   I2CSensorRead(senbrdHandle, COLOR_RAW, 28);
@@ -887,7 +888,6 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
   
   if (Serial1.available()) {
     char v = Serial1.read();
-    // Serial.print(v);
     
     switch (btDataHeader) {
       case Idle:
@@ -927,7 +927,6 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
                 
               deg = "";
               btState++;
-              // Serial.print(btDegree); Serial.print(' ');
             }
           break;
           case 2:
@@ -935,10 +934,7 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
               dis += v;
             else {
               int temp = dis.toInt();
-              if (temp<=100)
-                btDistance = temp;
-                
-              //Serial.print(btDistance); Serial.println(' ');
+              if (temp<=100)         btDistance = temp;
               dis = "";
               btState=0;
               btDataHeader = Idle;
@@ -955,26 +951,6 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
           btGestureCode = v-'0';
           len = 0;
           btDataHeader = Idle;
-          //Serial.print("buttun pressed ");
-          //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
-          //List<String> functionList = ['Accel', 'Back', 'Chase', 'Auto', 'L-Trun', 'R-Trun', 'Front', 'Left', 'Right', 'Back'];
-        }
-        break;
-      case ButtonDef:
-        if (len<4) {
-          //Serial.print("buttun code ");
-          //Serial.print(v);
-          //Serial.println(' ');
-          //String code = v;
-          btButtonFunction[len] = v-'0';//code.toInt();
-          len ++;
-        }
-        else {
-          len = 0;
-          //buttonVal = "";
-          //btState++;
-          //btState = 0;
-          btDataHeader = Idle;
         }
         break;
       case Attributes:
@@ -990,8 +966,11 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
         break;
     }
   }
+
   if (btDataHeader == EndOfData) {
     btDataHeader = Idle;
+    // Serial.print(btDegree); Serial.print(' ');
+    // Serial.print(btDistance); Serial.println(' ');
     //Serial.print("buttun pressed ");
     //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
 
@@ -1001,10 +980,11 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
     // setScreen(4, 1, btDistance);
     
     // setScreen(12, 0, maxEye);
+    // setScreen(12, 1, eye[maxEye]);
 
-    // setScreen(12, 1, eye[maxEye] );
-    if ( btGestureCode==0 || btGestureCode==4 ) {
-      switch (btButtonFunction[btButtonIndex]) {
+    //List<String> functionList = ['Accel', 'Back', 'Chase', 'Auto', 'L-Trun', 'R-Trun', 'Front', 'Left', 'Right', 'Back'];
+    if ( btGestureCode==0 || btGestureCode==2 || btGestureCode==4 || btGestureCode==5 ) {
+      switch ( btButtonIndex ) {
         case 0:   // Accel
           speed = 2.0;
           break;
@@ -1018,12 +998,10 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
           if ( eye[maxEye] > 30 ) {
             Chase(btDegree, btDistance, btRotate);
           }
-          else
-          {
+          else {
             btDistance = 0;
             btDegree = 0;
           }
-          
           //Back(btDegree, btDistance, btRotate);
           break;
         case 4:
@@ -1038,27 +1016,25 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
           break;
       }
     }
-    else { // if ( btGestureCode==3 || btGestureCode==6 )
+    else { // if ( btGestureCode==1 || btGestureCode==3 || btGestureCode==6 )
       if (btRotate ==-40 || btRotate ==40) {
           btAngle = compass;
       }
       speed = 1.0;
       btRotate = 0;
     }
+    
+    // Serial.print(btDegree);   Serial.print(' ');
+    // Serial.print(btDistance); Serial.print(' ');
+    // Serial.print(btRotate);   Serial.println(' ');
+    
     // Execute
-    
-      Serial.print(btDegree); Serial.print(' ');
-      Serial.print(btDistance); Serial.print(' ');
-      Serial.print(btRotate); Serial.println(' ');
-    
-   
     // if ( btRotate==0 ) {
     //   moveSmart(btDegree, btDistance*speed*0.7, btAngle);
     // }
     // else
-    //   motorControl(0, 0, btRotate);
+    motorControl(btDegree, btDistance, btRotate);
   }
-  motorControl(btDegree, btDistance, btRotate);
 
   /*
   else if (btDataHeader == DemoMode) {
@@ -1081,11 +1057,14 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
       btTxBuffer[9] = maxEye;
       btTxBuffer[11] = eye[maxEye] & 0xff;
       btTxBuffer[12] = eye[maxEye] >> 8;
-      btTxBuffer[13] = 'Z';
-      Serial1.write(btTxBuffer, 14);
+      btTxBuffer[13] = eyeAngle & 0xff;
+      btTxBuffer[14] = eyeAngle >> 8;
+      btTxBuffer[15] = 'Z';
+      Serial1.write(btTxBuffer, 16);
     }
     btSendTimer = millis();
   }
+
 }
 
 
