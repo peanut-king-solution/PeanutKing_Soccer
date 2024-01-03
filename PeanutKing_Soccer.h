@@ -5,7 +5,7 @@
  * @summary     Soccer Robot Library
  * @version     1.0
  * @author      Jack Kwok
- * @data        1 August 2020
+ * @date        1 August 2020
  */
 
 
@@ -54,15 +54,6 @@
 //   gofront
 // } pressureTestStatus;
 
-// typedef enum {
-//   Idle = 0,
-//   Joystick = 1,
-//   PadButton,
-//   ButtonDef,
-//   Attributes,
-//   EndOfData = 26,
-//   DemoMode = 25,
-// } btDataType;
 
 class PeanutKing_Soccer {
  public:

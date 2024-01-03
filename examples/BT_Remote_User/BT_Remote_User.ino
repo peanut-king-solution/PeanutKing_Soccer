@@ -16,7 +16,7 @@ void loop() {
 }
 
 void bluetoothRemote(void) {
-  static btDataType btDataHeader = Idle;
+  static btData_t btDataHeader = Idle;
   static uint32_t btSendTimer = 0;
   static uint8_t btState = 0, len = 0;
   static int btAngle = 0;

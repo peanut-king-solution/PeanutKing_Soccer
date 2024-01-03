@@ -11,14 +11,15 @@ void loop() {
   robot.motorSet(2,-199); // motor 3, turn clockwise
   robot.motorSet(3,-199); // motor 4, turn clockwise
 
-  delay(1000);
+  delay(200);
+  robot.motorStop();       // all motor stop
 
   robot.motorSet(0,199);  // motor 1, turn anti-clockwise
   robot.motorSet(1,199);  // motor 2, turn anti-clockwise
   robot.motorSet(2,199);  // motor 3, turn anti-clockwise
   robot.motorSet(3,199);  // motor 4, turn anti-clockwise
 
-  delay(1000);
+  delay(200);
 
   robot.motorStop();       // all motor stop
 

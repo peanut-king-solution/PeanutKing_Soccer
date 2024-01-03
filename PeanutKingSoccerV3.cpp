@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2023 PeanutKing Solution
+ * Copyright (c) 2024 PeanutKing Solution
  *
  * @file        PeanutKingSoccerV3.cpp
  * @summary     Soccer Robot V3 Library
  * @version     3.4.0
  * @author      Jack Kwok
- * @data        5 June 2023
+ * @date        2 January 2024
+ * 
+ * @log         3.3.0 - 5  Jun 2023
+ *              3.1.0 - 26 Jul 2022
  */ 
 
 #include "PeanutKingSoccerV3.h"
@@ -27,35 +30,43 @@ PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
   }
 }
 
-ISR(TIMER1_COMPB_vect) {
+ISR(TIMER2_COMPA_vect) {
   if (V3bot != NULL) {
     V3bot->timerLoop();
   }
 }
 
+/* 3921.16 Hz /2 */
 void PeanutKingSoccerV3::timerLoop(void) {
   tim1Count++;
-  
-  if (tim1Count%10 == 1) {
+
+  if (tim1Count%8 == 1) {
     buttons();
     if (button[0]==RELEASE || button[0]==RELEASE_S || button[0]==RELEASE_L) {
       motorEnabled = !motorEnabled;
+      
+      if ( motorEnabled ) {
+        motorEnable();
+      }
+      else {
+        motorDisable();
+      }
       // digitalWrite(actledPin, LOW);
     }
   }
-  
-  if (tim1Count%2 == 1) {
-    for (uint8_t i=0; i<4; i++) {
-      motorUpdate(i);
-    }
+
+  if ( motorEnabled ) {
+    motorUpdate();
   }
+
 }
 
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
 void PeanutKingSoccerV3::init(uint8_t mode) {
   Serial.begin(115200);
-  Serial1.begin(115200);
+  // Serial1.begin(115200);
+  Serial1.begin(9600);
 
   for (uint8_t i=0; i<4; i++) {
     pinMode(inhPin[i],  OUTPUT);
@@ -89,6 +100,62 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   lcdSetup();
   delay(200);
   cli();    //disable interrupts
+
+
+//---------------------------------------------- Set PWM frequency for D4 & D27 ------------------------------
+//TCCR0B = TCCR0B & B11111000 | B00000001;    // set timer 0 divisor to     1 for PWM frequency of 62500.00 Hz
+//TCCR0B = TCCR0B & B11111000 | B00000010;    // set timer 0 divisor to     8 for PWM frequency of  7812.50 Hz
+  // TCCR0B = TCCR0B & B11111000 | B00000011;    // set timer 0 divisor to    64 for PWM frequency of   976.56 Hz (Default)
+//TCCR0B = TCCR0B & B11111000 | B00000100;    // set timer 0 divisor to   256 for PWM frequency of   244.14 Hz
+//TCCR0B = TCCR0B & B11111000 | B00000101;    // set timer 0 divisor to  1024 for PWM frequency of    61.04 Hz
+
+
+//---------------------------------------------- Set PWM frequency for D11 & D12 -----------------------------
+
+//TCCR1B = TCCR1B & B11111000 | B00000001;    // set timer 1 divisor to     1 for PWM frequency of 32772.55 Hz
+TCCR1B = TCCR1B & B11111000 | B00000010;    // set timer 1 divisor to     8 for PWM frequency of  3921.16 Hz
+  // TCCR1B = TCCR1B & B11111000 | B00000011;    // set timer 1 divisor to    64 for PWM frequency of   490.20 Hz
+// TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
+//TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
+
+//---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
+
+//TCCR2B = TCCR2B & B11111000 | B00000001;    // set timer 2 divisor to     1 for PWM frequency of 32772.55 Hz
+// TCCR2B = TCCR2B & B11111000 | B00000010;    // set timer 2 divisor to     8 for PWM frequency of  3921.16 Hz
+TCCR2B = TCCR2B & B11111000 | B00000011;    // set timer 2 divisor to    32 for PWM frequency of   980.39 Hz
+  // TCCR2B = TCCR2B & B11111000 | B00000100;    // set timer 2 divisor to    64 for PWM frequency of   490.20 Hz
+//TCCR2B = TCCR2B & B11111000 | B00000101;    // set timer 2 divisor to   128 for PWM frequency of   245.10 Hz
+// TCCR2B = TCCR2B & B11111000 | B00000110;    // set timer 2 divisor to   256 for PWM frequency of   122.55 Hz
+//TCCR2B = TCCR2B & B11111000 | B00000111;    // set timer 2 divisor to  1024 for PWM frequency of    30.64 Hz
+
+
+//---------------------------------------------- Set PWM frequency for D2, D3 & D5 ---------------------------
+
+//TCCR3B = TCCR3B & B11111000 | B00000001;    // set timer 3 divisor to     1 for PWM frequency of 32772.55 Hz
+TCCR3B = TCCR3B & B11111000 | B00000010;    // set timer 3 divisor to     8 for PWM frequency of  3921.16 Hz
+  // TCCR3B = TCCR3B & B11111000 | B00000011;    // set timer 3 divisor to    64 for PWM frequency of   490.20 Hz
+// TCCR3B = TCCR3B & B11111000 | B00000100;    // set timer 3 divisor to   256 for PWM frequency of   122.55 Hz
+//TCCR3B = TCCR3B & B11111000 | B00000101;    // set timer 3 divisor to  1024 for PWM frequency of    30.64 Hz
+
+
+//---------------------------------------------- Set PWM frequency for D6, D7 & D8 ---------------------------
+
+//TCCR4B = TCCR4B & B11111000 | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 32772.55 Hz
+TCCR4B = TCCR4B & B11111000 | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
+  // TCCR4B = TCCR4B & B11111000 | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
+// TCCR4B = TCCR4B & B11111000 | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
+//TCCR4B = TCCR4B & B11111000 | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
+
+
+//---------------------------------------------- Set PWM frequency for D44, D45 & D46 ------------------------
+
+//TCCR5B = TCCR5B & B11111000 | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 32772.55 Hz
+//TCCR5B = TCCR5B & B11111000 | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
+  // TCCR5B = TCCR5B & B11111000 | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
+//TCCR5B = TCCR5B & B11111000 | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
+//TCCR5B = TCCR5B & B11111000 | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
+  
+
   /*
   //   Timer 1
   TCCR1A  = 0x00;           // Normal mode, just as a Timer
@@ -96,19 +163,21 @@ void PeanutKingSoccerV3::init(uint8_t mode) {
   OCR1A   = 624;             // 8 * 4 / 16 = 2us
   // OCR1A = 1250;       // =(16*10^6) / (125*256) -1 (must be <65536)
   OCR1A   = 100;            // Hz = ?
-  
-  TCCR1B = (1 << WGM12);    // CTC mode; Clear Timer on Compare
-  // TCCR1B |= (1 << CS11); // Set CS#1 bit for 8 prescaler for timer 1
-  TCCR1B |= (1 << CS10) | (1 << CS11);    // CLK i/o /64 (From Prescaler)  (must be <65536)
-  // TCCR1B |= (1 << CS12);    // prescaler = 256
-  // TCCR1B |= (1 << CS10) | (1 << CS12);    // prescaler = 1024
-  */
-  TCNT1   = 0;
-  // TCCR1B  = (1 << WGM12);   // CTC mode; Clear Timer on Compare
-  // TCCR1B &= ~(1 << CS10);
-  // TCCR1B |= (1 << CS11);    // Set CS#1 bit for 8 prescaler for timer 1
-  TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
 
+  // TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
+  
+  */
+  // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
+  // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
+  // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
+  // TCCR4C = _BV(COM4A1) | _BV(COM4B1) | _BV(WGM41) | _BV(WGM40);
+
+  TCNT2   = 0;
+  TCCR2B |= (1 << WGM22);    // CTC mode; Clear Timer on Compare (OCR2A)
+  // TCCR2A |= (1 << WGM21);    // CTC mode; Clear Timer on Compare (OCR2A)
+  TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt
+  OCR2A = 63;
+  // OCR2B = 63;
   sei();    //allow interrupts
 
   //while ( compassRead() == 400 );
@@ -228,7 +297,7 @@ void PeanutKingSoccerV3::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uin
   }
   _status = gIIC->Write(handle, txBuff, length+1);
   // I2CSend(addr, txBuff, length+1);
-} 
+}
 
 IICIT::status_t PeanutKingSoccerV3::LCDCallback(const IICIT::status_t status) {
   return status;
@@ -467,45 +536,108 @@ void PeanutKingSoccerV3::actLED(bool state) {
 // simple motor turn, [mi] cannot add, one by one 
 void PeanutKingSoccerV3::motorSet(uint8_t mi, int16_t speed) {
   targetSpeed[mi] = speed;
-  //digitalWrite(dirPin[mi], motorBrakeEnabled ?  HIGH : LOW);
 
   if ( targetSpeed[mi]>0 ) {
-    if      ( targetSpeed[mi]<  9 ) targetSpeed[mi] = 0;
-    else if ( targetSpeed[mi]< 20 ) targetSpeed[mi] = 20;
+    if      ( targetSpeed[mi]< 10 ) targetSpeed[mi] = 0;
+    else if ( targetSpeed[mi]< 25 ) targetSpeed[mi] = 25;
     else if ( targetSpeed[mi]>255 ) targetSpeed[mi] = 255;
   }
   else if ( targetSpeed[mi]<0 ) {
-    if      ( targetSpeed[mi]> -9 ) targetSpeed[mi] = 0;
-    else if ( targetSpeed[mi]>-20 ) targetSpeed[mi] = -20;
+    if      ( targetSpeed[mi]>-10 ) targetSpeed[mi] = 0;
+    else if ( targetSpeed[mi]>-25 ) targetSpeed[mi] = -25;
     else if ( targetSpeed[mi]<-256) targetSpeed[mi] = -256;
   }
 }
 
-void PeanutKingSoccerV3::motorUpdate(uint8_t mi) {
-  if ( !motorEnabled ) {
-    digitalWrite(in1Pin[mi], HIGH);
-    digitalWrite(in2Pin[mi], HIGH);
-    targetSpeed[mi] = 0;
-    currentSpeed[mi] = 0;
-  } 
-  else if (targetSpeed[mi] == 0) {
-    digitalWrite(in1Pin[mi], HIGH);
-    digitalWrite(in2Pin[mi], HIGH);
-    currentSpeed[mi] = 0;
+void PeanutKingSoccerV3::motorStop(void) {
+  for(uint8_t i=0; i<4; i++) {
+    targetSpeed[i] = 0;
   }
-  else {
-    if      (targetSpeed[mi] > currentSpeed[mi]) currentSpeed[mi] += 1;
-    else if (targetSpeed[mi] < currentSpeed[mi]) currentSpeed[mi] -= 1;
-    if (currentSpeed[mi] > 0) {
-      digitalWrite(in1Pin[mi], LOW);
-      analogWrite(in2Pin[mi], currentSpeed[mi] );
+}
+
+void PeanutKingSoccerV3::motorUpdate(void) {
+  for (uint8_t mi=0; mi<4; mi++) {
+    if      (targetSpeed[mi] > currentSpeed[mi]) currentSpeed[mi] ++;
+    else if (targetSpeed[mi] < currentSpeed[mi]) currentSpeed[mi] --;
+    else continue;
+
+    if ( targetSpeed[mi] == 0) {
+      digitalWrite(in1Pin[mi], HIGH);
+      digitalWrite(in2Pin[mi], HIGH);
+      currentSpeed[mi] = 0;
+    }
+    else if (currentSpeed[mi] > 0) {
+      analogWrite(in1Pin[mi], 255 - currentSpeed[mi] );
+      digitalWrite(in2Pin[mi], HIGH);
     }
     else {
-      // digitalWrite(in1Pin[mi], HIGH);
-      // analogWrite(in2Pin[mi], 255 + currentSpeed[mi] );
       analogWrite(in1Pin[mi], -currentSpeed[mi] );
       digitalWrite(in2Pin[mi], LOW);
     }
+  }
+
+  /*
+  // OCR3B = (currentSpeed[0] < 0) ? (-currentSpeed[0]) : (255 -currentSpeed[0]);
+  // OCR3A = (currentSpeed[1] < 0) ? (-currentSpeed[1]) : (255 -currentSpeed[1]);
+  // OCR4C = (currentSpeed[2] < 0) ? (-currentSpeed[2]) : (255 -currentSpeed[2]);
+  // OCR1A = (currentSpeed[3] < 0) ? (-currentSpeed[3]) : (255 -currentSpeed[3]);
+
+  if (currentSpeed[0] < 0) {
+    PORTE &= ~(1 << 5);      // Low
+    OCR3B = (-currentSpeed[0]);
+  }
+  else {
+    PORTE |=   1 << 5;      // HIGH
+    OCR3B = (255 -currentSpeed[0]);
+  }
+  if (currentSpeed[1] < 0) {
+    PORTH &= ~(1 << 3);      // Low
+    OCR3A = (-currentSpeed[1]);
+  }
+  else {
+    PORTH |=   1 << 3;      // HIGH
+    OCR3A = (255 -currentSpeed[1]);
+  }
+  if (currentSpeed[2] < 0) {
+    PORTH &= ~(1 << 6);      // Low
+    OCR4C = (-currentSpeed[2]);
+  }
+  else {
+    PORTH |=   1 << 6;      // HIGH
+    OCR4C = (255 -currentSpeed[2]);
+  }
+  if (currentSpeed[3] < 0) {
+    PORTB &= ~(1 << 6);      // Low
+    OCR1A = (-currentSpeed[3]);
+  }
+  else {
+    PORTB |=   1 << 6;      // HIGH
+    OCR1A = (255 -currentSpeed[3]);
+  }
+  */
+/*
+  const motor_t motor[4] = {
+    {&OCR3B, &PORTE, 5, 4},
+    {&OCR3A, &PORTH, 3, 7},
+    {&OCR4C, &PORTH, 6, 10},
+    {&OCR1A, &PORTB, 6, 13}
+  };
+*/
+
+}
+
+void PeanutKingSoccerV3::motorDisable(void) {
+  for(uint8_t i=0; i<4; i++) {
+    digitalWrite(inhPin[i], LOW);
+    digitalWrite(in1Pin[i], HIGH);
+    digitalWrite(in2Pin[i], HIGH);
+    currentSpeed[i] = 0;
+  }
+}
+
+void PeanutKingSoccerV3::motorEnable(void) {
+  for(uint8_t i=0; i<4; i++) {
+    digitalWrite(inhPin[i], HIGH);
   }
 }
 
@@ -544,13 +676,6 @@ void PeanutKingSoccerV3::moveSmart(uint16_t angular_direction, int16_t speed, in
   if ( speed==0 && abs(rotation)<12 ) rotation = 0;
   motorControl(angular_direction, speed, rotation);
 }
-
-void PeanutKingSoccerV3::motorStop(void) {
-  for(uint8_t i=0; i<4; i++) {
-    motorSet(i, 0);
-  }
-}
-
 
 
 
@@ -763,7 +888,8 @@ void PeanutKingSoccerV3::enableScanning(bool enable, uint16_t sensorType, bool e
 
 bool PeanutKingSoccerV3::buttTrigRead(uint8_t pin) {
   bool b = !digitalRead(buttonPin[pin]);
-
+  // button
+  return b;
 }
 
 void PeanutKingSoccerV3::buttons(void) {
@@ -779,9 +905,9 @@ void PeanutKingSoccerV3::buttons(void) {
           holdTimer[i] = currentTime;
         break;
         case TAP:
-          if ( currentTime - holdTimer[i] > TAP_DURATION ) {
-            button[i] = PRESS;
-          }
+          button[i] = PRESS;
+          // if ( currentTime - holdTimer[i] > TAP_DURATION ) {
+          // }
         break;
         case TAP2:
           if ( currentTime - holdTimer[i] > HOLD_DURATION ) {
@@ -860,6 +986,7 @@ void PeanutKingSoccerV3::buttons(void) {
           button[i] = NONE;
         break;
         default:
+          button[i] = NONE;
         break;
       }
     }
@@ -879,7 +1006,7 @@ void PeanutKingSoccerV3::bluetoothAttributes() {
 
 
 void PeanutKingSoccerV3::bluetoothRemote(void) {
-  static btDataType btDataHeader = Idle;
+  static btData_t btDataHeader = Idle;
   static uint32_t btSendTimer = 0;
   static uint8_t btState = 0, len = 0;
   static int btAngle = 0;
@@ -888,6 +1015,8 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
   
   if (Serial1.available()) {
     char v = Serial1.read();
+
+    // Serial.print(v);  // debugUse
     
     switch (btDataHeader) {
       case Idle:
@@ -903,7 +1032,7 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
           case 'C':
             btDataHeader = ButtonDef;
             break;
-          case 'D':
+          case 'E':
             //btDataHeader = Attributes;
             break;
           case 'Z':
@@ -942,6 +1071,13 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
           break;
         }
         break;
+      case ButtonDef:
+        len ++;
+        if (len==4) {
+          len = 0;
+          btDataHeader = Idle;
+        }
+        break;
       case PadButton:
         if (len==0) {
           btButtonIndex = v-'0';
@@ -969,8 +1105,8 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
 
   if (btDataHeader == EndOfData) {
     btDataHeader = Idle;
-    // Serial.print(btDegree); Serial.print(' ');
-    // Serial.print(btDistance); Serial.println(' ');
+    Serial.print(btDegree); Serial.print(' ');
+    Serial.print(btDistance); Serial.println(' ');
     //Serial.print("buttun pressed ");
     //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
 
@@ -1052,7 +1188,14 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
       btTxBuffer[1] = compass & 0xff;
       btTxBuffer[2] = compass >> 8;
       btTxBuffer[3] = 'U';
-      btTxBuffer[4] = ultrasonic[0] > 255 ? 255 : ultrasonic[0];
+      btTxBuffer[4] = ultrasonic[0] / 10;
+      btTxBuffer[4] = btTxBuffer[4] > 255 ? 255 : btTxBuffer[4];
+      btTxBuffer[5] = ultrasonic[1] / 10;
+      btTxBuffer[5] = btTxBuffer[5] > 255 ? 255 : btTxBuffer[5];
+      btTxBuffer[6] = ultrasonic[2] / 10;
+      btTxBuffer[6] = btTxBuffer[6] > 255 ? 255 : btTxBuffer[6];
+      btTxBuffer[7] = ultrasonic[3] / 10;
+      btTxBuffer[7] = btTxBuffer[7] > 255 ? 255 : btTxBuffer[7];
       btTxBuffer[8] = 'E';
       btTxBuffer[9] = maxEye;
       btTxBuffer[11] = eye[maxEye] & 0xff;

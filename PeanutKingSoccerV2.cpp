@@ -188,7 +188,7 @@ uint8_t CLbit = 0;
  * 58.3us / cm
  * 932.9 cycle per it for 1 tick = 1 cm
  */
-ISR(TIMER2_COMPA_vect) {
+ISR(TIMER2_COMPB_vect) {
   pinRead = (*xsPin[XSi].port >> xsPin[XSi].bit) & 1;
   if ( pinRead != XS[XSi].pSt ) {
     XS[XSi].pSt = pinRead;
