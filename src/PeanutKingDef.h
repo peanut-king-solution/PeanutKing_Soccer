@@ -108,11 +108,11 @@ const float pi = 3.1415926535897;
 
 typedef enum { front = 0, left, right, back } sensorNum;
 
-typedef enum {
-  black=0,  white,   grey,
-  red,      blue,    green,
-  yellow,   cyan,    magenta
-} color_t;
+// typedef enum {
+//   black=0,  white,   grey,
+//   red,      blue,    green,
+//   yellow,   cyan,    magenta
+// } color_t;
 
 typedef enum {
   Idle = 0,

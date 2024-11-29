@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024 PeanutKing Solution
  *
- * @file        PeanutKingSoccerV3.h
+ * @file        PeanutKingSoccerV4.h
  * @summary     Soccer Robot V3 Library
  * @version     3.4.0
  * @author      Jack Kwok
@@ -12,13 +12,20 @@
  */
 
 
-#ifndef PeanutKing_Soccer_V3_H
-#define PeanutKing_Soccer_V3_H
+#ifndef PeanutKing_Soccer_V4_H
+#define PeanutKing_Soccer_V4_H
 
+#include <pins_arduino.h>
 #include "IICIT.h"
 #include "PeanutKingDef.h"
-
-
+#include "SlowSoftI2CMaster.h"
+#include <SPI.h>				// must include this here (or else IDE can't find it)
+                                           
+#include <PDQ_GFX.h>				// PDQ: Core graphics library
+#include <PDQ_ST7735.h>			// PDQ: Hardware-specific driver library
+#include <pcint.h>
+// #include <Fonts/FreeSerif12pt7b.h>	// include fancy serif font
+// #include <Fonts/FreeSans12pt7b.h>	// include fancy sans-serif font
 #define LED1   0x01
 #define LED2   0x02
 #define LED3   0x04
@@ -36,28 +43,15 @@
 #endif
 #define BIN 2
 
-// flags for backlight control
-#define LCD_BACKLIGHT     0x08    // B00001000
-#define LCD_NOBACKLIGHT   0x00    // B00000000
-
-#define En B00000100  // Enable bit
-//#define Rw B00000010  // Read/Write bit
-#define Rs B00000001  // Register select bit
-
-#define LCD_RETURNHOME    0x02
-#define LCD_ENTRYLEFT  
-#define LCD_ENTRYSHIFTDECREMENT 0x00
-#define LCD_CLEARDISPLAY  0x01
-#define LCD_SETDDRAMADDR  0x80
 
 #define DEBUGMODE       1
 
 
 // Soccer Sensorboard Register Address
-#define  IR_RAW         0x10    // 2byte*12   (0x10 - 0x27)
-#define  IR_MAX         0x28
-#define  IR_MIN         0x29
-#define  IR_ANGLE       0x2a    // 2byte
+#define  IR_RAW         0x0    // 2byte*12   (0x10 - 0x27)
+#define  IR_MAX         0x11
+#define  IR_MIN         0x12
+#define  IR_ANGLE       0x13    // 2byte
 //  IR_LIMIT        0x2c
 #define  IR_COUNT       0x2d    // 2byte
 #define  IR_LEDEN       0x2f
@@ -93,7 +87,11 @@
 #define  GET_PITCH      0x58    // 2byte
 #define  MAG_CENT       0x5a    // xxyyzz
 
-
+#define TFT_CS  0 // TFT LCD的CS PIN腳
+#define TFT_DC   53 // TFT DC(A0、RS) 
+#define TFT_RST  50 // TFT Reset
+#define TFT_SCL  52 // TFT Reset
+#define TFT_SDA  51 // TFT Resets
 // const uint8_t
 //   STATERESET   = 0,
 //   STATESET     = 1;
@@ -104,11 +102,59 @@
 
 // 1. userdefinebutton set of movement
 // 2. attributes
+typedef enum{
+          // RGB
+  OFF,    // 000
+  BLUE,   // 001
+  GREEN,  // 010
+  CYAN,   // 011
+  RED,    // 100
+  PURPLE, // 101
+  YELLOW, // 110
+  WHITE   // 111
+}obBrdLEDCL;
+typedef enum{
+  CL1,
+  CL2,
+  CL3,
+  CL4,
+  CL5,
+  CL6,
+  CL7,
+  CL8
+}CL_SENSOR;
+typedef enum{
+  U1,
+  U2,
+  U3,
+  U4
+}ULTR_SENSOR;
 
+typedef enum{
+  S1_P = 10,
+  S2_P,
+  S3_P,
+  S4_P,
+}S_PIN;
 
-class PeanutKingSoccerV3 {
+typedef enum{
+  D6_P = 56,
+  D5_P,
+  D4_P,
+  D3_P,
+  D2_P,
+  D1_P,
+}D_PIN;
+
+typedef enum{
+  A4_P = 62,
+  A3_P,
+  A2_P,
+  A1_P,
+}A_PIN;
+class PeanutKingSoccerV4 {
  public:
-  PeanutKingSoccerV3(void);
+  PeanutKingSoccerV4(void);
 
 /* =============================================================================
  *                              Functions
@@ -123,39 +169,36 @@ class PeanutKingSoccerV3 {
     buttTrigRead(uint8_t),
     whiteLineCheck(uint8_t);
   uint8_t 
-    floorColorReadRaw(uint8_t, uint8_t = black);
+    floorColorReadRaw(uint8_t, uint8_t = 0),    
+    compoundEyeMaxEye(void),
+    compoundMaxEyeVal(void),
+    compoundEyeVal(uint8_t n),
+    getColorSensor(uint8_t);
   uint16_t
     floorColorRead(uint8_t),
-    compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
     compassRead(void),
     whiteLineCal(uint8_t = 0, uint16_t = 200);
-
+  uint8_t* compoundEyeRead();
   void 
     compoundEyeCal(float* calData);
   uint16_t
-    ultrasonicRead3(void),
-    eyeReadShort(void),
     getRedColor(uint8_t i);
 
   void
-    actLED(bool),
-    lcdMenu(void),
+    setOnBrdLED(uint8_t color),
+    setOnBrdLED(uint8_t LED, uint8_t status),
     // bluetoothSend(char[]),
     // bluetoothReceive(void),
     bluetoothRemote(void),
     bluetoothAttributes(void);
   
   uint8_t colorReadAll(void);
-  IICIT::status_t LCDCallback(const IICIT::status_t status);
   IICIT::status_t rxCpltCallback(const IICIT::status_t status);
-
   void 
     init(uint8_t = 0),
     // autoScanning(void),
     enableScanning(bool, uint16_t, bool),
-
-    setLED(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w),
     dataFetch(void),
     I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length),
     I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length),
@@ -177,59 +220,35 @@ class PeanutKingSoccerV3 {
 
   /* Bottom Level Library */
   void
-    timerLoop(void),
-    motorEnable(void),
     motorDisable(void),
-    motorUpdate(void),
     buttons(void);
 
 
-
-  /* LCD Library */
-  void
-    printSpace(uint32_t, uint8_t digits = 3),
-    setScreen(uint8_t, uint8_t, char[] ),
-    setScreen(uint8_t, uint8_t, int16_t, uint8_t digits = 3),
-    lcdSetup(void),
-    lcdClear(void),
-    setCursor(uint8_t col, uint8_t row);
-  void
-    send(uint8_t value, uint8_t mode),
-    write4bits(uint8_t value),
-    expanderWrite(uint8_t _data);
-  size_t 
-    printNumber(unsigned long, uint8_t),
-    print(long, int = DEC),
-    print(const char *),
-    write(uint8_t);
 
   // Constant  ======================================================================
   const int8_t 
     PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
   const uint8_t
-    compass_address = 0x08,
-    LCD_Addr        = 0x20;
+  sensorBoardAddr = 0x13,
+  compass_address = 0x08;
   const uint8_t
     numLEDs     = 8;  // Number of RGB LEDs in strip
 
   // Pin Allocation ==================================================================
   const uint8_t
-    sensorBoardAddr,
-    topBoardAddr,
-    actledPin,
-    buttonPin[3],
-    inhPin[4],
+    buttonPin[4],
+    ledPin[3],
     in1Pin[4],
     in2Pin[4],
-    diagPin[4];
-    
-  const motor_t motor[4] = {
-    {&OCR3B, &PORTE, 5, 4},
-    {&OCR3A, &PORTH, 3, 7},
-    {&OCR4C, &PORTH, 6, 10},
-    {&OCR1A, &PORTB, 6, 13}
-  };
+    APin[4],
+    DPin[6],
+    pwmPin[4],
+    ULTPin_trig[4];
+  uint8_t  ULTPin_echo[4];
+  SlowSoftI2CMaster  swiic[8];
+  
+  PDQ_ST7735 tft;
 
     // in1Pin      in2  inh1
     // 2, OCR3B,    3   4
@@ -251,9 +270,9 @@ class PeanutKingSoccerV3 {
     txBuff[50];
   uint16_t
     compass,
-    eyeAngle,
-    eye[13];          // 12 ir reading
-  int16_t ultrasonic[4];    //4 ultrasonic reading
+    eyeAngle;
+    uint8_t eye[12];          // 12 ir reading
+  uint16_t ultrasonic[4];    //4 ultrasonic reading
   uint16_t whiteLineThreshold[4] = {30, 30, 30, 30};
 
   buttonStatus_t button[3] = {NONE};
@@ -275,7 +294,6 @@ class PeanutKingSoccerV3 {
     ledFlashEnabled   = false;
   uint16_t
     EYEBOUNDARY = 20,
-    LCD_backlightval,
     systemTime;      //a reference 100Hz clock, 0-100 every second
   uint32_t
     screenTicks = 0,
@@ -297,9 +315,18 @@ class PeanutKingSoccerV3 {
     btRotate = 0;
 
   IICIT::Handle compssHandle;
-  IICIT::Handle lcdScrHandle;
   IICIT::Handle senbrdHandle;
   IICIT::Handle topbrdHandle;
+  private:
+  void ULT_Echo_dect(uint8_t);
+  static void ULT_Echo_dect_0();
+  static void ULT_Echo_dect_1();
+  static void ULT_Echo_dect_2();
+  static void ULT_Echo_dect_3();
+  static void (*ULT_Echo_dect_ptr[4])();
+  uint32_t ULT_dt[4];
+  uint32_t ULT_get_interval[4];
+
 };
 
 #endif

@@ -188,7 +188,7 @@ uint8_t CLbit = 0;
  * 58.3us / cm
  * 932.9 cycle per it for 1 tick = 1 cm
  */
-ISR(TIMER2_COMPB_vect) {
+ISR(TIMER2_COMPA_vect) {
   pinRead = (*xsPin[XSi].port >> xsPin[XSi].bit) & 1;
   if ( pinRead != XS[XSi].pSt ) {
     XS[XSi].pSt = pinRead;
@@ -245,10 +245,6 @@ PeanutKingSoccerV2::PeanutKingSoccerV2(void) :
   ledPin  (33),
   actledPin(30),
   buttonPin{42, 47, 48},
-
-  // inhPin  { 4,  7, 10, 13},
-  // in1Pin  { 2,  5,  8, 11},
-  // in2Pin  { 3,  6,  9, 12},
 
   pwmPin   { 5,  4,  3,  2},
   //dirPin[4]   = {22, 23, 24, 25},  // v2.1
