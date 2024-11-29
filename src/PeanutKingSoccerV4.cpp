@@ -1,9 +1,9 @@
 /*
  * Copyright (c) 2024 PeanutKing Solution
  *
- * @file        PeanutKingSoccerV3.cpp
- * @summary     Soccer Robot V3 Library
- * @version     3.4.0
+ * @file        PeanutKingSoccerV4.cpp
+ * @summary     Soccer Robot V4 Library
+ * @version     4.0.0
  * @author      Jack Kwok
  * @date        2 January 2024
  * 
@@ -11,196 +11,203 @@
  *              3.1.0 - 26 Jul 2022
  */ 
 
-#include "PeanutKingSoccerV3.h"
-
-static PeanutKingSoccerV3* V3bot = NULL;
-
-PeanutKingSoccerV3::PeanutKingSoccerV3(void) :
-  actledPin(37),
-  topBoardAddr(10),
-  sensorBoardAddr(12),
-
-  buttonPin{36, 35, 34},        // mainboard V3.3-3.4
-  inhPin  { 4,  7, 10, 13},     // long high  timer 0 (controls pin 13, 4);
-  in1Pin  { 2,  5,  8, 11},     // timer 1 (controls pin 12, 11);
-  in2Pin  { 3,  6,  9, 12},     // timer 2 (controls pin 10, 9);
-  diagPin {50, 51, 53, 53} {    // timer 3 (controls pin 5, 3, 2);
-  if (V3bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
-    V3bot = this;
+#include "PeanutKingSoccerV4.h"
+static PeanutKingSoccerV4* V4bot = NULL;
+static void PeanutKingSoccerV4::ULT_Echo_dect_0(){
+  V4bot->ULT_Echo_dect(0);
+}
+static void PeanutKingSoccerV4::ULT_Echo_dect_1(){
+  
+  V4bot->ULT_Echo_dect(1);
+}
+static void PeanutKingSoccerV4::ULT_Echo_dect_2(){
+  
+  V4bot->ULT_Echo_dect(2);
+}
+static void PeanutKingSoccerV4::ULT_Echo_dect_3(){
+  
+  V4bot->ULT_Echo_dect(3);
+}
+void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
+    PeanutKingSoccerV4::ULT_Echo_dect_0,
+    PeanutKingSoccerV4::ULT_Echo_dect_1,
+    PeanutKingSoccerV4::ULT_Echo_dect_2,
+    PeanutKingSoccerV4::ULT_Echo_dect_3
+};
+PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
+  swiic{
+      SlowSoftI2CMaster (30, 29, 1),
+      SlowSoftI2CMaster (32, 31, 1),
+      SlowSoftI2CMaster (34, 33, 1),
+      SlowSoftI2CMaster (36, 35, 1),
+      SlowSoftI2CMaster (38, 37, 1),
+      SlowSoftI2CMaster (40, 39, 1),
+      SlowSoftI2CMaster (42, 41, 1),
+      SlowSoftI2CMaster (44, 43, 1)},
+  buttonPin{22, 23, 24, 25},        // mainboard V4
+  in1Pin{9,  7,  5, 3},     // timer 1 (controls pin 12, 11);
+  in2Pin{8,  6,  4, 2},     // timer 2 (controls pin 10, 9);
+  ledPin{26, 28, 27},
+  ULTPin_trig{47, 46, 49, 48}, //{49, 48, 47, 46}
+  ULTPin_echo{A12, A13, A14, A15}, //{A15, A14, A13, A12}
+  pwmPin{10, 11, 12, 13} {    // timer 3 (controls pin 5, 3, 2);
+  if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
+    V4bot = this;
   }
 }
 
-ISR(TIMER2_COMPA_vect) {
-  if (V3bot != NULL) {
-    V3bot->timerLoop();
+
+uint8_t PeanutKingSoccerV4::getColorSensor(uint8_t color_sensor_num){
+  uint8_t val = 0;
+  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
+    // Serial.println("I2C device busy");
+    return;
   }
-}
-
-/* 3921.16 Hz /2 */
-void PeanutKingSoccerV3::timerLoop(void) {
-  tim1Count++;
-
-  if (tim1Count%8 == 1) {
-    buttons();
-    if (button[0]==RELEASE || button[0]==RELEASE_S || button[0]==RELEASE_L) {
-      motorEnabled = !motorEnabled;
-      
-      if ( motorEnabled ) {
-        motorEnable();
-      }
-      else {
-        motorDisable();
-      }
-      // digitalWrite(actledPin, LOW);
-    }
-  }
-
-  if ( motorEnabled ) {
-    motorUpdate();
-  }
-
+  swiic[color_sensor_num].i2c_write(0x01); // send memory to device
+  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
+  val = swiic[color_sensor_num].i2c_read(true); // read one byte and send NAK afterwards
+  swiic[color_sensor_num].i2c_stop(); // stop communication
+  return val;
 }
 
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
-void PeanutKingSoccerV3::init(uint8_t mode) {
+void PeanutKingSoccerV4::init(uint8_t mode) {
   Serial.begin(115200);
   // Serial1.begin(115200);
   Serial1.begin(9600);
-
+  for (uint8_t i=0;i<8;i++){
+    swiic[i].i2c_init();
+  }
   for (uint8_t i=0; i<4; i++) {
-    pinMode(inhPin[i],  OUTPUT);
     pinMode(in1Pin[i],  OUTPUT);
     pinMode(in2Pin[i],  OUTPUT);
-    pinMode(diagPin[i], OUTPUT);
-    digitalWrite(inhPin[i], HIGH);
-    digitalWrite(diagPin[i], HIGH);
   }
+  for (uint8_t i=0; i<4; i++)
+    pinMode(buttonPin[i], INPUT_PULLUP);
   for (uint8_t i=0; i<3; i++)
-    pinMode(buttonPin[i], INPUT);
+    pinMode(ledPin[i], OUTPUT);
   
-  pinMode(actledPin, OUTPUT);
-  digitalWrite(actledPin, HIGH);
-  
+  for (uint8_t i = 0;i<4;i++){
+    pinMode(ULTPin_trig[i],OUTPUT);
+    pinMode(ULTPin_echo[i],INPUT);
+    PCattachInterrupt(ULTPin_echo[i],ULT_Echo_dect_ptr[i],CHANGE);
+  }
   delay(10);
 
   compssHandle = gIIC->RegisterDevice(compass_address, 1, IICIT::Speed::SLOW);
   senbrdHandle = gIIC->RegisterDevice(sensorBoardAddr, 1, IICIT::Speed::SLOW);
-  topbrdHandle = gIIC->RegisterDevice(topBoardAddr, 1, IICIT::Speed::SLOW);
-  lcdScrHandle = gIIC->RegisterDevice(LCD_Addr, 1, IICIT::Speed::SLOW);
-
-  // uint8_t msg[1] = {LCD_backlightval};// reset expander and turn backlight off (Bit 8 =1)
-  // uint8_t _status = gIIC->Write(lcdScrHandle, msg, 1);
-  // delay(10);
-  // if ( gIIC->getStatus() != 0 ) {
-  //   lcdScrHandle = gIIC->RegisterDevice(0x38, 1, IICIT::Speed::SLOW);
-  // }
-  delay(200);
-
-  lcdSetup();
-  delay(200);
-  cli();    //disable interrupts
+  #if defined(ST7735_RST_PIN)	// reset like Adafruit does
+    FastPin<ST7735_RST_PIN>::setOutput();
+    FastPin<ST7735_RST_PIN>::hi();
+    FastPin<ST7735_RST_PIN>::lo();
+    delay(1);
+    FastPin<ST7735_RST_PIN>::hi();
+  #endif
+  tft.start_TFT();
+  tft.fillScreen(ST7735_BLACK);
 
 
-//---------------------------------------------- Set PWM frequency for D4 & D27 ------------------------------
-//TCCR0B = TCCR0B & B11111000 | B00000001;    // set timer 0 divisor to     1 for PWM frequency of 62500.00 Hz
-//TCCR0B = TCCR0B & B11111000 | B00000010;    // set timer 0 divisor to     8 for PWM frequency of  7812.50 Hz
-  // TCCR0B = TCCR0B & B11111000 | B00000011;    // set timer 0 divisor to    64 for PWM frequency of   976.56 Hz (Default)
-//TCCR0B = TCCR0B & B11111000 | B00000100;    // set timer 0 divisor to   256 for PWM frequency of   244.14 Hz
-//TCCR0B = TCCR0B & B11111000 | B00000101;    // set timer 0 divisor to  1024 for PWM frequency of    61.04 Hz
+// //---------------------------------------------- Set PWM frequency for D4 & D27 ------------------------------
+// //TCCR0B = TCCR0B & B11111000 | B00000001;    // set timer 0 divisor to     1 for PWM frequency of 62500.00 Hz
+// //TCCR0B = TCCR0B & B11111000 | B00000010;    // set timer 0 divisor to     8 for PWM frequency of  7812.50 Hz
+//   // TCCR0B = TCCR0B & B11111000 | B00000011;    // set timer 0 divisor to    64 for PWM frequency of   976.56 Hz (Default)
+// //TCCR0B = TCCR0B & B11111000 | B00000100;    // set timer 0 divisor to   256 for PWM frequency of   244.14 Hz
+// //TCCR0B = TCCR0B & B11111000 | B00000101;    // set timer 0 divisor to  1024 for PWM frequency of    61.04 Hz
 
 
-//---------------------------------------------- Set PWM frequency for D11 & D12 -----------------------------
+// //---------------------------------------------- Set PWM frequency for D11 & D12 -----------------------------
 
-//TCCR1B = TCCR1B & B11111000 | B00000001;    // set timer 1 divisor to     1 for PWM frequency of 32772.55 Hz
-TCCR1B = TCCR1B & B11111000 | B00000010;    // set timer 1 divisor to     8 for PWM frequency of  3921.16 Hz
-  // TCCR1B = TCCR1B & B11111000 | B00000011;    // set timer 1 divisor to    64 for PWM frequency of   490.20 Hz
-// TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
-//TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
+// //TCCR1B = TCCR1B & B11111000 | B00000001;    // set timer 1 divisor to     1 for PWM frequency of 32772.55 Hz
+// TCCR1B = TCCR1B & B11111000 | B00000010;    // set timer 1 divisor to     8 for PWM frequency of  3921.16 Hz
+//   // TCCR1B = TCCR1B & B11111000 | B00000011;    // set timer 1 divisor to    64 for PWM frequency of   490.20 Hz
+// // TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
+// //TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
 
-//---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
+// //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
 
-//TCCR2B = TCCR2B & B11111000 | B00000001;    // set timer 2 divisor to     1 for PWM frequency of 32772.55 Hz
-// TCCR2B = TCCR2B & B11111000 | B00000010;    // set timer 2 divisor to     8 for PWM frequency of  3921.16 Hz
-TCCR2B = TCCR2B & B11111000 | B00000011;    // set timer 2 divisor to    32 for PWM frequency of   980.39 Hz
-  // TCCR2B = TCCR2B & B11111000 | B00000100;    // set timer 2 divisor to    64 for PWM frequency of   490.20 Hz
-//TCCR2B = TCCR2B & B11111000 | B00000101;    // set timer 2 divisor to   128 for PWM frequency of   245.10 Hz
-// TCCR2B = TCCR2B & B11111000 | B00000110;    // set timer 2 divisor to   256 for PWM frequency of   122.55 Hz
-//TCCR2B = TCCR2B & B11111000 | B00000111;    // set timer 2 divisor to  1024 for PWM frequency of    30.64 Hz
-
-
-//---------------------------------------------- Set PWM frequency for D2, D3 & D5 ---------------------------
-
-//TCCR3B = TCCR3B & B11111000 | B00000001;    // set timer 3 divisor to     1 for PWM frequency of 32772.55 Hz
-TCCR3B = TCCR3B & B11111000 | B00000010;    // set timer 3 divisor to     8 for PWM frequency of  3921.16 Hz
-  // TCCR3B = TCCR3B & B11111000 | B00000011;    // set timer 3 divisor to    64 for PWM frequency of   490.20 Hz
-// TCCR3B = TCCR3B & B11111000 | B00000100;    // set timer 3 divisor to   256 for PWM frequency of   122.55 Hz
-//TCCR3B = TCCR3B & B11111000 | B00000101;    // set timer 3 divisor to  1024 for PWM frequency of    30.64 Hz
+// //TCCR2B = TCCR2B & B11111000 | B00000001;    // set timer 2 divisor to     1 for PWM frequency of 32772.55 Hz
+// // TCCR2B = TCCR2B & B11111000 | B00000010;    // set timer 2 divisor to     8 for PWM frequency of  3921.16 Hz
+// TCCR2B = TCCR2B & B11111000 | B00000011;    // set timer 2 divisor to    32 for PWM frequency of   980.39 Hz
+//   // TCCR2B = TCCR2B & B11111000 | B00000100;    // set timer 2 divisor to    64 for PWM frequency of   490.20 Hz
+// //TCCR2B = TCCR2B & B11111000 | B00000101;    // set timer 2 divisor to   128 for PWM frequency of   245.10 Hz
+// // TCCR2B = TCCR2B & B11111000 | B00000110;    // set timer 2 divisor to   256 for PWM frequency of   122.55 Hz
+// //TCCR2B = TCCR2B & B11111000 | B00000111;    // set timer 2 divisor to  1024 for PWM frequency of    30.64 Hz
 
 
-//---------------------------------------------- Set PWM frequency for D6, D7 & D8 ---------------------------
+// //---------------------------------------------- Set PWM frequency for D2, D3 & D5 ---------------------------
 
-//TCCR4B = TCCR4B & B11111000 | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 32772.55 Hz
-TCCR4B = TCCR4B & B11111000 | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
-  // TCCR4B = TCCR4B & B11111000 | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
-// TCCR4B = TCCR4B & B11111000 | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
-//TCCR4B = TCCR4B & B11111000 | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
+// //TCCR3B = TCCR3B & B11111000 | B00000001;    // set timer 3 divisor to     1 for PWM frequency of 32772.55 Hz
+// TCCR3B = TCCR3B & B11111000 | B00000010;    // set timer 3 divisor to     8 for PWM frequency of  3921.16 Hz
+//   // TCCR3B = TCCR3B & B11111000 | B00000011;    // set timer 3 divisor to    64 for PWM frequency of   490.20 Hz
+// // TCCR3B = TCCR3B & B11111000 | B00000100;    // set timer 3 divisor to   256 for PWM frequency of   122.55 Hz
+// //TCCR3B = TCCR3B & B11111000 | B00000101;    // set timer 3 divisor to  1024 for PWM frequency of    30.64 Hz
 
 
-//---------------------------------------------- Set PWM frequency for D44, D45 & D46 ------------------------
+// //---------------------------------------------- Set PWM frequency for D6, D7 & D8 ---------------------------
 
-//TCCR5B = TCCR5B & B11111000 | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 32772.55 Hz
-//TCCR5B = TCCR5B & B11111000 | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
-  // TCCR5B = TCCR5B & B11111000 | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
-//TCCR5B = TCCR5B & B11111000 | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
-//TCCR5B = TCCR5B & B11111000 | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
+// //TCCR4B = TCCR4B & B11111000 | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 32772.55 Hz
+// TCCR4B = TCCR4B & B11111000 | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
+//   // TCCR4B = TCCR4B & B11111000 | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
+// // TCCR4B = TCCR4B & B11111000 | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
+// //TCCR4B = TCCR4B & B11111000 | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
+
+
+// //---------------------------------------------- Set PWM frequency for D44, D45 & D46 ------------------------
+
+// //TCCR5B = TCCR5B & B11111000 | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 32772.55 Hz
+// //TCCR5B = TCCR5B & B11111000 | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
+//   // TCCR5B = TCCR5B & B11111000 | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
+// //TCCR5B = TCCR5B & B11111000 | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
+// //TCCR5B = TCCR5B & B11111000 | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
   
 
-  /*
-  //   Timer 1
-  TCCR1A  = 0x00;           // Normal mode, just as a Timer
-  TCNT1   = 0;
-  OCR1A   = 624;             // 8 * 4 / 16 = 2us
-  // OCR1A = 1250;       // =(16*10^6) / (125*256) -1 (must be <65536)
-  OCR1A   = 100;            // Hz = ?
+//   /*
+//   //   Timer 1
+//   TCCR1A  = 0x00;           // Normal mode, just as a Timer
+//   TCNT1   = 0;
+//   OCR1A   = 624;             // 8 * 4 / 16 = 2us
+//   // OCR1A = 1250;       // =(16*10^6) / (125*256) -1 (must be <65536)
+//   OCR1A   = 100;            // Hz = ?
 
-  // TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
+//   // TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
   
-  */
-  // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
-  // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
-  // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
-  // TCCR4C = _BV(COM4A1) | _BV(COM4B1) | _BV(WGM41) | _BV(WGM40);
+//   */
+//   // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
+//   // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
+//   // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
+//   // TCCR4C = _BV(COM4A1) | _BV(COM4B1) | _BV(WGM41) | _BV(WGM40);
 
-  TCNT2   = 0;
-  TCCR2B |= (1 << WGM22);    // CTC mode; Clear Timer on Compare (OCR2A)
-  // TCCR2A |= (1 << WGM21);    // CTC mode; Clear Timer on Compare (OCR2A)
-  TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt
-  OCR2A = 63;
-  // OCR2B = 63;
-  sei();    //allow interrupts
+//   TCNT2   = 0;
+//   TCCR2B |= (1 << WGM22);    // CTC mode; Clear Timer on Compare (OCR2A)
+//   // TCCR2A |= (1 << WGM21);    // CTC mode; Clear Timer on Compare (OCR2A)
+//   TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt
+//   OCR2A = 63;
+//   // OCR2B = 63;
+//   sei();    //allow interrupts
 
-  //while ( compassRead() == 400 );
+//   //while ( compassRead() == 400 );
 
-  // uint8_t l[12];
-  // for (uint8_t i=0; i<4; i++) {
-  //   if ( n & (1<<i) ) {
-  //     uint8_t *p = &l[i * 3];  // 4 bytes per pixel
-  //     p[0] = 200;                   // R
-  //     p[1] = 200;                   // G
-  //     p[2] = 200;                   // B
-  //   }
-  // }
-  // I2CSensorSend(senbrdHandle,LED_RGB,l,12);
+//   // uint8_t l[12];
+//   // for (uint8_t i=0; i<4; i++) {
+//   //   if ( n & (1<<i) ) {
+//   //     uint8_t *p = &l[i * 3];  // 4 bytes per pixel
+//   //     p[0] = 200;                   // R
+//   //     p[1] = 200;                   // G
+//   //     p[2] = 200;                   // B
+//   //   }
+//   // }
+//   // I2CSensorSend(senbrdHandle,LED_RGB,l,12);
 
-  delay(1500);
+//   delay(1500);
+
 }
 
 
 /* =============================================================================
  *                                  Data fetch
  * ============================================================================= */
-void PeanutKingSoccerV3::dataFetch(void) {
+void PeanutKingSoccerV4::dataFetch(void) {
   // int16_t temp;
   // for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
   // I2CSensorRead(8, ACC_RAW, 6);
@@ -233,23 +240,8 @@ void PeanutKingSoccerV3::dataFetch(void) {
   compass |= rxBuff[1] << 8;
   compass = compass/100;
 
-  for (uint8_t i=0; i<8; i++)     rxBuff[i] = 0;
-  I2CSensorRead(topbrdHandle, ULT_DATA, 8);
-  for (uint8_t i=0; i<4; i++) {
-    ultrasonic[i]  = rxBuff[2*i] & 0xff;
-    ultrasonic[i] |= rxBuff[2*i+1] << 8;
-  }
+  
 
-/*
-  //sensorBoardAddr
-  for (uint8_t i=0; i<27; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, IR_RAW, 27);
-  for (uint8_t i=0; i<12; i++) {
-    eye[i]  = rxBuff[2*i] & 0xff;
-    eye[i] |= rxBuff[2*i+1] << 8;
-  }
-  maxEye = rxBuff[24];
-*/
   compoundEyeRead();
 
   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
@@ -269,7 +261,7 @@ void PeanutKingSoccerV3::dataFetch(void) {
     colorHSL[i].l  = rxBuff[4*i+3];
   }
 
-  for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
+  for (uint8_t i=0; i<16; i++)      rxBuff[i] = 0;
   I2CSensorRead(senbrdHandle, COLOR_HSV, 16);
   for (uint8_t i=0; i<4; i++) {
     colorHSV[i].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
@@ -278,7 +270,7 @@ void PeanutKingSoccerV3::dataFetch(void) {
   }
 }
 
-void PeanutKingSoccerV3::I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length) {
+void PeanutKingSoccerV4::I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length) {
   uint8_t _status;
   txBuff[0] = sensor;
   _status = gIIC->Write(handle, txBuff, 1);
@@ -287,7 +279,7 @@ void PeanutKingSoccerV3::I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uin
   // I2CRead(addr, rxBuff, length);
 }
 
-void PeanutKingSoccerV3::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length) {
+void PeanutKingSoccerV4::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length) {
   uint8_t _status;
   txBuff[0] = sensor;
   // if (rxBuff[0]!=2) return;
@@ -299,21 +291,18 @@ void PeanutKingSoccerV3::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uin
   // I2CSend(addr, txBuff, length+1);
 }
 
-IICIT::status_t PeanutKingSoccerV3::LCDCallback(const IICIT::status_t status) {
+
+IICIT::status_t PeanutKingSoccerV4::rxCpltCallback(const IICIT::status_t status) {
   return status;
 }
 
-IICIT::status_t PeanutKingSoccerV3::rxCpltCallback(const IICIT::status_t status) {
-  return status;
-}
-
-// void PeanutKingSoccerV3::I2CSend(int8_t addr, uint8_t *data, uint8_t length) {
+// void PeanutKingSoccerV4::I2CSend(int8_t addr, uint8_t *data, uint8_t length) {
 //   Wire.beginTransmission(addr);
 //   Wire.write(data, length);
 //   Wire.endTransmission();
 // }
 
-// void PeanutKingSoccerV3::I2CRead(int8_t addr, uint8_t *data, uint8_t length) {
+// void PeanutKingSoccerV4::I2CRead(int8_t addr, uint8_t *data, uint8_t length) {
 //   uint8_t i=0;
 //   Wire.requestFrom((int)addr, (int)length);
 //   while (Wire.available()) {
@@ -325,14 +314,14 @@ IICIT::status_t PeanutKingSoccerV3::rxCpltCallback(const IICIT::status_t status)
 /* =============================================================================
  *                                  Sensor Read
  * ============================================================================= */
-bool PeanutKingSoccerV3::buttonRead(uint8_t button_no) {
-  if ( button_no == 1 || button_no == 2 ) 
-    return !digitalRead(buttonPin[button_no]);
+bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
+  if ( button_no == 1 || button_no == 2 || button_no == 3 || button_no == 4 ) 
+    return !digitalRead(buttonPin[button_no-1]);
   else
     return 0;
 }
 
-uint16_t PeanutKingSoccerV3::compassRead(void) {
+uint16_t PeanutKingSoccerV4::compassRead(void) {
   for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
   I2CSensorRead(compssHandle, GET_YAW, 2);
   compass  = rxBuff[0] & 0xff;
@@ -340,49 +329,31 @@ uint16_t PeanutKingSoccerV3::compassRead(void) {
   compass = compass/100;
   return compass;
 }
-
-uint16_t PeanutKingSoccerV3::compoundEyeRead(uint8_t eye_no) {
-  for (uint8_t i=0; i<27; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, IR_RAW, 28);
+uint8_t PeanutKingSoccerV4::compoundEyeMaxEye(){
+  rxBuff[0] = 0;
+  I2CSensorRead(senbrdHandle, 13, 1);
+  return rxBuff[0];
+}
+uint8_t PeanutKingSoccerV4::compoundMaxEyeVal(){
+  rxBuff[0] = 0;
+  I2CSensorRead(senbrdHandle, 12, 1);
+  return rxBuff[0];
+}
+uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n){
+  rxBuff[0] = 0;
+  I2CSensorRead(senbrdHandle, n, 1);
+  return rxBuff[0];
+}
+uint8_t* PeanutKingSoccerV4::compoundEyeRead() {
+  for (uint8_t i=0; i<12; i++)    rxBuff[i] = 0;
+  I2CSensorRead(senbrdHandle, IR_RAW, 12);
   for (uint8_t i=0; i<12; i++) {
-    eye[i+1]  = rxBuff[2*i] & 0xff;
-    eye[i+1] |= rxBuff[2*i+1] << 8;
+    eye[i]  = rxBuff[i];
   }
-  maxEye = rxBuff[24]+1;
-  eyeAngle  = rxBuff[26] & 0xff;
-  eyeAngle |= rxBuff[27] << 8;
-  eyeAngle += 30;
-  if (eyeAngle>=360) eyeAngle -= 360;
-  
-  if ( eye_no >0 && eye_no <= 12 )
-    return eye[eye_no];
-  else if ( eye_no == 13 ) 
-    return maxEye;
-  else if ( eye_no == 14 ) 
-    return eye[maxEye];
-  else 
-    return 0;
+ return eye;
 }
 
-uint16_t PeanutKingSoccerV3::eyeReadShort(void) {
-  for (uint8_t i=0; i<4; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, IR_MAX, 4);
-
-  maxEye = rxBuff[0];
-  eyeAngle  = rxBuff[2] & 0xff;
-  eyeAngle |= rxBuff[3] << 8;
-  eyeAngle += 30;
-  if (eyeAngle>=360) eyeAngle -= 360;
-  
-  I2CSensorRead(senbrdHandle, IR_RAW+2*maxEye, 2);
-  maxEye += 1;  // change from start=0 to start=1;
-  eye[maxEye]  = rxBuff[0] & 0xff;
-  eye[maxEye] |= rxBuff[1] << 8;
-
-  return eye[maxEye];
-}
-
-void PeanutKingSoccerV3::compoundEyeCal(float* calData) {
+void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
   uint8_t _status;
   uint8_t msg[25] = {0};
   uint16_t eyeCal[12] = {0};
@@ -397,49 +368,32 @@ void PeanutKingSoccerV3::compoundEyeCal(float* calData) {
   _status = gIIC->Write(senbrdHandle, msg, 25);
 }
 
-uint16_t PeanutKingSoccerV3::ultrasonicRead(uint8_t i) {
-  const uint8_t ui[4] = {0, 3, 1, 2};
-  //    0     3     1     2
-  //  front left  right back
-  if ( ui[i]<0 || ui[i]>=4 ) return 999;
-  for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
-  I2CSensorRead(topbrdHandle, ULT_DATA+ui[i]*2, 2);
-  ultrasonic[i]  = rxBuff[0] & 0xff;
-  ultrasonic[i] |= rxBuff[1] << 8;
-  return ultrasonic[i];
+
+uint16_t PeanutKingSoccerV4::ultrasonicRead(uint8_t n){
+  if(millis()-ULT_get_interval[n]<30) return ultrasonic[n];
+  digitalWrite(ULTPin_trig[n], LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTPin_trig[n], HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTPin_trig[n], LOW);
+  ULT_get_interval[n] = millis();
+  return ultrasonic[n];
 }
 
-uint16_t PeanutKingSoccerV3::ultrasonicRead3(void) {
-  const uint8_t ui[4] = {0, 3, 1, 2};
-  //    0     3     1     2
-  //  front left  right back
-  for (uint8_t i=0; i<8; i++)     rxBuff[i] = 0;
-  I2CSensorRead(topbrdHandle, ULT_DATA, 8);
+void PeanutKingSoccerV4::ULT_Echo_dect(uint8_t n){
+  static uint32_t delaystart = 0;
+  delaystart = micros();
+  if (digitalRead(ULTPin_echo[n])){
+    ULT_dt[n] = micros();
+  }else{
+    ULT_dt[n] = micros()-ULT_dt[n];
+  }
+  float dist = (float)ULT_dt[n]* 0.017f;
+  if(dist<450) ultrasonic[n] = (uint16_t)round(dist); 
   
-  for (uint8_t i=0; i<4; i++) { 
-    ultrasonic[i]  = rxBuff[ui[i]*2] & 0xff;
-    ultrasonic[i] |= rxBuff[ui[i]*2+1] << 8;
-  }
-  return 1;
 }
 
-void PeanutKingSoccerV3::setLED(uint8_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  uint8_t _status;
-  led[0] = LED_RGB;
-  for (uint8_t i=0; i<8; i++) {
-    if ( ((n>>i) & 0x01) == 1 ) {
-      Serial.println(i);
-      uint8_t *p = &led[1 + i*4];  // 4 bytes per pixel
-      p[0] = r;                   // R
-      p[1] = g;                   // G
-      p[2] = b;                   // B
-      p[3] = w;                   // W
-    }
-  }
-  _status = gIIC->Write(topbrdHandle, led, 33);
-}
-
-void PeanutKingSoccerV3::setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+void PeanutKingSoccerV4::setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   uint8_t _status;
   txBuff[0] = COLOR_BL;
   for (uint8_t i=0; i<4; i++) {
@@ -453,13 +407,13 @@ void PeanutKingSoccerV3::setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w) 
 }
 
 
-// void PeanutKingSoccerV3::sendLED(void) {
+// void PeanutKingSoccerV4::sendLED(void) {
 // }
 // f l r b
 // f b l r{
 
 
-uint16_t PeanutKingSoccerV3::getRedColor(uint8_t i) {
+uint16_t PeanutKingSoccerV4::getRedColor(uint8_t i) {
   const uint8_t ci[4] = {0, 3, 1, 2};
   for (uint8_t i=0; i<2; i++)    rxBuff[i] = 0;
   I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 2);
@@ -467,7 +421,7 @@ uint16_t PeanutKingSoccerV3::getRedColor(uint8_t i) {
   return colorRGB[i].r;
 }
 
-uint16_t PeanutKingSoccerV3::floorColorRead(uint8_t i) {
+uint16_t PeanutKingSoccerV4::floorColorRead(uint8_t i) {
   const uint8_t ci[4] = {0, 3, 1, 2};
   for (uint8_t i=0; i<6; i++)    rxBuff[i] = 0;
   I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 6);
@@ -477,7 +431,7 @@ uint16_t PeanutKingSoccerV3::floorColorRead(uint8_t i) {
   return colorRGB[i].r + colorRGB[i].g + colorRGB[i].b;
 }
 
-uint8_t PeanutKingSoccerV3::colorReadAll(void) {
+uint8_t PeanutKingSoccerV4::colorReadAll(void) {
   const uint8_t ci[4] = {0, 3, 1, 2};
   
   for (uint8_t i=0; i<32; i++)    rxBuff[i] = 0;
@@ -514,134 +468,65 @@ uint8_t PeanutKingSoccerV3::colorReadAll(void) {
   // }
 }
 
-uint16_t PeanutKingSoccerV3::whiteLineCal(uint8_t pin_no, uint16_t calVal) {
+uint16_t PeanutKingSoccerV4::whiteLineCal(uint8_t pin_no, uint16_t calVal) {
   whiteLineThreshold[pin_no] = calVal;
   floorColorRead(pin_no);
   return (colorRGB[pin_no].r + colorRGB[pin_no].g + colorRGB[pin_no].b);
 }
 
-bool PeanutKingSoccerV3::whiteLineCheck(uint8_t i) {
+bool PeanutKingSoccerV4::whiteLineCheck(uint8_t i) {
   floorColorRead(i);
   isWhite[i] = ((colorRGB[i].r + colorRGB[i].g + colorRGB[i].b) > whiteLineThreshold[i]);
   return isWhite[i];
 }
 
-void PeanutKingSoccerV3::actLED(bool state) {
-  digitalWrite(actledPin, state);
+void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
+  digitalWrite(ledPin[0], color&1);
+  digitalWrite(ledPin[1], color&2);
+  digitalWrite(ledPin[2], color&4);
 }
-
+void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
+  digitalWrite(ledPin[LED], status);
+}
 /* =============================================================================
  *                                  Motors
  * ============================================================================= */
 // simple motor turn, [mi] cannot add, one by one 
-void PeanutKingSoccerV3::motorSet(uint8_t mi, int16_t speed) {
-  targetSpeed[mi] = speed;
+void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
 
-  if ( targetSpeed[mi]>0 ) {
-    if      ( targetSpeed[mi]< 10 ) targetSpeed[mi] = 0;
-    else if ( targetSpeed[mi]< 25 ) targetSpeed[mi] = 25;
-    else if ( targetSpeed[mi]>255 ) targetSpeed[mi] = 255;
+  if ( speed == 0) {
+    digitalWrite(in1Pin[mi], HIGH);
+    digitalWrite(in2Pin[mi], HIGH);
   }
-  else if ( targetSpeed[mi]<0 ) {
-    if      ( targetSpeed[mi]>-10 ) targetSpeed[mi] = 0;
-    else if ( targetSpeed[mi]>-25 ) targetSpeed[mi] = -25;
-    else if ( targetSpeed[mi]<-256) targetSpeed[mi] = -256;
+  else if (speed > 0) {
+    analogWrite(in1Pin[mi], speed );
+    digitalWrite(in2Pin[mi], LOW);
+  }
+  else {
+    digitalWrite(in1Pin[mi], LOW );
+    analogWrite(in2Pin[mi], - speed);
   }
 }
 
-void PeanutKingSoccerV3::motorStop(void) {
+void PeanutKingSoccerV4::motorStop(void) {
   for(uint8_t i=0; i<4; i++) {
-    targetSpeed[i] = 0;
+    digitalWrite(in1Pin[i], HIGH);
+    digitalWrite(in2Pin[i], HIGH);
   }
 }
 
-void PeanutKingSoccerV3::motorUpdate(void) {
-  for (uint8_t mi=0; mi<4; mi++) {
-    if      (targetSpeed[mi] > currentSpeed[mi]) currentSpeed[mi] ++;
-    else if (targetSpeed[mi] < currentSpeed[mi]) currentSpeed[mi] --;
-    else continue;
 
-    if ( targetSpeed[mi] == 0) {
-      digitalWrite(in1Pin[mi], HIGH);
-      digitalWrite(in2Pin[mi], HIGH);
-      currentSpeed[mi] = 0;
-    }
-    else if (currentSpeed[mi] > 0) {
-      analogWrite(in1Pin[mi], 255 - currentSpeed[mi] );
-      digitalWrite(in2Pin[mi], HIGH);
-    }
-    else {
-      analogWrite(in1Pin[mi], -currentSpeed[mi] );
-      digitalWrite(in2Pin[mi], LOW);
-    }
-  }
-
-  /*
-  // OCR3B = (currentSpeed[0] < 0) ? (-currentSpeed[0]) : (255 -currentSpeed[0]);
-  // OCR3A = (currentSpeed[1] < 0) ? (-currentSpeed[1]) : (255 -currentSpeed[1]);
-  // OCR4C = (currentSpeed[2] < 0) ? (-currentSpeed[2]) : (255 -currentSpeed[2]);
-  // OCR1A = (currentSpeed[3] < 0) ? (-currentSpeed[3]) : (255 -currentSpeed[3]);
-
-  if (currentSpeed[0] < 0) {
-    PORTE &= ~(1 << 5);      // Low
-    OCR3B = (-currentSpeed[0]);
-  }
-  else {
-    PORTE |=   1 << 5;      // HIGH
-    OCR3B = (255 -currentSpeed[0]);
-  }
-  if (currentSpeed[1] < 0) {
-    PORTH &= ~(1 << 3);      // Low
-    OCR3A = (-currentSpeed[1]);
-  }
-  else {
-    PORTH |=   1 << 3;      // HIGH
-    OCR3A = (255 -currentSpeed[1]);
-  }
-  if (currentSpeed[2] < 0) {
-    PORTH &= ~(1 << 6);      // Low
-    OCR4C = (-currentSpeed[2]);
-  }
-  else {
-    PORTH |=   1 << 6;      // HIGH
-    OCR4C = (255 -currentSpeed[2]);
-  }
-  if (currentSpeed[3] < 0) {
-    PORTB &= ~(1 << 6);      // Low
-    OCR1A = (-currentSpeed[3]);
-  }
-  else {
-    PORTB |=   1 << 6;      // HIGH
-    OCR1A = (255 -currentSpeed[3]);
-  }
-  */
-/*
-  const motor_t motor[4] = {
-    {&OCR3B, &PORTE, 5, 4},
-    {&OCR3A, &PORTH, 3, 7},
-    {&OCR4C, &PORTH, 6, 10},
-    {&OCR1A, &PORTB, 6, 13}
-  };
-*/
-
-}
-
-void PeanutKingSoccerV3::motorDisable(void) {
+void PeanutKingSoccerV4::motorDisable(void) {
   for(uint8_t i=0; i<4; i++) {
-    digitalWrite(inhPin[i], LOW);
     digitalWrite(in1Pin[i], HIGH);
     digitalWrite(in2Pin[i], HIGH);
     currentSpeed[i] = 0;
   }
 }
 
-void PeanutKingSoccerV3::motorEnable(void) {
-  for(uint8_t i=0; i<4; i++) {
-    digitalWrite(inhPin[i], HIGH);
-  }
-}
 
-void PeanutKingSoccerV3::motorControl(float mAngle, float mSpeed, float rotate) {
+
+void PeanutKingSoccerV4::motorControl(float mAngle, float mSpeed, float rotate) {
   int16_t mc[4];
 
   mc[0] = -mSpeed*sin( (mAngle+45.0)*pi/180.0 );
@@ -654,7 +539,7 @@ void PeanutKingSoccerV3::motorControl(float mAngle, float mSpeed, float rotate) 
   }
 }
 
-void PeanutKingSoccerV3::move(int16_t speed_X, int16_t speed_Y) {
+void PeanutKingSoccerV4::move(int16_t speed_X, int16_t speed_Y) {
   double mAngle = atan((double)speed_Y/(double)speed_X) * pi;
   if ( speed_X<0 ) mAngle += 180;
   if ( mAngle<0 )  mAngle += 360;
@@ -665,7 +550,7 @@ void PeanutKingSoccerV3::move(int16_t speed_X, int16_t speed_Y) {
 }
 
 // motor move + compass as reference
-void PeanutKingSoccerV3::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
+void PeanutKingSoccerV4::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
   int16_t c = compassRead() - angle;
   int16_t rotation = c < 180 ? -c : 360 - c;
   
@@ -684,7 +569,7 @@ void PeanutKingSoccerV3::moveSmart(uint16_t angular_direction, int16_t speed, in
  * ============================================================================= */
 
 // motor test ------------------------------------------------------
-uint8_t PeanutKingSoccerV3::motorTest (void) {
+uint8_t PeanutKingSoccerV4::motorTest (void) {
   static uint32_t motorTimer = 0;
   static uint8_t i = 0;
   uint32_t timeNow = millis();
@@ -706,7 +591,7 @@ uint8_t PeanutKingSoccerV3::motorTest (void) {
 
 //                                  strategy
 // =================================================================================
-void PeanutKingSoccerV3::Chase(int& direct, int& speed, int& rotation) {
+void PeanutKingSoccerV4::Chase(int& direct, int& speed, int& rotation) {
   static bool outside[4];
   //  attack
   //  Defend
@@ -788,7 +673,7 @@ void PeanutKingSoccerV3::Chase(int& direct, int& speed, int& rotation) {
     */
 }
 
-void PeanutKingSoccerV3::Back(int& direct, int& speed, int& rotation) {
+void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
   int16_t 
     defendSpeed = 50 + btAttributes[2]*12,          // 80
     y = ultrasonic[back] - (11 - btAttributes[2]) * 8,
@@ -815,7 +700,7 @@ void PeanutKingSoccerV3::Back(int& direct, int& speed, int& rotation) {
 
 
 
-// uint16_t PeanutKingSoccerV3::sort(uint16_t a[], uint8_t size) {
+// uint16_t PeanutKingSoccerV4::sort(uint16_t a[], uint8_t size) {
 //   for(uint8_t i=0; i<(size-1); i++) {
 //     for(uint8_t o=0; o<(size-(i+1)); o++) {
 //       if(a[o] > a[o+1]) {
@@ -828,7 +713,7 @@ void PeanutKingSoccerV3::Back(int& direct, int& speed, int& rotation) {
 //   return a[(size-1)/2];
 // }
 
-// hsv_t PeanutKingSoccerV3::rgb2hsv(rgb_t in) {
+// hsv_t PeanutKingSoccerV4::rgb2hsv(rgb_t in) {
 //   hsv_t      out;
 //   int16_t  min, max, delta;
 
@@ -868,35 +753,34 @@ void PeanutKingSoccerV3::Back(int& direct, int& speed, int& rotation) {
 
 
 // // Bluetooth ------------------------------------------------------
-// void PeanutKingSoccerV3::bluetoothSend(char string[]) {
+// void PeanutKingSoccerV4::bluetoothSend(char string[]) {
 // // send char
 //   Serial1.write(string, sizeof(string));
 // }
 
-// void PeanutKingSoccerV3::bluetoothReceive(void) {
+// void PeanutKingSoccerV4::bluetoothReceive(void) {
 // // send char
 //   btRxBuffer[0] = Serial1.read();
 // }
 
 
 // old function
-void PeanutKingSoccerV3::enableScanning(bool enable, uint16_t sensorType, bool enableLED) {
+void PeanutKingSoccerV4::enableScanning(bool enable, uint16_t sensorType, bool enableLED) {
   // autoScanEnabled = enable;
   // autoScanSensors = sensorType;
   // ledEnabled = enableLED;
 }
 
-bool PeanutKingSoccerV3::buttTrigRead(uint8_t pin) {
-  bool b = !digitalRead(buttonPin[pin]);
+bool PeanutKingSoccerV4::buttTrigRead(uint8_t pin) {
   // button
-  return b;
+  return digitalRead(buttonPin[pin]);
 }
 
-void PeanutKingSoccerV3::buttons(void) {
-  static uint32_t holdTimer[3] = {0};
+void PeanutKingSoccerV4::buttons(void) {
+  static uint32_t holdTimer[4] = {0};
   uint32_t currentTime = millis();
 
-  for (uint8_t i=0; i<3; i++) {
+  for (uint8_t i=0; i<4; i++) {
     bool b = !digitalRead(buttonPin[i]);
     if ( b ) {                  // Pressed
       switch(button[i]) {
@@ -995,17 +879,14 @@ void PeanutKingSoccerV3::buttons(void) {
 }
 
 
-void PeanutKingSoccerV3::lcdMenu(void) {
+
+void PeanutKingSoccerV4::bluetoothAttributes() {
 
 }
 
-void PeanutKingSoccerV3::bluetoothAttributes() {
-
-}
 
 
-
-void PeanutKingSoccerV3::bluetoothRemote(void) {
+void PeanutKingSoccerV4::bluetoothRemote(void) {
   static btData_t btDataHeader = Idle;
   static uint32_t btSendTimer = 0;
   static uint8_t btState = 0, len = 0;
@@ -1212,189 +1093,9 @@ void PeanutKingSoccerV3::bluetoothRemote(void) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// col(0-15), row(0-1) --------------------------------------------
-void PeanutKingSoccerV3::setScreen(uint8_t col, uint8_t row, char string[]) {
-  // if ((millis() - screenTicks) > 40) {
-    screenTicks = millis();
-    setCursor(col, row);
-    print(string);
-  // }
-}
-
-void PeanutKingSoccerV3::setScreen(uint8_t col, uint8_t row, int16_t numbers, uint8_t digits) {
-  // volatile bool temp = autoScanEnabled;
-  // autoScanEnabled = false;
-  // autoScanEnabled = temp;
-
-  // if ((millis() - screenTicks) > 40) {
-    screenTicks = millis();
-    setCursor(col, row);
-    if (numbers>=0) {
-      for (uint8_t i=1; i<digits; i++ ) {
-        if ( numbers < pow(10, i) )   print(" ");
-      }
-    }
-    print(numbers);
-  // }
-}
-
-void PeanutKingSoccerV3::printSpace(uint32_t data, uint8_t digit) {
-  for ( int i=1; i<digit; i++ ) {
-    if ( data < pow(10, i) )   Serial.print(" ");
-  }
-  Serial.print(data);
-}
-
-
-
-
-
-
-
-//                                  LCD LIBRARY
-// ================================================================
-
-void PeanutKingSoccerV3::lcdSetup (void) {
-  // According to datasheet PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
-  // we need at least 40ms after power rises above 2.7V before sending commands.
-  // Arduino can turn on way befer 4.5V so we'll wait 50
-  delay(5);
-  
-  // Now we pull both RS and R/W low to begin commands
-  uint8_t msg[1] = {LCD_backlightval};// reset expander and turn backlight off (Bit 8 =1)
-  uint8_t _status = gIIC->Write(lcdScrHandle, msg, 1);
-  delay(1000);
-
-  // put the LCD into 4 bit mode, according to the hitachi HD44780 datasheet figure 24, pg 46
-  write4bits(0x03 << 4);  delayMicroseconds(4200);  // Start in 8bit mode, try 4 bit mode, wait > 4.1ms
-  write4bits(0x03 << 4);  delayMicroseconds(150);   // second try, wait > 4.1ms
-  write4bits(0x03 << 4);  delayMicroseconds(37);    // third go!
-  write4bits(0x02 << 4);  delayMicroseconds(37);
-
-  send(0b00101000, 0);    delayMicroseconds(37);    // Function Set - 4 bits(Still), 2 lines, 5x8 font
-  send(0x08 | 0x04, 0);   delayMicroseconds(37);    // Initialize to default text direction
-
-  lcdClear();               // clear it off
-
-  send(0x04 | 0x02, 0);     // set the entry mode, left to right
-
-  //send(LCD_RETURNHOME, 0);    delay(2);             // set cursor position to zero, takes a long time!
-  LCD_backlightval=LCD_BACKLIGHT;
-}
-
-
-/********** high level commands, for the user! */
-void PeanutKingSoccerV3::lcdClear(void) {
-  send(LCD_CLEARDISPLAY, 0);// Clear display, set cursor position to zero
-  delayMicroseconds(1600);  // Takes a long time!
-}
-
-void PeanutKingSoccerV3::setCursor(uint8_t col, uint8_t row) {
-  static const uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
-  if ( row > 2 )  row = 1;
-  send(LCD_SETDDRAMADDR | (col + row_offsets[row]), 0);   // **********send**********
-}
-
-size_t PeanutKingSoccerV3::printNumber(unsigned long n, uint8_t base) {
-  char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
-  char *str = &buf[sizeof(buf) - 1];
-
-  *str = '\0';
-
-  // prevent crash if called with base == 1
-  if (base < 2) base = 10;
-  
-  do {
-    char c = n % base;
-    n /= base;
-    *--str = c < 10 ? c + '0' : c + 'A' - 10;
-  } while(n);
-  return print(str);
-}
-
-size_t PeanutKingSoccerV3::print(long n, int base) {
-  if (base == 0) {
-    return write(n);
-  } else
-  if (base == 10) {
-    if (n < 0) {
-      char v[1] = "-";
-      
-      int t = print(v);
-      n = -n;
-      return printNumber(n, 10) + t;
-    }
-    return printNumber(n, 10);
-  }
-  else {
-    return printNumber(n, base);
-  }
-}
-
-size_t PeanutKingSoccerV3::print(const char str[]) {
-  size_t n = 0;
-  size_t l = strlen(str);
-  while (1) {
-    if (n==l)           break;
-    if (write(*str++))  n++;
-    else                break;
-  }
-  return n;
-}
-//send(c, Rs)
-
-inline size_t PeanutKingSoccerV3::write(uint8_t value) {
-  send(value, Rs);
-  return 1;
-}
-
 //command(uint8_t value)   send(value, 0);
 /************ low level data pushing commands **********/
 
-// write either command or data
-void PeanutKingSoccerV3::send(uint8_t value, uint8_t mode) {
-  uint8_t highnib =  value    & 0xf0;     // HHHH0000
-  uint8_t lownib  = (value<<4)& 0xf0;     // LLLL0000
-  
-  write4bits((highnib)|mode);
-  write4bits((lownib)|mode);
-}
-
-void PeanutKingSoccerV3::write4bits(uint8_t value) {
-  uint8_t _status;
-  uint8_t msg[2] = {
-    // ((int)(value) | LCD_backlightval),
-    ((int)(value | En) | LCD_backlightval),    //pulseEnable
-    ((int)(value & ~En) | LCD_backlightval)
-  };
-  _status = gIIC->Write(lcdScrHandle, msg, 1);
-  delayMicroseconds(1);        // enable pulse must be >450ns
-  _status = gIIC->Write(lcdScrHandle, msg+1, 1);
-  delayMicroseconds(40);       // commands need > 37us to settle
-}
 
 
 
