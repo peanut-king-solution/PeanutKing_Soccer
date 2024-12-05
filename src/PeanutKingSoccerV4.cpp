@@ -69,7 +69,34 @@ uint8_t PeanutKingSoccerV4::getColorSensor(uint8_t color_sensor_num){
   swiic[color_sensor_num].i2c_stop(); // stop communication
   return val;
 }
-
+RGB_Struct PeanutKingSoccerV4::getColorSensorRGB(uint8_t color_sensor_num){
+  RGB_Struct temp;
+  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
+    // Serial.println("I2C device busy");
+    return;
+  }
+  swiic[color_sensor_num].i2c_write(0x08); // send memory to device
+  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
+  temp.red = swiic[color_sensor_num].i2c_read(false); // read one byte and send NAK afterwards
+  temp.green = swiic[color_sensor_num].i2c_read(false); // read one byte and send NAK afterwards
+  temp.blue = swiic[color_sensor_num].i2c_read(true); // read one byte and send NAK afterwards
+  swiic[color_sensor_num].i2c_stop(); // stop communication
+  return temp;
+}
+HSL_Struct PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num){
+  HSL_Struct temp;
+   if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
+    // Serial.println("I2C device busy");
+    return;
+  }
+  swiic[color_sensor_num].i2c_write(0x03); // send memory to device
+  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
+  temp.h = swiic[color_sensor_num].i2c_read(0)|swiic[color_sensor_num].i2c_read(0)<<8; // read one byte and send NAK afterwards
+  temp.s = swiic[color_sensor_num].i2c_read(0); // read one byte and send NAK afterwards
+  temp.l = swiic[color_sensor_num].i2c_read(1); // read one byte and send NAK afterwards
+  swiic[color_sensor_num].i2c_stop(); // stop communication
+  return temp;
+}
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
 void PeanutKingSoccerV4::init(uint8_t mode) {
@@ -329,7 +356,7 @@ uint16_t PeanutKingSoccerV4::compassRead(void) {
   compass = compass/100;
   return compass;
 }
-uint8_t PeanutKingSoccerV4::compoundEyeMaxEye(){
+uint8_t PeanutKingSoccerV4::compoundMaxEye(){
   rxBuff[0] = 0;
   I2CSensorRead(senbrdHandle, 13, 1);
   return rxBuff[0];
@@ -388,8 +415,8 @@ void PeanutKingSoccerV4::ULT_Echo_dect(uint8_t n){
   }else{
     ULT_dt[n] = micros()-ULT_dt[n];
   }
-  float dist = (float)ULT_dt[n]* 0.017f;
-  if(dist<450) ultrasonic[n] = (uint16_t)round(dist); 
+  float dist = (float)ULT_dt[n]* 0.17f;
+  if(dist<4500) ultrasonic[n] = (uint16_t)round(dist); 
   
 }
 
