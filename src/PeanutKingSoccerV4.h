@@ -104,14 +104,14 @@
 // 2. attributes
 typedef enum{
           // RGB
-  OFF,    // 000
-  BLUE,   // 001
-  GREEN,  // 010
-  CYAN,   // 011
-  RED,    // 100
-  PURPLE, // 101
-  YELLOW, // 110
-  WHITE   // 111
+  LED_OFF,    // 000
+  LED_BLUE,   // 001
+  LED_GREEN,  // 010
+  LED_CYAN,   // 011
+  LED_RED,    // 100
+  LED_PURPLE, // 101
+  LED_YELLOW, // 110
+  LED_WHITE   // 111
 }obBrdLEDCL;
 typedef enum{
   CL1,
@@ -152,6 +152,27 @@ typedef enum{
   A2_P,
   A1_P,
 }A_PIN;
+typedef enum {
+  BLACK,  
+  WHITE,   
+  GREY,
+  RED,      
+  GREEN,   
+  BLUE, 
+  YELLOW,   
+  CYAN     
+}color_sensor_color;
+typedef struct{
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+}RGB_Struct;
+
+typedef struct{
+  uint16_t h;
+  uint8_t s;
+  uint8_t l;
+}HSL_Struct;
 class PeanutKingSoccerV4 {
  public:
   PeanutKingSoccerV4(void);
@@ -170,7 +191,7 @@ class PeanutKingSoccerV4 {
     whiteLineCheck(uint8_t);
   uint8_t 
     floorColorReadRaw(uint8_t, uint8_t = 0),    
-    compoundEyeMaxEye(void),
+    compoundMaxEye(void),
     compoundMaxEyeVal(void),
     compoundEyeVal(uint8_t n),
     getColorSensor(uint8_t);
@@ -216,7 +237,8 @@ class PeanutKingSoccerV4 {
 
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
-
+  HSL_Struct getColorSensorHSL(uint8_t color_sensor_num);
+  RGB_Struct getColorSensorRGB(uint8_t color_sensor_num);
 
   /* Bottom Level Library */
   void
