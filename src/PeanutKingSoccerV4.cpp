@@ -101,8 +101,7 @@ HSL_Struct PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num){
 // External interrupt different settings depends on version number 
 void PeanutKingSoccerV4::init(uint8_t mode) {
   Serial.begin(115200);
-  // Serial1.begin(115200);
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   for (uint8_t i=0;i<8;i++){
     swiic[i].i2c_init();
   }
@@ -912,213 +911,107 @@ void PeanutKingSoccerV4::bluetoothAttributes() {
 }
 
 
-
+typedef enum
+{
+  FORWARD= 'F',
+  BACKWARD ='B',
+  LEFT ='L',
+  RIGHT= 'R',
+  CIRCLE= 'C',
+  CROSS= 'X',
+  TRIANGLE= 'T',
+  SQUARE= 'S',
+  START= 'A',
+  PAUSE ='P'
+}BluetoothCmd;
 void PeanutKingSoccerV4::bluetoothRemote(void) {
-  static btData_t btDataHeader = Idle;
-  static uint32_t btSendTimer = 0;
-  static uint8_t btState = 0, len = 0;
-  static int btAngle = 0;
-  static String deg = "", dis = "", buttonVal = "";
-  static float speed = 1.0;
-  
+  static uint32_t last_ticks = 0;
+  static BluetoothCmd v = PAUSE;
+  static char msg[2] = {0};
+  // if(millis() - last_ticks>80){
+    // Serial.print("Hi");
+  //   Serial1.println(millis());
+  //   Serial1.print("$");
+  //   bluetoothSendStr();
+  //   Serial1.print("$");
+  //   last_ticks = millis();
+  // }
   if (Serial1.available()) {
-    char v = Serial1.read();
-
-    // Serial.print(v);  // debugUse
-    
-    switch (btDataHeader) {
-      case Idle:
-      case EndOfData:
-      case DemoMode:
-        switch (v) {
-          case 'A':
-            btDataHeader = Joystick;
-            break;
-          case 'B':
-            btDataHeader = PadButton;
-            break;
-          case 'C':
-            btDataHeader = ButtonDef;
-            break;
-          case 'E':
-            //btDataHeader = Attributes;
-            break;
-          case 'Z':
-            btDataHeader = EndOfData;
-            break;
-          case 'Y':
-            btDataHeader = DemoMode;
-            break;
-        }
-        btState = 1;
-        break;
-      case Joystick:
-        switch(btState) {
-          case 1:
-            if (v != 'D')
-              deg += v;
-            else {
-              int temp = deg.toInt();
-              if (temp<360)
-                btDegree = temp;
-                
-              deg = "";
-              btState++;
-            }
-          break;
-          case 2:
-            if (v != '.')
-              dis += v;
-            else {
-              int temp = dis.toInt();
-              if (temp<=100)         btDistance = temp;
-              dis = "";
-              btState=0;
-              btDataHeader = Idle;
-            }
-          break;
-        }
-        break;
-      case ButtonDef:
-        len ++;
-        if (len==4) {
-          len = 0;
-          btDataHeader = Idle;
-        }
-        break;
-      case PadButton:
-        if (len==0) {
-          btButtonIndex = v-'0';
-          len ++;
-        }
-        else if (len==1) {
-          btGestureCode = v-'0';
-          len = 0;
-          btDataHeader = Idle;
-        }
-        break;
-      case Attributes:
-        if (len<5) {
-          btAttributes[len] = v-'0';//code.toInt();
-          len ++;
-        }
-        else {
-          EYEBOUNDARY = 10 + (10-btAttributes[0]) * 20;
-          len = 0;
-          btDataHeader = Idle;
-        }
-        break;
-    }
-  }
-
-  if (btDataHeader == EndOfData) {
-    btDataHeader = Idle;
-    Serial.print(btDegree); Serial.print(' ');
-    Serial.print(btDistance); Serial.println(' ');
-    //Serial.print("buttun pressed ");
-    //Serial.print(btButtonIndex); Serial.print(btGestureCode); Serial.println(' ');
-
-    // setScreen(0, 0, "Deg ");
-    // setScreen(4, 0, btDegree);
-    // setScreen(0, 1, "Dist");
-    // setScreen(4, 1, btDistance);
-    
-    // setScreen(12, 0, maxEye);
-    // setScreen(12, 1, eye[maxEye]);
-
-    //List<String> functionList = ['Accel', 'Back', 'Chase', 'Auto', 'L-Trun', 'R-Trun', 'Front', 'Left', 'Right', 'Back'];
-    if ( btGestureCode==0 || btGestureCode==2 || btGestureCode==4 || btGestureCode==5 ) {
-      switch ( btButtonIndex ) {
-        case 0:   // Accel
-          speed = 2.0;
-          break;
-        case 1:   // Back
-          Back(btDegree, btDistance, btRotate);
-          break;
-        case 2:   // Chase
-          Chase(btDegree, btDistance, btRotate);
-          break;
-        case 3:   // Auto
-          if ( eye[maxEye] > 30 ) {
-            Chase(btDegree, btDistance, btRotate);
-          }
-          else {
-            btDistance = 0;
-            btDegree = 0;
-          }
-          //Back(btDegree, btDistance, btRotate);
-          break;
-        case 4:
-          btAngle = compass;
-          btRotate = -40;
-          break;
-        case 5:
-          btAngle = compass;
-          btRotate = 40;
-          break;
-        case 6:   // Front
-          break;
-      }
-    }
-    else { // if ( btGestureCode==1 || btGestureCode==3 || btGestureCode==6 )
-      if (btRotate ==-40 || btRotate ==40) {
-          btAngle = compass;
-      }
-      speed = 1.0;
-      btRotate = 0;
+    // v = Serial1.read();
+    Serial1.readBytes(msg, 2);
+    Serial.print("2char:");
+    Serial.print(msg[0]);
+    Serial.print(" ");
+    Serial.println(msg[1]);
+    if(msg[1] == '0'){
+      v = msg[0];
+    }else if(msg[1] == '1'){
+      v = PAUSE;
     }
     
-    // Serial.print(btDegree);   Serial.print(' ');
-    // Serial.print(btDistance); Serial.print(' ');
-    // Serial.print(btRotate);   Serial.println(' ');
-    
-    // Execute
-    // if ( btRotate==0 ) {
-    //   moveSmart(btDegree, btDistance*speed*0.7, btAngle);
-    // }
-    // else
-    motorControl(btDegree, btDistance, btRotate);
-  }
-
-  /*
-  else if (btDataHeader == DemoMode) {
-    if ( eye[maxEye] > EYEBOUNDARY ) {
-      Chase(btDegree, btDistance, btRotate);
+  
+      switch (v) {
+          case FORWARD:
+            Serial.println("front");
+            motorSet(0,120);
+            motorSet(1,120);
+            motorSet(2,-120);
+            motorSet(3,-120);
+            // setLED( 1 << 3 | 1<<4, 0, 255, 0, 0);
+            break;
+          case BACKWARD:
+            Serial.println("back");
+            motorSet(0,-120);
+            motorSet(1,-120);
+            motorSet(2,120);
+            motorSet(3,120);
+            // setLED(1<<0 | 1<<7, 0, 255, 0, 0);
+            break;
+          case RIGHT:
+            Serial.println("left");
+            
+            motorSet(0,-120);
+            motorSet(1,120);
+            motorSet(2,120);
+            motorSet(3,-120);
+            // setLED(1<<2 | 1<<1, 0, 255, 0, 0);
+            break;
+          case LEFT:
+            Serial.println("right");
+            motorSet(0,120);
+            motorSet(1,-120);
+            motorSet(2,-120);
+            motorSet(3,120);
+            // setLED(1<<6 | 1<<5, 0, 255, 0, 0);
+            break;
+          case CIRCLE:
+            Serial.println("rot ccw");
+            motorSet(0,120);
+            motorSet(1,120);
+            motorSet(2,120);
+            motorSet(3,120);
+            break;
+          case SQUARE:
+            Serial.println("rot cw");
+            motorSet(0,-120);
+            motorSet(1,-120);
+            motorSet(2,-120);
+            motorSet(3,-120);
+            break;
+          case PAUSE:
+            Serial.println("Stop");
+            motorSet(0,0);
+            motorSet(1,0);
+            motorSet(2,0);
+            motorSet(3,0);
+            // setLED(255, 0, 0, 0, 0);
+            break;
+          case START:
+            // setLED(255, 255, 255, 0, 0);
+            break;
+        }
     }
-    //Back(btDegree, btDistance, btRotate);
-    moveSmart(btDegree, btDistance*speed, btAngle);
-  }*/
-
-  // Send Data
-  if (millis() - btSendTimer > 100) {
-    if (Serial1.availableForWrite() > 50) {
-      btTxBuffer[0] = 'C';
-      btTxBuffer[1] = compass & 0xff;
-      btTxBuffer[2] = compass >> 8;
-      btTxBuffer[3] = 'U';
-      btTxBuffer[4] = ultrasonic[0] / 10;
-      btTxBuffer[4] = btTxBuffer[4] > 255 ? 255 : btTxBuffer[4];
-      btTxBuffer[5] = ultrasonic[1] / 10;
-      btTxBuffer[5] = btTxBuffer[5] > 255 ? 255 : btTxBuffer[5];
-      btTxBuffer[6] = ultrasonic[2] / 10;
-      btTxBuffer[6] = btTxBuffer[6] > 255 ? 255 : btTxBuffer[6];
-      btTxBuffer[7] = ultrasonic[3] / 10;
-      btTxBuffer[7] = btTxBuffer[7] > 255 ? 255 : btTxBuffer[7];
-      btTxBuffer[8] = 'E';
-      btTxBuffer[9] = maxEye;
-      btTxBuffer[11] = eye[maxEye] & 0xff;
-      btTxBuffer[12] = eye[maxEye] >> 8;
-      btTxBuffer[13] = eyeAngle & 0xff;
-      btTxBuffer[14] = eyeAngle >> 8;
-      btTxBuffer[15] = 'Z';
-      Serial1.write(btTxBuffer, 16);
-    }
-    btSendTimer = millis();
-  }
-
 }
-
-
 
 //command(uint8_t value)   send(value, 0);
 /************ low level data pushing commands **********/
