@@ -18,7 +18,7 @@ enum
 	ST7735_INITR_18BLACKTAB		= ST7735_INITR_BLACKTAB,	// 1.8" (128x160) ST7735S chipset with black tab
 };
 
-#define ST7735_CHIPSET		ST7735_INITR_BLACKTAB	// <= Set ST7735 LCD chipset/variation here (from above list)
+#define ST7735_CHIPSET		ST7735_INITR_GREENTAB	// <= Set ST7735 LCD chipset/variation here (from above list)
 
 // NOTE: These are typical hookups individual boards will vary, please check your documentation.
 // CAUTION: While Adafruit boards generally always come with needed level-converters, I find many
