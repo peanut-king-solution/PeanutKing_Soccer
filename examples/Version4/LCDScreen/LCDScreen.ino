@@ -20,6 +20,8 @@ void loop() {
 	robot.tft.setTextColor(ST7735_WHITE);
   robot.tft.setCursor(0, 10);
 	robot.tft.print(curr_tick);
-  delay(10);
+  robot.tft.fillCircle(40, 30, 10, ST7735_BLUE);
+  robot.tft.drawRect(40, 100, 50, 20, ST7735_YELLOW);
+  robot.tft.fillTriangle(45, 60, 10, 80, 60, 80, ST7735_MAGENTA);
 
 }
