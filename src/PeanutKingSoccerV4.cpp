@@ -117,7 +117,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   for (uint8_t i = 0;i<4;i++){
     pinMode(ULTPin_trig[i],OUTPUT);
     pinMode(ULTPin_echo[i],INPUT);
-    PCattachInterrupt(ULTPin_echo[i],ULT_Echo_dect_ptr[i],CHANGE);
+    PcInt::attachInterrupt(ULTPin_echo[i],ULT_Echo_dect_ptr[i],CHANGE);
   }
   delay(10);
 
