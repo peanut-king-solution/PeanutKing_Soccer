@@ -1,128 +1,71 @@
-/********************
-Rui Azevedo - ruihfazevedo(@rrob@)gmail.com
-adapted from: http://playground.arduino.cc/Main/PcInt
-with many changes to make it compatible with arduino boards (original worked on Uno)
-not tested on many boards but has the code uses arduino macros for pin mappings
-it should be more compatible and also more easy to extend
-some boards migh need pcintPinMap definition
+/*
+ * YetAnotherPcInt.h
+ *
+ * This module supplies a set of helper functions to use the
+ * PinChange interrupt in a convenient manner, similar to
+ * the standard Arduino attachInterrupt.
+ *
+ * Copyright (c) 2014-2016 Kees Bakker, Paulo Costa
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307  USA
+ */
 
-Sept. 2014
-  small changes to existing PCINT library, supporting an optional cargo parameter
+#pragma once
 
-Nov.2014 large changes
-  - Use arduino standard macros for PCINT mapping instead of specific map math, broaden compatibility
-  - array[a][b] is 17% faster than array[(a<<3)+b], same memory
-  - reverse pin mappings for pin change check (not on arduino env. AFAIK)
+#include <Arduino.h>
 
-**/
-#ifndef ARDUINO_PCINT_MANAGER
-#define ARDUINO_PCINT_MANAGER
-
-	#if ARDUINO < 100
-		#include <WProgram.h>
-	#else
-		#include <Arduino.h>
-	#endif
-	#include "pins_arduino.h"
-
-	typedef void (*voidFuncPtr)(void);
-
-	#define HANDLER_TYPE mixHandler
-
-	/*#if (defined (_mk20dx128_h_) || defined (__MK20DX128__)) && defined (CORE_TEENSY)
-	#define RSITE_TEENSY3
-	#endif
-	defined(RSITE_TEENSY3) || defined(ARDUINO_SAM_DUE)*/
-
-	#if defined(__arm__) || defined(ESP8266) || defined(ESP32)
-		#warning Compiling for arm
-		#define PCINT_NO_MAPS
-	#endif
-
-	#ifndef PCINT_NO_MAPS
-		// PCINT reverse map
-		#if defined(digital_pin_to_pcint)
-			#define digitalPinFromPCINTSlot(slot,bit) pgm_read_byte(digital_pin_to_pcint+(((slot)<<3)+(bit)))
-			#define pcintPinMapBank(slot) ((uint8_t*)((uint8_t*)digital_pin_to_pcint+((slot)<<3)))
-		#else
-			#warning using maps!
-			#if ( defined(__AVR_ATmega328__) || defined(__AVR_ATmega328P__) || defined(__AVR_ATmega16u4__) )
-				//UNO
-				const uint8_t pcintPinMap[3][8] PROGMEM={{8,9,10,11,12,13,0x80,0x80},{14,15,16,17,18,19,20,21},{0,1,2,3,4,5,6,7}};
-			#elif ( defined(__AVR_ATmega2560__) )
-				const uint8_t pcintPinMap[3][8] PROGMEM={{53,52,51,50,10,11,12,13},{0,15,14,0x80,0x80,0x80,0x80,0x80},{A8,A9,A10,A11,A12,A13,A14,A15}};
-			#elif ( defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega644__))
-				#error "uC PCINT REVERSE MAP IS NOT DEFINED, ATmega1284P variant unknown"
-				//run the mkPCIntMap example to obtain a map for your board!
-			#else
-				#warning "uC PCINT REVERSE MAP IS NOT DEFINED"
-				//run the mkPCIntMap example to obtain a map for your board!
-			#endif
-			#define digitalPinFromPCINTSlot(slot,bit) pgm_read_byte(pcintPinMap+(((slot)<<3)+(bit)))
-			#define pcintPinMapBank(slot) ((uint8_t*)((uint8_t*)pcintPinMap+((slot)<<3)))
-		#endif
-		#define digitalPinFromPCINTBank(bank,bit) pgm_read_byte((uint8_t*)bank+bit)
-
-	#endif
-
-	//this handler can be used instead of any void(*)() and optionally it can have an associated void *
-	//and use it to call void(*)(void* payload)
-	struct mixHandler {
-		union {
-			void (*voidFunc)(void);
-			void (*payloadFunc)(void*);
-		} handler;
-		void *payload;
-		inline mixHandler():payload(NULL) {handler.voidFunc=NULL;}
-		inline mixHandler(void (*f)(void)):payload(NULL) {handler.voidFunc=f;}
-		inline mixHandler(void (*f)(void*),void *payload):payload(payload) {handler.payloadFunc=f;}
-		inline void operator()() {payload?handler.payloadFunc(payload):handler.voidFunc();}
-		inline bool operator==(void*ptr) {return handler.voidFunc==ptr;}
-		inline bool operator!=(void*ptr) {return handler.voidFunc!=ptr;}
-	};
-
-	#ifdef PCINT_NO_MAPS
-	  #if  defined(__STM32F1__) || defined(__STM32F4__) // https://github.com/rogerclarkmelbourne/Arduino_STM32
-	    #define INT_MODE_TYPE ExtIntTriggerMode
-	    #define NUM_DIGITAL_PINS BOARD_NR_GPIO_PINS
-	  #else
-            #define INT_MODE_TYPE uint8_t
-	  #endif
-	  
-	  extern HANDLER_TYPE PCintFunc[NUM_DIGITAL_PINS];
-	  template<uint8_t N> void PCint() {PCintFunc[N]();}
-	#else
-   #define INT_MODE_TYPE uint8_t
-	void PCattachInterrupt(uint8_t pin,HANDLER_TYPE userFunc, uint8_t mode);
-	void PCdetachInterrupt(uint8_t pin);
-
-	// common code for isr handler. "port" is the PCINT number.
-	// there isn't really a good way to back-map ports and masks to pins.
-	// here we consider only the first change found ignoring subsequent, assuming no interrupt cascade
-	// static void PCint(uint8_t port);
-
-	#endif
-	/*
-	 * attach an interrupt to a specific pin using pin change interrupts.
-	 */
-	template<uint8_t PIN>
-	void PCattachInterrupt(HANDLER_TYPE userFunc, INT_MODE_TYPE mode) {
-	  #ifdef PCINT_NO_MAPS
-			PCintFunc[PIN]=userFunc;
-	    attachInterrupt(digitalPinToInterrupt(PIN),PCint<PIN>,mode);
-	  #else
-			PCattachInterrupt(PIN,userFunc,mode);
-	  #endif
-	}
-
-	template<uint8_t PIN>
-	void PCdetachInterrupt() {
-		#ifdef PCINT_NO_MAPS
-	    detachInterrupt(PIN);
-	  #else
-			PCdetachInterrupt(PIN);
-	  #endif
-	}
+class PcInt {
+public:
+  typedef void (*callback)(void *userdata, bool pinstate);
+  
+  static void attachInterrupt(uint8_t pin, callback func, void *userdata, uint8_t mode=CHANGE, bool trigger_now=false);
+  static void detachInterrupt(uint8_t pin);
 
 
-#endif
+  // === Syntax sugar for `attachInterrupt()` with different callback signatures ===
+  
+  // Ataches an interrupt callback without arguments.
+  static inline void attachInterrupt(uint8_t pin, void(*func)(), uint8_t mode=CHANGE, bool trigger_now=false) {
+    //On AVR's calling convention, if we call a funcion with extra arguments, they are silently ignored
+    attachInterrupt(pin, (callback)func, nullptr, mode, trigger_now);
+  };
+
+  // Ataches an interrupt callback with user data.
+  template<typename T>
+  static inline void attachInterrupt(uint8_t pin, void(*func)(T *arg), T *userdata, uint8_t mode=CHANGE, bool trigger_now=false) {
+    //On AVR's calling convention, if we call a funcion with extra arguments, they are silently ignored
+    attachInterrupt(pin, (PcInt::callback)func, (void*)userdata, mode, trigger_now);
+  };
+
+  // Ataches an interrupt callback with pin state.
+  static inline void attachInterrupt(uint8_t pin, void(*func)(bool pinstate), uint8_t mode=CHANGE, bool trigger_now=false) {
+    //On AVR's calling convention, if we call a funcion with extra arguments, they are silently ignored
+    attachInterrupt(pin, _wrap_callback_pinvalue, func, mode, trigger_now);
+  };
+  
+  // Ataches an interrupt callback with user data and pin state.
+  template<typename T>
+  static inline void attachInterrupt(uint8_t pin, void(*func)(T *arg, bool pinstate), T *userdata, uint8_t mode=CHANGE, bool trigger_now=false) {
+    attachInterrupt(pin, (PcInt::callback)func, (void*)userdata, mode, trigger_now);
+  };
+  
+  
+private:
+  //This tiny wrapper is necessary for callback with pin_state but without userdata
+  static void _wrap_callback_pinvalue(void (*func)(bool pinstate), bool pinstate) {
+    func(pinstate);
+  };
+};
