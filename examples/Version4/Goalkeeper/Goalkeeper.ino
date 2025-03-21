@@ -41,6 +41,9 @@ void loop() {
   else if (xonicback > 400){                         // Use distance away from back wall as reference to relocate the car
     motor(-90,-90,90,90);                           // move back
   }
+  else if (xonicback < 350){                         // Use distance away from back wall as reference to relocate the car
+    motor(90,90,-90,-90);                           // move forward
+  }
   else{
     robot.motorStop();                              // Stop moving
   }
