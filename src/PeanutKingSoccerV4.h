@@ -347,7 +347,8 @@ class PeanutKingSoccerV4 {
   static void ULT_Echo_dect_3();
   static void (*ULT_Echo_dect_ptr[4])();
   uint32_t ULT_dt[4];
-  uint32_t ULT_get_interval[4];
+  uint32_t ULT_get_interval;
+  uint8_t ultra_send_seq = 0;
 
 };
 

@@ -396,17 +396,27 @@ void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
 
 
 uint16_t PeanutKingSoccerV4::ultrasonicRead(uint8_t n){
-  if(millis()-ULT_get_interval[n]<30) return ultrasonic[n];
-  digitalWrite(ULTPin_trig[n], LOW);
+  if(millis()-ULT_get_interval<30) return ultrasonic[n];
+  if(ultra_send_seq>=3){
+    ultra_send_seq = 0;
+  } else {
+    ultra_send_seq++;
+  }
+  Serial.print("ULT: ");
+  Serial.println(ultra_send_seq);
+  Serial.print("ms: ");
+  Serial.println(millis());
+  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
   delayMicroseconds(2);
-  digitalWrite(ULTPin_trig[n], HIGH);
+  digitalWrite(ULTPin_trig[ultra_send_seq], HIGH);
   delayMicroseconds(10);
-  digitalWrite(ULTPin_trig[n], LOW);
-  ULT_get_interval[n] = millis();
+  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
+  ULT_get_interval = millis();
   return ultrasonic[n];
 }
 
 void PeanutKingSoccerV4::ULT_Echo_dect(uint8_t n){
+  if(ultra_send_seq!=n) return;
   static uint32_t delaystart = 0;
   delaystart = micros();
   if (digitalRead(ULTPin_echo[n])){
