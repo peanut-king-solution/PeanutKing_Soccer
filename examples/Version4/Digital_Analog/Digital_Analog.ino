@@ -50,11 +50,15 @@ void loop() {
   Serial.print(analogRead(A4_P));
   Serial.print("\n");
 
+  robot.setOnBrdLED(LED_CYAN);
   delay(200);
   digitalWrite(D4_P, LOW);
   digitalWrite(D5_P, LOW);
   digitalWrite(D6_P, LOW);
   
+  robot.setOnBrdLED(0,HIGH);
+  robot.setOnBrdLED(1,LOW);
+  robot.setOnBrdLED(2,LOW);
 
   delay(200);
 
