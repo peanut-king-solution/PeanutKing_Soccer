@@ -162,17 +162,8 @@ typedef enum {
   YELLOW,   
   CYAN     
 }color_sensor_color;
-typedef struct{
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-}RGB_Struct;
 
-typedef struct{
-  uint16_t h;
-  uint8_t s;
-  uint8_t l;
-}HSL_Struct;
+
 class PeanutKingSoccerV4 {
  public:
   PeanutKingSoccerV4(void);
@@ -188,7 +179,7 @@ class PeanutKingSoccerV4 {
   bool
     buttonRead(uint8_t),
     buttTrigRead(uint8_t),
-    whiteLineCheck(uint8_t);
+    whiteLineCheck(uint8_t,uint16_t);
   uint8_t 
     floorColorReadRaw(uint8_t, uint8_t = 0),    
     compoundMaxEye(void),
@@ -199,7 +190,7 @@ class PeanutKingSoccerV4 {
     floorColorRead(uint8_t),
     ultrasonicRead(uint8_t),
     compassRead(void),
-    whiteLineCal(uint8_t = 0, uint16_t = 200);
+    whiteLineCal(uint8_t = 00);
   uint8_t* compoundEyeRead();
   void 
     compoundEyeCal(float* calData);
@@ -237,8 +228,8 @@ class PeanutKingSoccerV4 {
 
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
-  HSL_Struct getColorSensorHSL(uint8_t color_sensor_num);
-  RGB_Struct getColorSensorRGB(uint8_t color_sensor_num);
+  hsl_t getColorSensorHSL(uint8_t color_sensor_num);
+  rgb_t getColorSensorRGB(uint8_t color_sensor_num);
 
   /* Bottom Level Library */
   void
@@ -281,9 +272,9 @@ class PeanutKingSoccerV4 {
   // Variables =======================================================================
   bool
     buttonPressed[3],
-    isWhite[4]  = {false},
-    onBound[4]  = {false},
-    outBound[4] = {false};
+    isWhite[8]  = {false},
+    onBound[8]  = {false},
+    outBound[8] = {false};
   uint8_t 
     maxEye,
     groundColor[4],   //color sensor
@@ -295,16 +286,16 @@ class PeanutKingSoccerV4 {
     eyeAngle;
     uint8_t eye[12];          // 12 ir reading
   uint16_t ultrasonic[4];    //4 ultrasonic reading
-  uint16_t whiteLineThreshold[4] = {30, 30, 30, 30};
+  uint16_t whiteLineThreshold[8] = {30, 30, 30, 30};
 
   buttonStatus_t button[3] = {NONE};
 
   int16_t currentSpeed[4] = {0,0,0,0};
   int16_t targetSpeed[4] = {0,0,0,0};
 
-  rgb_t colorRGB[4];
-  hsl_t colorHSL[4];
-  hsv_t colorHSV[4];
+  rgb_t colorRGB[8];
+  hsl_t colorHSL[8];
+  hsv_t colorHSV[8];
 
   // Sensor Reading ======================================================
   bool
