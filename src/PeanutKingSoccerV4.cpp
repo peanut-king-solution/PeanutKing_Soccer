@@ -503,7 +503,18 @@ uint16_t PeanutKingSoccerV4::floorColorRead(uint8_t i) {
 //     groundColor[i] = rxBuff[24+i];
 //   }
 // }
+void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, char string[]) {
+  tft.setCursor(col*6, row*10);
+  tft.print(string);
+}
 
+void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
+  tft.setCursor(col*6, row*10);
+  tft.print(numbers);
+}
+void PeanutKingSoccerV4::clearScreen(void) {
+  tft.fillScreen(ST7735_BLACK);
+}
 uint16_t PeanutKingSoccerV4::whiteLineCal(uint8_t pin_no) {
 
   whiteLineThreshold[pin_no] = getColorSensorHSL(pin_no).h;

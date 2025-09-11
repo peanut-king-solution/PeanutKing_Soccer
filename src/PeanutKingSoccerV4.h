@@ -129,6 +129,12 @@ typedef enum{
   U3,
   U4
 }ULTR_SENSOR;
+typedef enum{
+  M1,
+  M2,
+  M3,
+  M4
+}MOTOR;
 
 typedef enum{
   S1_P = 10,
@@ -231,6 +237,11 @@ class PeanutKingSoccerV4 {
   hsl_t getColorSensorHSL(uint8_t color_sensor_num);
   rgb_t getColorSensorRGB(uint8_t color_sensor_num);
 
+  // wrapped TFT
+  void 
+    setScreen(uint8_t, uint8_t, char[] ),
+    setScreen(uint8_t, uint8_t, int16_t),
+    clearScreen(void);
   /* Bottom Level Library */
   void
     motorDisable(void),
@@ -313,7 +324,6 @@ class PeanutKingSoccerV4 {
     sysTicks = 0;
     
   uint16_t tim1Count = 0;
-
   // BT Variables ========================================================
   uint8_t
     btButtonIndex,
