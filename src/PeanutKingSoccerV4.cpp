@@ -36,20 +36,20 @@ void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
 };
 PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   swiic{
-      SlowSoftI2CMaster (30, 29, 1),
-      SlowSoftI2CMaster (32, 31, 1),
-      SlowSoftI2CMaster (34, 33, 1),
-      SlowSoftI2CMaster (36, 35, 1),
-      SlowSoftI2CMaster (38, 37, 1),
-      SlowSoftI2CMaster (40, 39, 1),
-      SlowSoftI2CMaster (42, 41, 1),
-      SlowSoftI2CMaster (44, 43, 1)},
+      SlowSoftI2CMaster (29, 30, 1),
+      SlowSoftI2CMaster (31, 32, 1),
+      SlowSoftI2CMaster (33, 34, 1),
+      SlowSoftI2CMaster (35, 36, 1),
+      SlowSoftI2CMaster (37, 38, 1),
+      SlowSoftI2CMaster (39, 40, 1),
+      SlowSoftI2CMaster (41, 42, 1),
+      SlowSoftI2CMaster (43, 44, 1)},
   buttonPin{22, 23, 24, 25},        // mainboard V4
   in1Pin{9,  7,  5, 3},     // timer 1 (controls pin 12, 11);
   in2Pin{8,  6,  4, 2},     // timer 2 (controls pin 10, 9);
   ledPin{26, 28, 27},
-  ULTPin_trig{47, 46, 49, 48}, //{49, 48, 47, 46}
-  ULTPin_echo{A12, A13, A14, A15}, //{A15, A14, A13, A12}
+  ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
+  ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
   pwmPin{10, 11, 12, 13} {    // timer 3 (controls pin 5, 3, 2);
   if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
     V4bot = this;
@@ -346,7 +346,6 @@ bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
   else
     return 0;
 }
-
 uint16_t PeanutKingSoccerV4::compassRead(void) {
   for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
   I2CSensorRead(compssHandle, GET_YAW, 2);
@@ -402,10 +401,10 @@ uint16_t PeanutKingSoccerV4::ultrasonicRead(uint8_t n){
   } else {
     ultra_send_seq++;
   }
-  Serial.print("ULT: ");
-  Serial.println(ultra_send_seq);
-  Serial.print("ms: ");
-  Serial.println(millis());
+  // Serial.print("ULT: ");
+  // Serial.println(ultra_send_seq);
+  // Serial.print("ms: ");
+  // Serial.println(millis());
   digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
   delayMicroseconds(2);
   digitalWrite(ULTPin_trig[ultra_send_seq], HIGH);
