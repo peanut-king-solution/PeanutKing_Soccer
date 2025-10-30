@@ -1,17 +1,22 @@
 /*
- * Copyright (c) 2022 PeanutKing Solution
+ * Copyright (c) 2024 PeanutKing Solution
  *
- * @file        PeanutKingSoccerV3.cpp
+ * @file        PeanutKingSoccerV3.h
  * @summary     Soccer Robot V3 Library
- * @version     3.1
+ * @version     3.4.0
  * @author      Jack Kwok
- * @data        26 July 2022
+ * @date        2 January 2024
+ * 
+ * @log         3.3.0 - 5  Jun 2023
+ *              3.1.0 - 26 Jul 2022
  */
 
-#include "IICIT.h"
 
 #ifndef PeanutKing_Soccer_V3_H
 #define PeanutKing_Soccer_V3_H
+
+#include "IICIT.h"
+#include "PeanutKingDef.h"
 
 
 #define LED1   0x01
@@ -49,8 +54,8 @@
 
 
 // Soccer Sensorboard Register Address
-#define  IR_RAW         0x00    // 2byte*12   (0x10 - 0x27)
-#define  IR_MAX         0x13
+#define  IR_RAW         0x10    // 2byte*12   (0x10 - 0x27)
+#define  IR_MAX         0x28
 #define  IR_MIN         0x29
 #define  IR_ANGLE       0x2a    // 2byte
 //  IR_LIMIT        0x2c
@@ -89,82 +94,9 @@
 #define  MAG_CENT       0x5a    // xxyyzz
 
 
-
-
-const float pi = 3.1415926535897;
-
-typedef struct {
-  uint16_t r;
-  uint16_t g;
-  uint16_t b;
-} rgb_t;
-
-typedef struct {
-  uint16_t h;
-  uint8_t s;
-  uint8_t v;
-} hsv_t;
-
-typedef struct {
-  uint16_t h;
-  uint8_t s;
-  uint8_t l;
-} hsl_t;
-
-// typedef struct {
-//   volatile uint8_t *port;
-//   uint8_t mask;
-//   uint8_t numLEDs;
-//   uint8_t numBytes;
-//   uint8_t *pixels;     // Holds LED color values (3 or 4 bytes each)
-// } led_t;
-
-typedef enum { front = 0, left, right, back } sensorNum;
-
-typedef enum {
-  black=0,  white,   grey,
-  red,      green,   blue, 
-  yellow,   cyan,    magenta
-} color;
-
 // const uint8_t
 //   STATERESET   = 0,
 //   STATESET     = 1;
-
-// const float pi = 3.1415926535897;
-
-// typedef enum {
-//   testLED = 1,
-//   testMotor,
-//   testCompass,
-//   testUltrasonic,
-//   testCompoundeye,
-//   testColor,
-//   testBT,
-  
-//   testAll = 99,
-// } testUnit;
-
-// typedef enum {
-//   chaseball,
-//   goal,
-//   gohome,
-//   gohome2,
-//   goleft,
-//   goright,
-//   gofront
-// } pressureTestStatus;
-
-// typedef enum {
-//   Idle = 0,
-//   Joystick = 1,
-//   PadButton,
-//   ButtonDef,
-//   Attributes,
-//   EndOfData = 26,
-//   DemoMode = 25,
-// } btDataType;
-
 
 // motor,  + clockwise turn when positive value
 // 1 4
@@ -172,38 +104,6 @@ typedef enum {
 
 // 1. userdefinebutton set of movement
 // 2. attributes
-
-
-#define TAP_DURATION    140
-#define HOLD_DURATION   1000
-#define WAIT_DURATION   130
-
-typedef enum {
-  NONE  = 0,
-  TAP   = 1,      // -
-  PRESS = 2,      // ---
-  HOLD  = 3,      // ------
-  TAP2  = 4,      // - -
-  TAP3  = 5,      // - - -
-  RELEASE = 6,
-  RELEASE_S = 7,
-  RELEASE_L = 8,
-
-  TAP1_W = 10,
-  TAP2_W = 11,
-  TAP3_W = 12,
-  HOLD2  = 13,    // - --
-  
-  TAP2_R = 16,
-  TAP3_R = 17,
-} buttonStatus_t;
-
-// typedef struct {
-//   uint32_t holdTimer;
-//   uint16_t button;
-//   uint16_t b;
-// } button_t;
-
 
 
 class PeanutKingSoccerV3 {
@@ -223,25 +123,32 @@ class PeanutKingSoccerV3 {
     buttTrigRead(uint8_t),
     whiteLineCheck(uint8_t);
   uint8_t 
-    floorColorReadRaw(uint8_t, uint8_t = black),
-    floorColorRead(uint8_t);
+    floorColorReadRaw(uint8_t, uint8_t = black);
   uint16_t
+    floorColorRead(uint8_t),
     compoundEyeRead(uint8_t = 13),
     ultrasonicRead(uint8_t),
     compassRead(void),
-    whiteLineCal(uint16_t = 20, uint8_t = 0);
+    whiteLineCal(uint8_t = 0, uint16_t = 200);
 
-  void compoundEyeCal(float* calData);
+  void 
+    compoundEyeCal(float* calData);
+  uint16_t
+    ultrasonicRead3(void),
+    eyeReadShort(void),
+    getRedColor(uint8_t i);
+
   void
     actLED(bool),
     lcdMenu(void),
-    bluetoothSend(char[]),
-    bluetoothReceive(void),
+    // bluetoothSend(char[]),
+    // bluetoothReceive(void),
     bluetoothRemote(void),
     bluetoothAttributes(void);
   
   uint8_t colorReadAll(void);
   IICIT::status_t LCDCallback(const IICIT::status_t status);
+  IICIT::status_t rxCpltCallback(const IICIT::status_t status);
 
   void 
     init(uint8_t = 0),
@@ -252,22 +159,30 @@ class PeanutKingSoccerV3 {
     dataFetch(void),
     I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length),
     I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length),
-    I2CSend(int8_t addr, uint8_t *data, uint8_t length),
-    I2CRead(int8_t addr, uint8_t *data, uint8_t length),
+    // I2CSend(int8_t addr, uint8_t *data, uint8_t length),
+    // I2CRead(int8_t addr, uint8_t *data, uint8_t length),
     setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w),
 
     motorControl(float,float,float),
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
     moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
-    motorStop(void),
-    buttons(void);
+    motorStop(void);
 
-  uint8_t buttons(uint8_t);
   uint8_t motorTest (void);
 
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
+
+
+  /* Bottom Level Library */
+  void
+    timerLoop(void),
+    motorEnable(void),
+    motorDisable(void),
+    motorUpdate(void),
+    buttons(void);
+
 
 
   /* LCD Library */
@@ -292,10 +207,11 @@ class PeanutKingSoccerV3 {
   const int8_t 
     PAGEUPPERLIMIT = 6,
     PAGELOWERLIMIT = 0;
-  
   const uint8_t
     compass_address = 0x08,
     LCD_Addr        = 0x20;
+  const uint8_t
+    numLEDs     = 8;  // Number of RGB LEDs in strip
 
   // Pin Allocation ==================================================================
   const uint8_t
@@ -303,13 +219,23 @@ class PeanutKingSoccerV3 {
     topBoardAddr,
     actledPin,
     buttonPin[3],
-    pwmPin[4],
-    dirPin[4],
-    dir2Pin[4],
+    inhPin[4],
+    in1Pin[4],
+    in2Pin[4],
     diagPin[4];
     
-  const uint8_t
-    numLEDs     = 8;  // Number of RGB LEDs in strip
+  const motor_t motor[4] = {
+    {&OCR3B, &PORTE, 5, 4},
+    {&OCR3A, &PORTH, 3, 7},
+    {&OCR4C, &PORTH, 6, 10},
+    {&OCR1A, &PORTB, 6, 13}
+  };
+
+    // in1Pin      in2  inh1
+    // 2, OCR3B,    3   4
+    // 5, OCR3A,    6   7
+    // 8, OCR4C,    9   10
+    // 11,OCR1A,    12  13
     
   // Variables =======================================================================
   bool
@@ -332,6 +258,9 @@ class PeanutKingSoccerV3 {
 
   buttonStatus_t button[3] = {NONE};
 
+  int16_t currentSpeed[4] = {0,0,0,0};
+  int16_t targetSpeed[4] = {0,0,0,0};
+
   rgb_t colorRGB[4];
   hsl_t colorHSL[4];
   hsv_t colorHSV[4];
@@ -352,6 +281,8 @@ class PeanutKingSoccerV3 {
     screenTicks = 0,
     sysTicks = 0;
     
+  uint16_t tim1Count = 0;
+
   // BT Variables ========================================================
   uint8_t
     btButtonIndex,
@@ -364,6 +295,11 @@ class PeanutKingSoccerV3 {
     btDegree = 0,
     btDistance = 0,
     btRotate = 0;
+
+  void 
+    bluetoothRename(String name),
+    bluetoothPrintName(void),
+    bluetoothSendStr();
 
   IICIT::Handle compssHandle;
   IICIT::Handle lcdScrHandle;
