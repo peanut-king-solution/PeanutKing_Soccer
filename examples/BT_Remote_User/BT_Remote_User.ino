@@ -5,7 +5,7 @@ void PeanutKingSoccerV3::bluetoothSendStr(){ // declared in the header file but 
   // protocol defined here
   String send2bt = "soccer,";
   send2bt = send2bt + String(robot.compassRead()) + ",";
-  
+
   send2bt = send2bt + String(robot.ultrasonicRead(front)) + "," + String(robot.ultrasonicRead(back)) + "," + String(robot.ultrasonicRead(left)) + "," + String(robot.ultrasonicRead(right)) + ",";
 
   send2bt = send2bt + String(compoundEyeRead(13)) + "," + String(compoundEyeRead(14));
