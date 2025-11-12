@@ -3,7 +3,7 @@
  *
  * @file        PeanutKingSoccerV3.cpp
  * @summary     Soccer Robot V3 Library
- * @version     3.4.0
+ * @version     3.4.1
  * @author      Jack Kwok
  * @date        2 January 2024
  *
@@ -1720,4 +1720,4 @@ void PeanutKingSoccerV3::bluetoothPrintName(void)
   String str = Serial1.readString();
   uint8_t endidx = str.indexOf('\r');
   setScreen(0, 0, (char *)str.substring(6, endidx).c_str());
-}sdgdagd
+}
