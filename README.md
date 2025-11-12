@@ -11,15 +11,18 @@ Arudino library for Robo Fever soccer robot.
 ---
 
 ## Documentation
+Please be noted that V2, V3, V4 are not compatible.
 
  * 2022-07-26 V3.1 robot Library released
 
- * V3.0 robot released
-
  * V2.2 robot released
  
+ * V3.0 robot released
 
-
+ * V3.4.7 robot library released
+   - provided bluetooth remote connection for controlling and data monitoring
+  
+ * V4 robot released
 
 # Soccer Robot v3.0 scope
 
