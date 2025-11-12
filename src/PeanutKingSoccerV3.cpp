@@ -3,7 +3,7 @@
  *
  * @file        PeanutKingSoccerV3.cpp
  * @summary     Soccer Robot V3 Library
- * @version     3.4.1
+ * @version     3.4.4
  * @author      Jack Kwok
  * @date        2 January 2024
  *
