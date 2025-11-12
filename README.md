@@ -14,10 +14,13 @@ Arudino library for Robo Fever soccer robot.
 
  * 2022-07-26 V3.1 robot Library released
 
- * V3.0 robot released
-
  * V2.2 robot released
  
+ * V3.0 robot released
+
+ * V3.4.7 robot library released
+   - provided bluetooth remote connection for controlling and data monitoring
+   - V4 robot released
 
 
 
