@@ -1,5 +1,5 @@
-#include <PeanutKing_Soccer_V3.h>
-static PeanutKing_Soccer_V3 robot = PeanutKing_Soccer_V3();
+#include <PeanutKingSoccerV3.h>
+static PeanutKingSoccerV3 robot = PeanutKingSoccerV3();
 
 void setup() {
   robot.init();
