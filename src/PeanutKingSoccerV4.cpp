@@ -50,7 +50,9 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   ledPin{26, 28, 27},
   ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
   ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
-  pwmPin{10, 11, 12, 13} {    // timer 3 (controls pin 5, 3, 2);
+  pwmPin{10, 11, 12, 13},     // timer 3 (controls pin 5, 3, 2);
+  motorMap{M1, M2, M3, M4}
+  {
   if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
     V4bot = this;
   }
@@ -540,23 +542,41 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
   digitalWrite(ledPin[LED], status);
 }
+
 /* =============================================================================
  *                                  Motors
  * ============================================================================= */
+
+/*
+Check which motor is connected to which port (M1/M2/M3/M4),
+then allocate the motor port to the correct motor position in void setup() function.
+e.g. robot.motorMapSet(M2, M3, M4, M1);
+*/
+void PeanutKingSoccerV4::motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack)
+{
+  motorMap[0] = LeftFront;
+  motorMap[1] = RightFront;
+  motorMap[2] = LeftBack;
+  motorMap[3] = RightBack;
+}
+
 // simple motor turn, [mi] cannot add, one by one 
 void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
+  uint8_t motorIndex = motorMap[mi];    // use motorMap to get the actual motor index
+  speed = constrain(speed, -255, 255);  // constrain speed to be within -255 to 255
 
+  // H brigdge control logic
   if ( speed == 0) {
-    digitalWrite(in1Pin[mi], HIGH);
-    digitalWrite(in2Pin[mi], HIGH);
+    digitalWrite(in1Pin[motorIndex], HIGH);
+    digitalWrite(in2Pin[motorIndex], HIGH);
   }
   else if (speed > 0) {
-    analogWrite(in1Pin[mi], speed );
-    digitalWrite(in2Pin[mi], LOW);
+    analogWrite(in1Pin[motorIndex], speed );
+    digitalWrite(in2Pin[motorIndex], LOW);
   }
   else {
-    digitalWrite(in1Pin[mi], LOW );
-    analogWrite(in2Pin[mi], - speed);
+    digitalWrite(in1Pin[motorIndex], LOW );
+    analogWrite(in2Pin[motorIndex], - speed);
   }
 }
 
@@ -567,7 +587,6 @@ void PeanutKingSoccerV4::motorStop(void) {
   }
 }
 
-
 void PeanutKingSoccerV4::motorDisable(void) {
   for(uint8_t i=0; i<4; i++) {
     digitalWrite(in1Pin[i], HIGH);
@@ -575,8 +594,6 @@ void PeanutKingSoccerV4::motorDisable(void) {
     currentSpeed[i] = 0;
   }
 }
-
-
 
 void PeanutKingSoccerV4::motorControl(float mAngle, float mSpeed, float rotate) {
   int16_t mc[4];
@@ -613,9 +630,6 @@ void PeanutKingSoccerV4::moveSmart(uint16_t angular_direction, int16_t speed, in
   if ( speed==0 && abs(rotation)<12 ) rotation = 0;
   motorControl(angular_direction, speed, rotation);
 }
-
-
-
 /* =============================================================================
  *                              Advance Control
  * ============================================================================= */

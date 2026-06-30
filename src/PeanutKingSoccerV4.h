@@ -222,8 +222,14 @@ class PeanutKingSoccerV4 {
     I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length),
     // I2CSend(int8_t addr, uint8_t *data, uint8_t length),
     // I2CRead(int8_t addr, uint8_t *data, uint8_t length),
-    setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w),
+    setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+    
+/* =============================================================================
+ *                               Motors Functions
+ * ============================================================================= */
 
+  void
+    motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack),
     motorControl(float,float,float),
     motorSet(uint8_t, int16_t),
     move(int16_t, int16_t),
@@ -232,8 +238,14 @@ class PeanutKingSoccerV4 {
 
   uint8_t motorTest (void);
 
+/* =============================================================================
+  *                              Strategy Functions
+  * ============================================================================= */
+
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
+
+
   hsl_t getColorSensorHSL(uint8_t color_sensor_num);
   rgb_t getColorSensorRGB(uint8_t color_sensor_num);
 
@@ -340,7 +352,8 @@ class PeanutKingSoccerV4 {
   IICIT::Handle compssHandle;
   IICIT::Handle senbrdHandle;
   IICIT::Handle topbrdHandle;
-  private:
+
+private:
   void ULT_Echo_dect(uint8_t);
   static void ULT_Echo_dect_0();
   static void ULT_Echo_dect_1();
@@ -351,6 +364,8 @@ class PeanutKingSoccerV4 {
   uint32_t ULT_get_interval;
   uint8_t ultra_send_seq = 0;
 
+  // motor
+  uint8_t motorMap[4];
 };
 
 #endif
