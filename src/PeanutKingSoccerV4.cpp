@@ -51,13 +51,12 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
   ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
   pwmPin{10, 11, 12, 13},     // timer 3 (controls pin 5, 3, 2);
-  motorMap{M1, M2, M3, M4}
+  motorMap{M1, M2, M3, M4}    // default motor mapping
   {
   if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
     V4bot = this;
   }
 }
-
 
 uint8_t PeanutKingSoccerV4::getColorSensor(uint8_t color_sensor_num){
   uint8_t val = 0;
@@ -348,12 +347,17 @@ bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
   else
     return 0;
 }
+
+// Read the compass value, unit: degree (0~360), clockwise
 uint16_t PeanutKingSoccerV4::compassRead(void) {
   for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
   I2CSensorRead(compssHandle, GET_YAW, 2);
   compass  = rxBuff[0] & 0xff;
   compass |= rxBuff[1] << 8;
   compass = compass/100;
+
+  // Apply the conversion using the compassConverter
+  compass = compassConverter.convert(compass);
   return compass;
 }
 uint8_t PeanutKingSoccerV4::compoundMaxEye(){
@@ -547,11 +551,9 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
  *                                  Motors
  * ============================================================================= */
 
-/*
-Check which motor is connected to which port (M1/M2/M3/M4),
-then allocate the motor port to the correct motor position in void setup() function.
-e.g. robot.motorMapSet(M2, M3, M4, M1);
-*/
+/* Check which motor is connected to which port (M1/M2/M3/M4),
+ * then allocate the motor port to the correct motor position in void setup() function.
+ * e.g. robot.motorMapSet(M2, M3, M4, M1); */
 void PeanutKingSoccerV4::motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack)
 {
   motorMap[0] = LeftFront;
@@ -560,7 +562,11 @@ void PeanutKingSoccerV4::motorsConfiguration(uint8_t LeftFront, uint8_t RightFro
   motorMap[3] = RightBack;
 }
 
-// simple motor turn, [mi] cannot add, one by one 
+/* Set single motor speed
+ * mi: motor index (0-3)
+ * speed: -255 to 255
+ * 
+ * All speed are < 0 -> robot rotates anti-clockwise */
 void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
   uint8_t motorIndex = motorMap[mi];    // use motorMap to get the actual motor index
   speed = constrain(speed, -255, 255);  // constrain speed to be within -255 to 255
@@ -580,14 +586,16 @@ void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
   }
 }
 
-void PeanutKingSoccerV4::motorStop(void) {
+// stop all motors
+void PeanutKingSoccerV4::motorsStop(void) {
   for(uint8_t i=0; i<4; i++) {
     digitalWrite(in1Pin[i], HIGH);
     digitalWrite(in2Pin[i], HIGH);
   }
 }
 
-void PeanutKingSoccerV4::motorDisable(void) {
+// disable all motors
+void PeanutKingSoccerV4::motorsDisable(void) {
   for(uint8_t i=0; i<4; i++) {
     digitalWrite(in1Pin[i], HIGH);
     digitalWrite(in2Pin[i], HIGH);
@@ -595,44 +603,68 @@ void PeanutKingSoccerV4::motorDisable(void) {
   }
 }
 
-void PeanutKingSoccerV4::motorControl(float mAngle, float mSpeed, float rotate) {
+// robot movement based on angle, speed, and rotation
+void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
   int16_t mc[4];
 
+  // convert the angle to the robot's coordinate system
+  mAngle = motorConverter.convert(mAngle);
+
+  // vector decomposition for mecanum wheels
   mc[0] = -mSpeed*sin( (mAngle+45.0)*pi/180.0 );
   mc[1] = -mSpeed*cos( (mAngle+45.0)*pi/180.0 );
   mc[2] = -mc[0];
   mc[3] = -mc[1];
 
+  // Apply the speed and rotation to each motor
   for(int8_t i=3; i>=0; i--) {
-    motorSet(i, mc[i] - rotate);
+    motorSet(i, mc[i] + rotate);
   }
 }
 
-void PeanutKingSoccerV4::move(int16_t speed_X, int16_t speed_Y) {
+// robot movement based on X and Y speed components
+void PeanutKingSoccerV4::moveBySpeedVector(int16_t speed_X, int16_t speed_Y) {
+  // Calculate the angle of movement based on the speed vector
   double mAngle = atan((double)speed_Y/(double)speed_X) * pi;
+
+  // Adjust the angle based on the quadrant of the speed vector
   if ( speed_X<0 ) mAngle += 180;
   if ( mAngle<0 )  mAngle += 360;
   
+  // Calculate the magnitude of the speed vector
   uint16_t mSpeed = sqrt( speed_X*speed_X + speed_Y*speed_Y );
-  
+
   moveSmart(mAngle, mSpeed);
+}
+
+// robot movement based on angle, speed, and compass correction with PID control
+void PeanutKingSoccerV4::moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, double facingAngle = 0.0) {
+  // set the desired facing angle for the PID controller
+  pid.setPoint = facingAngle;
+
+  // read the current compass value and normalize it to be [-180, 180] degrees
+  double c = compassConverter.normalize(compassRead() + 180.0f) - 180.0f;
+
+  // calculate the rotation correction based on the current compass reading
+  double rotation = pid.update(c);
+
+  moveByAngle(mAngle, mSpeed, rotation);
 }
 
 // motor move + compass as reference
 void PeanutKingSoccerV4::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
+  // calculate the difference between the current compass reading and the desired angle
   int16_t c = compassRead() - angle;
-  int16_t rotation = c < 180 ? -c : 360 - c;
+  // normalize the difference to be within -180 to 180 degrees
+  int16_t rotation = c < 180 ? -c : 360 - c;  // need to fix?
   
   //speed - 50
   //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
   rotation = rotation * (precision+3)/12;
   // if ( speed==0 && abs(rotation)>10 ) rotation = rotation < 35 ? 35 : rotation;
   if ( speed==0 && abs(rotation)<12 ) rotation = 0;
-  motorControl(angular_direction, speed, rotation);
+  moveByAngle(angular_direction, speed, rotation);
 }
-/* =============================================================================
- *                              Advance Control
- * ============================================================================= */
 
 // motor test ------------------------------------------------------
 uint8_t PeanutKingSoccerV4::motorTest (void) {
@@ -654,6 +686,9 @@ uint8_t PeanutKingSoccerV4::motorTest (void) {
   }
 }
 
+/* =============================================================================
+ *                              Advance Control
+ * ============================================================================= */
 
 //                                  strategy
 // =================================================================================
@@ -950,7 +985,6 @@ void PeanutKingSoccerV4::bluetoothAttributes() {
 
 }
 
-
 typedef enum
 {
   FORWARD= 'F',
@@ -1056,11 +1090,6 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
 //command(uint8_t value)   send(value, 0);
 /************ low level data pushing commands **********/
 
-
-
-
-
-
 void btSetupnTest(){
   char setBaud[] = "AT+BAUD8";
   
@@ -1071,4 +1100,3 @@ void btSetupnTest(){
   Serial1.end();
   Serial1.begin(115200);
 }
-
