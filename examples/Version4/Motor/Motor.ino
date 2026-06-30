@@ -2,26 +2,28 @@
 static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
 void setup() {
-  robot.init(); 
+  robot.init();
+  robot.motorsConfiguration(M1, M2, M3, M4); // configure the motor ports
+  robot.motorConverter.config().flip(); // configure the motor converter to flip the direction
 }
 
 void loop() {
-  robot.motorSet(0,-199); // motor 1, turn clockwise
-  robot.motorSet(1,-199); // motor 2, turn clockwise
-  robot.motorSet(2,-199); // motor 3, turn clockwise
-  robot.motorSet(3,-199); // motor 4, turn clockwise
+  robot.motorSet(0,-199); // motor 1, turn anti-clockwise
+  robot.motorSet(1,-199); // motor 2, turn anti-clockwise
+  robot.motorSet(2,-199); // motor 3, turn anti-clockwise
+  robot.motorSet(3,-199); // motor 4, turn anti-clockwise
 
   delay(200);
-  robot.motorStop();       // all motor stop
+  robot.motorsStop();       // all motor stop
 
-  robot.motorSet(0,199);  // motor 1, turn anti-clockwise
-  robot.motorSet(1,199);  // motor 2, turn anti-clockwise
-  robot.motorSet(2,199);  // motor 3, turn anti-clockwise
-  robot.motorSet(3,199);  // motor 4, turn anti-clockwise
+  robot.motorSet(0,199);  // motor 1, turn clockwise
+  robot.motorSet(1,199);  // motor 2, turn clockwise
+  robot.motorSet(2,199);  // motor 3, turn clockwise
+  robot.motorSet(3,199);  // motor 4, turn clockwise
 
   delay(200);
 
-  robot.motorStop();       // all motor stop
+  robot.motorsStop();       // all motor stop
 
   delay(1000);
 }

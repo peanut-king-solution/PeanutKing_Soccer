@@ -24,6 +24,9 @@
 #include <PDQ_GFX.h>				// PDQ: Core graphics library
 #include <PDQ_ST7735.h>			// PDQ: Hardware-specific driver library
 #include <pcint.h>
+
+#include <PIDController.h>
+#include <converter.h>
 // #include <Fonts/FreeSerif12pt7b.h>	// include fancy serif font
 // #include <Fonts/FreeSans12pt7b.h>	// include fancy sans-serif font
 #define LED1   0x01
@@ -174,6 +177,10 @@ class PeanutKingSoccerV4 {
  public:
   PeanutKingSoccerV4(void);
 
+  // Converters' instances
+  Converter motorConverter;
+  Converter compassConverter;
+
 /* =============================================================================
  *                              Functions
  * ============================================================================= */
@@ -195,6 +202,7 @@ class PeanutKingSoccerV4 {
   uint16_t
     floorColorRead(uint8_t),
     ultrasonicRead(uint8_t),
+    // Read the compass value, unit: degree (0~360), clockwise
     compassRead(void),
     whiteLineCal(uint8_t = 00);
   uint8_t* compoundEyeRead();
@@ -227,15 +235,31 @@ class PeanutKingSoccerV4 {
 /* =============================================================================
  *                               Motors Functions
  * ============================================================================= */
-
   void
+    /*
+    Check which motor is connected to which port (M1/M2/M3/M4),
+    then allocate the motor port to the correct motor position in void setup() function.
+    e.g. robot.motorMapSet(M2, M3, M4, M1);
+    */
     motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack),
-    motorControl(float,float,float),
-    motorSet(uint8_t, int16_t),
-    move(int16_t, int16_t),
-    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5),
-    motorStop(void);
-
+    
+    /* Set single motor speed, mi: motor index (0-3), speed: -255 to 255
+    
+    All speed are < 0 -> robot rotates clockwise */
+    motorSet(uint8_t mi, int16_t speed),
+    // stop all motors
+    motorsStop(void),
+    // disable all motors
+    motorsDisable(void),
+    
+    // robot movement based on angle, speed, and rotation
+    moveByAngle(float mAngle, float mSpeed, float rotate),
+    // robot movement based on X and Y speed components
+    moveBySpeedVector(int16_t speed_X, int16_t speed_Y),
+    // robot movement based on angle, speed, and compass correction with PID control
+    moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, double facingAngle = 0.0),
+    // motor move + compass as reference
+    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5);
   uint8_t motorTest (void);
 
 /* =============================================================================
@@ -369,6 +393,3 @@ private:
 };
 
 #endif
-
-
-
