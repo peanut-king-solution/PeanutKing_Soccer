@@ -3,39 +3,50 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
 void setup() {
   robot.init();
-  robot.motorsConfiguration(M1, M2, M3, M4); // configure the motor ports
-  robot.motorConverter.config().flip(); // configure the motor converter to flip the direction
+  /* You should first run without config check which motor (LF/RF/LB/RB) is connected to which port (M1/M2/M3/M4),
+  then allocate the motor port to the correct motor position in void setup() function. */
+
+  // uncomment the below line to configure the motor ports
+  // robot.motorsConfiguration(M4, M2, M3, M1); 
+  
+
+  /* You should also check the direction of each motor (LF/RF/LB/RB), 
+  then configure the motor converter to flip the direction in void setup() function. */
+
+  // uncomment the below line to configure the motor converter to adjust the robot's move direction
+  // robot.motorConverter.config().shift(90).flip();
 }
 
 void loop() {
-  robot.motorSet(0,-199); // motor 1, turn anti-clockwise
-  robot.motorSet(1,-199); // motor 2, turn anti-clockwise
-  robot.motorSet(2,-199); // motor 3, turn anti-clockwise
-  robot.motorSet(3,-199); // motor 4, turn anti-clockwise
+  // In this time, you should check which motor (LF/RF/LB/RB) is connected to which port (M1/M2/M3/M4), 
+  // then allocate the motor port to the correct motor position in void setup() function.
+  robot.motorSet(M1,199);
+  delay(1000);
 
-  delay(200);
-  robot.motorsStop();       // all motor stop
+  robot.motorsStop();
+  robot.motorSet(M2,199);
+  delay(1000);
 
-  robot.motorSet(0,199);  // motor 1, turn clockwise
-  robot.motorSet(1,199);  // motor 2, turn clockwise
-  robot.motorSet(2,199);  // motor 3, turn clockwise
-  robot.motorSet(3,199);  // motor 4, turn clockwise
+  robot.motorsStop();
+  robot.motorSet(M3,199);
+  delay(1000);
 
-  delay(200);
+  robot.motorsStop();
+  robot.motorSet(M4,199);
+  delay(1000);
 
-  robot.motorsStop();       // all motor stop
+  // Stop all motors
+  robot.motorsStop();
+  delay(1000);
 
+  // In this time, you should check the direction of each motor (LF/RF/LB/RB),
+  // then configure the motor converter to flip the direction in void setup() function.
+  robot.moveByAngle(0, 100, 0); // Move forward at speed 100
+  delay(1000);
+
+  robot.moveByAngle(45, 100, 0);  // Move forward-right at speed 100
+  delay(1000);
+
+  robot.moveByAngle(90, 100, 0);  // Move right at speed 100
   delay(1000);
 }
-
-
-/* Extra function
- *  
- * robot.moveSmart( a,b,c,d );  // motor move using compass as reference 
- *                              // a is angular direction, normally use compass reading as reference
- *                              // b is speed, motor car moving speed 
- *                              // c is angle, 
- *                              // d is precision,
- */
-
-  
