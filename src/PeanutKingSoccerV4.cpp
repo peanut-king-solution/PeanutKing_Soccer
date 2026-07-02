@@ -640,8 +640,8 @@ void PeanutKingSoccerV4::moveBySpeedVector(int16_t speed_X, int16_t speed_Y) {
 
 // robot movement based on angle, speed, and compass correction with PID control
 void PeanutKingSoccerV4::moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, double facingAngle = 0.0) {
-  // set the desired facing angle for the PID controller
-  pid.setPoint = facingAngle;
+  // set the desired facing angle for the PID controller (normalized to be within [-180, 180] degrees)
+  pid.setPoint = compassConverter.normalize(facingAngle + 180.0f) - 180.0f;
 
   // read the current compass value and normalize it to be [-180, 180] degrees
   double c = compassConverter.normalize(compassRead() + 180.0f) - 180.0f;
