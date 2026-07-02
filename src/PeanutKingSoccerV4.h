@@ -181,6 +181,9 @@ class PeanutKingSoccerV4 {
   Converter motorConverter;
   Converter compassConverter;
 
+  // PID controllers' instances
+  PIDController motorPID;
+
 /* =============================================================================
  *                              Functions
  * ============================================================================= */

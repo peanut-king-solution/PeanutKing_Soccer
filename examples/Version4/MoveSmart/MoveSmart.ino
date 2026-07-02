@@ -9,8 +9,8 @@ void setup() {
 }
 
 void loop() {
-  PIDController pid(2, 0, 0); // Example PID parameters (Kp, Ki, Kd)
-  robot.moveByAngleWithSmart(0, 80, pid); // Move at 0 degrees with speed 80 and PID control based on compass reading
+  // Move at 0 degrees with speed 80 and PID control based on compass reading
+  robot.moveByAngleWithSmart(0, 80, robot.motorPID);
 }
 
 /* Extra function

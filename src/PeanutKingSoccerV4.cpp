@@ -51,7 +51,8 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
   ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
   pwmPin{10, 11, 12, 13},     // timer 3 (controls pin 5, 3, 2);
-  motorMap{M1, M2, M3, M4}    // default motor mapping
+  motorMap{M1, M2, M3, M4},   // default motor mapping
+  motorPID(2.0, 0.0, 0.0)     // initialize PID controller with default coefficients (Kp=2.0, Ki=0.0, Kd=0.0)
   {
   if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
     V4bot = this;
