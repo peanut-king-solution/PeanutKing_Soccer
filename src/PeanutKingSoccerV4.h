@@ -243,12 +243,12 @@ class PeanutKingSoccerV4 {
     /* Check which motor is connected to which port (M1/M2/M3/M4),
      * then allocate the motor port to the correct motor position in void setup() function.
      * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-    motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack),
+    motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR LeftBack, MOTOR RightBack),
     
     /* Set single motor speed, mi: motor index (0-3), speed: -255 to 255
      * 
      * All speed are < 0 -> robot rotates clockwise */
-    motorSet(uint8_t mi, int16_t speed),
+    motorSet(MOTOR mi, int16_t speed),
     // stop all motors
     motorsStop(void),
     // disable all motors
@@ -388,7 +388,7 @@ private:
   uint8_t ultra_send_seq = 0;
 
   // motor
-  uint8_t motorMap[4];
+  MOTOR motorMap[4];
 };
 
 #endif

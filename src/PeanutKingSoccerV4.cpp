@@ -555,7 +555,7 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
 /* Check which motor is connected to which port (M1/M2/M3/M4),
  * then allocate the motor port to the correct motor position in void setup() function.
  * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-void PeanutKingSoccerV4::motorsConfiguration(uint8_t LeftFront, uint8_t RightFront, uint8_t LeftBack, uint8_t RightBack)
+void PeanutKingSoccerV4::motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR LeftBack, MOTOR RightBack)
 {
   motorMap[0] = LeftFront;
   motorMap[1] = RightFront;
@@ -568,8 +568,8 @@ void PeanutKingSoccerV4::motorsConfiguration(uint8_t LeftFront, uint8_t RightFro
  * speed: -255 to 255
  * 
  * All speed are < 0 -> robot rotates anti-clockwise */
-void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
-  uint8_t motorIndex = motorMap[mi];    // use motorMap to get the actual motor index
+void PeanutKingSoccerV4::motorSet(MOTOR mi, int16_t speed) {
+  MOTOR motorIndex = motorMap[mi];    // use motorMap to get the actual motor index
   speed = constrain(speed, -255, 255);  // constrain speed to be within -255 to 255
 
   // H brigdge control logic
