@@ -135,6 +135,15 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   tft.start_TFT();
   tft.fillScreen(ST7735_BLACK);
 
+  // compass calibration
+  delay(10);
+  uint16_t sum = 0;
+  uint8_t sampleCount = 10;
+  for (int i = 0; i < sampleCount; i++) {
+    sum += compassRead();
+  }
+  // Set 0° as the direction of the robot facing at starting
+  compassConverter.config().shift(-(int16_t)(sum / sampleCount));
 
 // //---------------------------------------------- Set PWM frequency for D4 & D27 ------------------------------
 // //TCCR0B = TCCR0B & B11111000 | B00000001;    // set timer 0 divisor to     1 for PWM frequency of 62500.00 Hz
@@ -555,12 +564,12 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
 /* Check which motor is connected to which port (M1/M2/M3/M4),
  * then allocate the motor port to the correct motor position in void setup() function.
  * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-void PeanutKingSoccerV4::motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR LeftBack, MOTOR RightBack)
+void PeanutKingSoccerV4::motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR RightBack, MOTOR LeftBack)
 {
   motorMap[0] = LeftFront;
   motorMap[1] = RightFront;
-  motorMap[2] = LeftBack;
-  motorMap[3] = RightBack;
+  motorMap[2] = RightBack;
+  motorMap[3] = LeftBack;
 }
 
 /* Set single motor speed
@@ -606,7 +615,7 @@ void PeanutKingSoccerV4::motorsDisable(void) {
 
 // robot movement based on angle, speed, and rotation
 void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
-  int16_t mc[4];
+  float mc[4];
 
   // convert the angle to the robot's coordinate system
   mAngle = motorConverter.convert(mAngle);
@@ -619,7 +628,7 @@ void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
 
   // Apply the speed and rotation to each motor
   for(int8_t i=3; i>=0; i--) {
-    motorSet(i, mc[i] + rotate);
+    motorSet(i, (int16_t)(mc[i] + rotate));
   }
 }
 
@@ -639,17 +648,56 @@ void PeanutKingSoccerV4::moveBySpeedVector(int16_t speed_X, int16_t speed_Y) {
 }
 
 // robot movement based on angle, speed, and compass correction with PID control
-void PeanutKingSoccerV4::moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, double facingAngle = 0.0) {
+void PeanutKingSoccerV4::moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, float facingAngle = 0.0) {
   // set the desired facing angle for the PID controller (normalized to be within [-180, 180] degrees)
   pid.setPoint = compassConverter.normalize(facingAngle + 180.0f) - 180.0f;
 
   // read the current compass value and normalize it to be [-180, 180] degrees
-  double c = compassConverter.normalize(compassRead() + 180.0f) - 180.0f;
+  float c = compassConverter.normalize(compassRead() + 180.0f) - 180.0f;
 
   // calculate the rotation correction based on the current compass reading
-  double rotation = pid.update(c);
+  float rotation = pid.update(c);
 
   moveByAngle(mAngle, mSpeed, rotation);
+}
+
+void PeanutKingSoccerV4::moveByAngleWithJason(float mAngle, float mSpeed, float compassReading) {
+  mAngle = motorConverter.convert(mAngle);
+  
+  float rad = (mAngle + 45.0f) * (pi / 180.0f);
+  float a = cos(rad), b = sin(rad);
+  float scaleFactor = max(fabsf(a), fabsf(b));
+
+  float m[4];
+  m[0] = -b / scaleFactor;   // M1
+  m[1] = -a / scaleFactor;   // M2
+  m[2] = -m[0];             // M3
+  m[3] = -m[1];             // M4
+
+  //normalize the compass reading to -180 to 180
+  compassReading = compassConverter.normalize(compassReading + 180.0f) - 180.0f;
+
+  float rotationScale, rotation;
+  rotationScale = -(compassReading / 180.0f); // scale to -1 to 1
+
+  if (fabsf(compassReading) < 90.0f) {
+    rotation = motorPID.update(-rotationScale);
+    rotation = constrain(rotation, -255.0f, 255.0f);
+  } else {
+    float sign = (rotationScale > 0.0f) ? 1.0f : ((rotationScale < 0.0f) ? -1.0f : 0.0f);
+    rotation = 255.0f * sign;
+    mSpeed = 0.0f;
+  }
+
+  float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
+
+  for (uint8_t i = 0; i < 4; i++) {
+    m[i] = m[i] * factor + rotation;
+    m[i] = constrain(m[i], -255.0f, 255.0f);
+    // Serial.print("Motor " + String(i) + ": " + String(m[i]) + " ");
+    motorSet((MOTOR)i, (int16_t)m[i]);
+  }
+  // Serial.println();
 }
 
 // motor move + compass as reference

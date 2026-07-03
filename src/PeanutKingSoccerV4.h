@@ -243,7 +243,7 @@ class PeanutKingSoccerV4 {
     /* Check which motor is connected to which port (M1/M2/M3/M4),
      * then allocate the motor port to the correct motor position in void setup() function.
      * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-    motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR LeftBack, MOTOR RightBack),
+    motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR RightBack, MOTOR LeftBack),
     
     /* Set single motor speed, mi: motor index (0-3), speed: -255 to 255
      * 
@@ -259,7 +259,8 @@ class PeanutKingSoccerV4 {
     // robot movement based on X and Y speed components
     moveBySpeedVector(int16_t speed_X, int16_t speed_Y),
     // robot movement based on angle, speed, and compass correction with PID control
-    moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, double facingAngle = 0.0),
+    moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, float facingAngle = 0.0),
+    moveByAngleWithJason(float mAngle, float mSpeed, float compassReading),
     // motor move + compass as reference
     moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5);
   uint8_t motorTest (void);
