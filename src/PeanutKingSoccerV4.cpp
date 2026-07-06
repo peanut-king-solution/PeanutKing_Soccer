@@ -354,19 +354,6 @@ bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
   else
     return 0;
 }
-
-// Read the compass value, unit: degree (0~360), clockwise
-uint16_t PeanutKingSoccerV4::compassRead(void) {
-  for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
-  I2CSensorRead(compssHandle, GET_YAW, 2);
-  compass  = rxBuff[0] & 0xff;
-  compass |= rxBuff[1] << 8;
-  compass = compass/100;
-
-  // Apply the conversion using the compassConverter
-  compass = compassConverter.convert(compass);
-  return compass;
-}
 uint8_t PeanutKingSoccerV4::compoundMaxEye(){
   rxBuff[0] = 0;
   I2CSensorRead(senbrdHandle, 13, 1);
@@ -552,6 +539,48 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
 }
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
   digitalWrite(ledPin[LED], status);
+}
+
+/* =============================================================================
+ *                                  Compass
+ * ============================================================================= */
+
+// Read the compass value, unit: degree (0~360), clockwise
+uint16_t PeanutKingSoccerV4::compassRead(void) {
+  for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
+  I2CSensorRead(compssHandle, GET_YAW, 2);
+  compass  = rxBuff[0] & 0xff;
+  compass |= rxBuff[1] << 8;
+  compass = compass/100;
+
+  // Apply the conversion using the compassConverter
+  compass = compassConverter.convert(compass);
+  return compass;
+}
+
+int16_t* PeanutKingSoccerV4::getAccelerometerRaw(void){
+  I2CSensorRead(compssHandle, ACC_RAW, 6);
+  static int16_t accel[3];
+  accel[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
+  accel[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
+  accel[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
+  return accel;
+}
+int16_t* PeanutKingSoccerV4::getGyroscopeRaw(void){
+  I2CSensorRead(compssHandle, GYR_RAW, 6);
+  static int16_t gyro[3];
+  gyro[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
+  gyro[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
+  gyro[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
+  return gyro;
+}
+int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void) {
+  I2CSensorRead(compssHandle, MAG_RAW, 6);
+  static int16_t mag[3];
+  mag[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
+  mag[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
+  mag[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
+  return mag;
 }
 
 /* =============================================================================

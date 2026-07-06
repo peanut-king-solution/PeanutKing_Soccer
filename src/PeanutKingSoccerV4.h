@@ -205,8 +205,6 @@ class PeanutKingSoccerV4 {
   uint16_t
     floorColorRead(uint8_t),
     ultrasonicRead(uint8_t),
-    // Read the compass value, unit: degree (0~360), clockwise
-    compassRead(void),
     whiteLineCal(uint8_t = 00);
   uint8_t* compoundEyeRead();
   void 
@@ -234,12 +232,23 @@ class PeanutKingSoccerV4 {
     // I2CSend(int8_t addr, uint8_t *data, uint8_t length),
     // I2CRead(int8_t addr, uint8_t *data, uint8_t length),
     setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+
+/* =============================================================================
+ *                              Compass Functions
+ * ============================================================================= */
+
+  // Read the compass value, unit: degree (0~360), clockwise
+  uint16_t compassRead(void);
+  
+  int16_t* getAccelerometerRaw(void);
+  int16_t* getGyroscopeRaw(void);
+  int16_t* getMagnetometerRaw(void);
     
 /* =============================================================================
  *                               Motors Functions
  * ============================================================================= */
   
- void
+  void
     /* Check which motor is connected to which port (M1/M2/M3/M4),
      * then allocate the motor port to the correct motor position in void setup() function.
      * e.g. robot.motorMapSet(M2, M3, M4, M1); */
