@@ -123,7 +123,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   }
   delay(10);
 
-  compssHandle = gIIC->RegisterDevice(compass_address, 1, IICIT::Speed::SLOW);
+  compssHandle = gIIC->RegisterDevice(compass_address, 1, IICIT::Speed::FAST);
   senbrdHandle = gIIC->RegisterDevice(sensorBoardAddr, 1, IICIT::Speed::SLOW);
   #if defined(ST7735_RST_PIN)	// reset like Adafruit does
     FastPin<ST7735_RST_PIN>::setOutput();
@@ -137,11 +137,8 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
 
   // compass calibration
   delay(10);
-  uint16_t sum = 0;
-  uint8_t sampleCount = 10;
-  for (int i = 0; i < sampleCount; i++) {
-    sum += compassRead();
-  }
+  uint16_t sum = 0; int8_t sampleCount = 10;
+  for (int i = 0; i < sampleCount; i++) sum += compassRead();
   // Set 0° as the direction of the robot facing at starting
   compassConverter.config().shift(-(int16_t)(sum / sampleCount));
 
