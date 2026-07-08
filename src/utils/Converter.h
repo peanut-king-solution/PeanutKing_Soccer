@@ -30,4 +30,4 @@ public:
   void reset();
 };
 
-#endif
+#endif  // CONVERTER_H

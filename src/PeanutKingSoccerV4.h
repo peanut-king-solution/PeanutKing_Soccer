@@ -11,24 +11,28 @@
  *              3.1.0 - 26 Jul 2022
  */
 
-
 #ifndef PeanutKing_Soccer_V4_H
 #define PeanutKing_Soccer_V4_H
 
-#include <pins_arduino.h>
-#include "IICIT.h"
 #include "PeanutKingDef.h"
-#include "SlowSoftI2CMaster.h"
-#include <SPI.h>				// must include this here (or else IDE can't find it)
-                                           
-#include <PDQ_GFX.h>				// PDQ: Core graphics library
-#include <PDQ_ST7735.h>			// PDQ: Hardware-specific driver library
-#include <pcint.h>
 
-#include <PIDController.h>
-#include <converter.h>
+#include "IICIT.h"
+#include "SlowSoftI2CMaster.h"
+
+#include "utils/Converter.h"
+#include "utils/PIDController.h"
+#include "modules/Motor/Motor.h"
+#include "modules/Movement/Movement.h"
+
+#include <SPI.h>					// must include this here (or else IDE can't find it)
+#include <pcint.h>				// Pin Change Interrupt Library
+#include <PDQ_GFX.h>			// PDQ: Core graphics library
+#include <PDQ_ST7735.h>		// PDQ: Hardware-specific driver library
+#include <pins_arduino.h> // Arduino pin definitions
+
 // #include <Fonts/FreeSerif12pt7b.h>	// include fancy serif font
 // #include <Fonts/FreeSans12pt7b.h>	// include fancy sans-serif font
+
 #define LED1   0x01
 #define LED2   0x02
 #define LED3   0x04
@@ -76,9 +80,6 @@
 #define  LED_RGB        0xa0    // 4byte*8 32 (0xa0 - 0xbf)
 #define  LED_HSV        0xc0    // 4byte*8 32 (0xc0 - 0xdf)
 
-//#define  MOTOR           0xf0    // 4 motors * 2byte
-//#define  ENCODER         0xf8    // 4 encoder* byte
-
 // Compass Module Register Address
 #define  ACC_RAW        0x40    // 6byte   (0-5)
 #define  GYR_RAW        0x46    // 6byte  (6-b)
@@ -99,14 +100,9 @@
 //   STATERESET   = 0,
 //   STATESET     = 1;
 
-// motor,  + clockwise turn when positive value
-// 1 4
-// 2 3
-
 // 1. userdefinebutton set of movement
 // 2. attributes
-typedef enum{
-          // RGB
+typedef enum{ // RGB
   LED_OFF,    // 000
   LED_BLUE,   // 001
   LED_GREEN,  // 010
@@ -133,19 +129,11 @@ typedef enum{
   U4
 }ULTR_SENSOR;
 typedef enum{
-  M1,
-  M2,
-  M3,
-  M4
-}MOTOR;
-
-typedef enum{
   S1_P = 10,
   S2_P,
   S3_P,
   S4_P,
 }S_PIN;
-
 typedef enum{
   D6_P = 56,
   D5_P,
@@ -154,7 +142,6 @@ typedef enum{
   D2_P,
   D1_P,
 }D_PIN;
-
 typedef enum{
   A4_P = 62,
   A3_P,
@@ -174,15 +161,22 @@ typedef enum {
 
 
 class PeanutKingSoccerV4 {
- public:
+public:
+  // Constructor
   PeanutKingSoccerV4(void);
 
+  // Initialize the robot's modules
+	void init(uint8_t = 0);
+
+	// Read all sensor data from the robot's modules
+	void dataFetch(void);
+
   // Converters' instances
-  Converter motorConverter;
   Converter compassConverter;
 
-  // PID controllers' instances
-  PIDController motorPID;
+  // Modules' instances (sequence of initialization is important)
+	Motor     motor;
+	Movement  move;
 
 /* =============================================================================
  *                              Functions
@@ -222,11 +216,9 @@ class PeanutKingSoccerV4 {
   
   uint8_t colorReadAll(void);
   IICIT::status_t rxCpltCallback(const IICIT::status_t status);
-  void 
-    init(uint8_t = 0),
+  void
     // autoScanning(void),
     enableScanning(bool, uint16_t, bool),
-    dataFetch(void),
     I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length),
     I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length),
     // I2CSend(int8_t addr, uint8_t *data, uint8_t length),
@@ -243,36 +235,6 @@ class PeanutKingSoccerV4 {
   int16_t* getAccelerometerRaw(void);
   int16_t* getGyroscopeRaw(void);
   int16_t* getMagnetometerRaw(void);
-    
-/* =============================================================================
- *                               Motors Functions
- * ============================================================================= */
-  
-  void
-    /* Check which motor is connected to which port (M1/M2/M3/M4),
-     * then allocate the motor port to the correct motor position in void setup() function.
-     * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-    motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR RightBack, MOTOR LeftBack),
-    
-    /* Set single motor speed, mi: motor index (0-3), speed: -255 to 255
-     * 
-     * All speed are < 0 -> robot rotates clockwise */
-    motorSet(MOTOR mi, int16_t speed),
-    // stop all motors
-    motorsStop(void),
-    // disable all motors
-    motorsDisable(void),
-    
-    // robot movement based on angle, speed, and rotation
-    moveByAngle(float mAngle, float mSpeed, float rotate),
-    // robot movement based on X and Y speed components
-    moveBySpeedVector(int16_t speed_X, int16_t speed_Y),
-    // robot movement based on angle, speed, and compass correction with PID control
-    moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, float facingAngle = 0.0),
-    moveByAngleWithJason(float mAngle, float mSpeed, float compassReading),
-    // motor move + compass as reference
-    moveSmart(uint16_t, int16_t, int16_t = 0, uint8_t = 5);
-  uint8_t motorTest (void);
 
 /* =============================================================================
   *                              Strategy Functions
@@ -308,8 +270,6 @@ class PeanutKingSoccerV4 {
   const uint8_t
     buttonPin[4],
     ledPin[3],
-    in1Pin[4],
-    in2Pin[4],
     APin[4],
     DPin[6],
     pwmPin[4],
@@ -346,9 +306,6 @@ class PeanutKingSoccerV4 {
 
   buttonStatus_t button[3] = {NONE};
 
-  int16_t currentSpeed[4] = {0,0,0,0};
-  int16_t targetSpeed[4] = {0,0,0,0};
-
   rgb_t colorRGB[8];
   hsl_t colorHSL[8];
   hsv_t colorHSV[8];
@@ -357,8 +314,6 @@ class PeanutKingSoccerV4 {
   bool
     btButton[10],
     // autoScanEnabled   = true,
-    motorEnabled      = true,
-    motorBrakeEnabled = true,
     ledEnabled        = false,
     ledFlashEnabled   = false;
   uint16_t
@@ -396,9 +351,6 @@ private:
   uint32_t ULT_dt[4];
   uint32_t ULT_get_interval;
   uint8_t ultra_send_seq = 0;
-
-  // motor
-  MOTOR motorMap[4];
 };
 
-#endif
+#endif  // PeanutKing_Soccer_V4_H

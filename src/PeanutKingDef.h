@@ -12,10 +12,7 @@
 #ifndef PeanutKingDef_H
 #define PeanutKingDef_H
 
-
-
-
-
+#include <Arduino.h>
 
 typedef struct {
   volatile uint16_t pwm;

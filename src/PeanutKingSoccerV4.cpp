@@ -17,15 +17,12 @@ static void PeanutKingSoccerV4::ULT_Echo_dect_0(){
   V4bot->ULT_Echo_dect(0);
 }
 static void PeanutKingSoccerV4::ULT_Echo_dect_1(){
-  
   V4bot->ULT_Echo_dect(1);
 }
 static void PeanutKingSoccerV4::ULT_Echo_dect_2(){
-  
   V4bot->ULT_Echo_dect(2);
 }
 static void PeanutKingSoccerV4::ULT_Echo_dect_3(){
-  
   V4bot->ULT_Echo_dect(3);
 }
 void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
@@ -36,25 +33,22 @@ void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
 };
 PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   swiic{
-      SlowSoftI2CMaster (29, 30, 1),
-      SlowSoftI2CMaster (31, 32, 1),
-      SlowSoftI2CMaster (33, 34, 1),
-      SlowSoftI2CMaster (35, 36, 1),
-      SlowSoftI2CMaster (37, 38, 1),
-      SlowSoftI2CMaster (39, 40, 1),
-      SlowSoftI2CMaster (41, 42, 1),
-      SlowSoftI2CMaster (43, 44, 1)},
+    SlowSoftI2CMaster (29, 30, 1),
+    SlowSoftI2CMaster (31, 32, 1),
+    SlowSoftI2CMaster (33, 34, 1),
+    SlowSoftI2CMaster (35, 36, 1),
+    SlowSoftI2CMaster (37, 38, 1),
+    SlowSoftI2CMaster (39, 40, 1),
+    SlowSoftI2CMaster (41, 42, 1),
+    SlowSoftI2CMaster (43, 44, 1)},
   buttonPin{22, 23, 24, 25},        // mainboard V4
-  in1Pin{9,  7,  5, 3},     // timer 1 (controls pin 12, 11);
-  in2Pin{8,  6,  4, 2},     // timer 2 (controls pin 10, 9);
   ledPin{26, 28, 27},
   ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
   ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
-  pwmPin{10, 11, 12, 13},     // timer 3 (controls pin 5, 3, 2);
-  motorMap{M1, M2, M3, M4},   // default motor mapping
-  motorPID(2.0, 0.0, 0.0)     // initialize PID controller with default coefficients (Kp=2.0, Ki=0.0, Kd=0.0)
-  {
-  if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
+  pwmPin{10, 11, 12, 13},    // timer 3 (controls pin 5, 3, 2);
+  move(motor)     // initialize Movement instance with motor reference
+{
+  if (V4bot == NULL) {
     V4bot = this;
   }
 }
@@ -99,17 +93,19 @@ hsl_t PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num){
   swiic[color_sensor_num].i2c_stop(); // stop communication
   return temp;
 }
+
 // initialize all IOs, Serial.begin, I2C, timer interrupt, 
 // External interrupt different settings depends on version number 
 void PeanutKingSoccerV4::init(uint8_t mode) {
   Serial.begin(115200);
   Serial1.begin(115200);
+
+  // Initialize the motor pins
+  motor.init();
+
+  // Initialize the soft I2C instances for all 8 color sensors
   for (uint8_t i=0;i<8;i++){
     swiic[i].i2c_init();
-  }
-  for (uint8_t i=0; i<4; i++) {
-    pinMode(in1Pin[i],  OUTPUT);
-    pinMode(in2Pin[i],  OUTPUT);
   }
   for (uint8_t i=0; i<4; i++)
     pinMode(buttonPin[i], INPUT_PULLUP);
@@ -273,8 +269,6 @@ void PeanutKingSoccerV4::dataFetch(void) {
   compass  = rxBuff[0] & 0xff;
   compass |= rxBuff[1] << 8;
   compass = compass/100;
-
-  
 
   compoundEyeRead();
 
@@ -584,218 +578,40 @@ int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void) {
 }
 
 /* =============================================================================
- *                                  Motors
- * ============================================================================= */
-
-/* Check which motor is connected to which port (M1/M2/M3/M4),
- * then allocate the motor port to the correct motor position in void setup() function.
- * e.g. robot.motorMapSet(M2, M3, M4, M1); */
-void PeanutKingSoccerV4::motorsConfiguration(MOTOR LeftFront, MOTOR RightFront, MOTOR RightBack, MOTOR LeftBack)
-{
-  motorMap[0] = LeftFront;
-  motorMap[1] = RightFront;
-  motorMap[2] = RightBack;
-  motorMap[3] = LeftBack;
-}
-
-/* Set single motor speed
- * mi: motor index (0-3)
- * speed: -255 to 255
- * 
- * All speed are < 0 -> robot rotates anti-clockwise */
-void PeanutKingSoccerV4::motorSet(MOTOR mi, int16_t speed) {
-  MOTOR motorIndex = motorMap[mi];    // use motorMap to get the actual motor index
-  speed = constrain(speed, -255, 255);  // constrain speed to be within -255 to 255
-
-  // H brigdge control logic
-  if ( speed == 0) {
-    digitalWrite(in1Pin[motorIndex], HIGH);
-    digitalWrite(in2Pin[motorIndex], HIGH);
-  }
-  else if (speed > 0) {
-    analogWrite(in1Pin[motorIndex], speed );
-    digitalWrite(in2Pin[motorIndex], LOW);
-  }
-  else {
-    digitalWrite(in1Pin[motorIndex], LOW );
-    analogWrite(in2Pin[motorIndex], - speed);
-  }
-}
-
-// stop all motors
-void PeanutKingSoccerV4::motorsStop(void) {
-  for(uint8_t i=0; i<4; i++) {
-    digitalWrite(in1Pin[i], HIGH);
-    digitalWrite(in2Pin[i], HIGH);
-  }
-}
-
-// disable all motors
-void PeanutKingSoccerV4::motorsDisable(void) {
-  for(uint8_t i=0; i<4; i++) {
-    digitalWrite(in1Pin[i], HIGH);
-    digitalWrite(in2Pin[i], HIGH);
-    currentSpeed[i] = 0;
-  }
-}
-
-// robot movement based on angle, speed, and rotation
-void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
-  float mc[4];
-
-  // convert the angle to the robot's coordinate system
-  mAngle = motorConverter.convert(mAngle);
-
-  // vector decomposition for mecanum wheels
-  mc[0] = -mSpeed*sin( (mAngle+45.0)*pi/180.0 );
-  mc[1] = -mSpeed*cos( (mAngle+45.0)*pi/180.0 );
-  mc[2] = -mc[0];
-  mc[3] = -mc[1];
-
-  // Apply the speed and rotation to each motor
-  for(int8_t i=3; i>=0; i--) {
-    motorSet(i, (int16_t)(mc[i] + rotate));
-  }
-}
-
-// robot movement based on X and Y speed components
-void PeanutKingSoccerV4::moveBySpeedVector(int16_t speed_X, int16_t speed_Y) {
-  // Calculate the angle of movement based on the speed vector
-  double mAngle = atan((double)speed_Y/(double)speed_X) * pi;
-
-  // Adjust the angle based on the quadrant of the speed vector
-  if ( speed_X<0 ) mAngle += 180;
-  if ( mAngle<0 )  mAngle += 360;
-  
-  // Calculate the magnitude of the speed vector
-  uint16_t mSpeed = sqrt( speed_X*speed_X + speed_Y*speed_Y );
-
-  moveSmart(mAngle, mSpeed);
-}
-
-// robot movement based on angle, speed, and compass correction with PID control
-void PeanutKingSoccerV4::moveByAngleWithSmart(float mAngle, float mSpeed, PIDController& pid, float facingAngle = 0.0) {
-  // set the desired facing angle for the PID controller (normalized to be within [-180, 180] degrees)
-  pid.setPoint = compassConverter.normalize(facingAngle + 180.0f) - 180.0f;
-
-  // read the current compass value and normalize it to be [-180, 180] degrees
-  float c = compassConverter.normalize(compassRead() + 180.0f) - 180.0f;
-
-  // calculate the rotation correction based on the current compass reading
-  float rotation = pid.update(c);
-
-  moveByAngle(mAngle, mSpeed, rotation);
-}
-
-void PeanutKingSoccerV4::moveByAngleWithJason(float mAngle, float mSpeed, float compassReading) {
-  mAngle = motorConverter.convert(mAngle);
-  
-  float rad = (mAngle + 45.0f) * (pi / 180.0f);
-  float a = cos(rad), b = sin(rad);
-  float scaleFactor = max(fabsf(a), fabsf(b));
-
-  float m[4];
-  m[0] = -b / scaleFactor;   // M1
-  m[1] = -a / scaleFactor;   // M2
-  m[2] = -m[0];             // M3
-  m[3] = -m[1];             // M4
-
-  //normalize the compass reading to -180 to 180
-  compassReading = compassConverter.normalize(compassReading + 180.0f) - 180.0f;
-
-  float rotationScale, rotation;
-  rotationScale = -(compassReading / 180.0f); // scale to -1 to 1
-
-  if (fabsf(compassReading) < 90.0f) {
-    rotation = motorPID.update(-rotationScale);
-    rotation = constrain(rotation, -255.0f, 255.0f);
-  } else {
-    float sign = (rotationScale > 0.0f) ? 1.0f : ((rotationScale < 0.0f) ? -1.0f : 0.0f);
-    rotation = 255.0f * sign;
-    mSpeed = 0.0f;
-  }
-
-  float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
-
-  for (uint8_t i = 0; i < 4; i++) {
-    m[i] = m[i] * factor + rotation;
-    m[i] = constrain(m[i], -255.0f, 255.0f);
-    // Serial.print("Motor " + String(i) + ": " + String(m[i]) + " ");
-    motorSet((MOTOR)i, (int16_t)m[i]);
-  }
-  // Serial.println();
-}
-
-// motor move + compass as reference
-void PeanutKingSoccerV4::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
-  // calculate the difference between the current compass reading and the desired angle
-  int16_t c = compassRead() - angle;
-  // normalize the difference to be within -180 to 180 degrees
-  int16_t rotation = c < 180 ? -c : 360 - c;  // need to fix?
-  
-  //speed - 50
-  //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
-  rotation = rotation * (precision+3)/12;
-  // if ( speed==0 && abs(rotation)>10 ) rotation = rotation < 35 ? 35 : rotation;
-  if ( speed==0 && abs(rotation)<12 ) rotation = 0;
-  moveByAngle(angular_direction, speed, rotation);
-}
-
-// motor test ------------------------------------------------------
-uint8_t PeanutKingSoccerV4::motorTest (void) {
-  static uint32_t motorTimer = 0;
-  static uint8_t i = 0;
-  uint32_t timeNow = millis();
-  
-  if ( timeNow - motorTimer > 1000) {
-    motorTimer = timeNow;
-    for (uint8_t j=0; j<4; j++) {
-      if ( i<4 )
-        motorSet( j, i==j ? 100 : 0 );
-      else
-        motorSet( j, (i-4)==j ? -100 : 0 );
-    }
-    i++;
-    if ( i==9 )
-      i=0;
-  }
-}
-
-/* =============================================================================
  *                              Advance Control
  * ============================================================================= */
 
 //                                  strategy
 // =================================================================================
 void PeanutKingSoccerV4::Chase(int& direct, int& speed, int& rotation) {
-  static bool outside[4];
-  //  attack
-  //  Defend
-  //  MovingSpeed
-  //  BallPossession
-  //  Precision
+  // static bool outside[4];
+  // //  attack
+  // //  Defend
+  // //  MovingSpeed
+  // //  BallPossession
+  // //  Precision
 
-  int16_t 
-    attackSpeed = 80 + btAttributes[2]*16,                // 150
-    defendSpeed = 50 + btAttributes[2]*12,
-    BallPossessionSpeed = attackSpeed-btAttributes[3]*4,  // 100
-    reading = eye[maxEye];
+  // int16_t 
+  //   attackSpeed = 80 + btAttributes[2]*16,                // 150
+  //   defendSpeed = 50 + btAttributes[2]*12,
+  //   BallPossessionSpeed = attackSpeed-btAttributes[3]*4,  // 100
+  //   reading = eye[maxEye];
 
-  uint8_t quadrant;
+  // uint8_t quadrant;
   
-    speed = 120;//reading > 500 ? BallPossessionSpeed : attackSpeed;
-    //rotation = (ultrasonic[right] - ultrasonic[left])/6;
+  //   speed = 120;//reading > 500 ? BallPossessionSpeed : attackSpeed;
+  //   //rotation = (ultrasonic[right] - ultrasonic[left])/6;
     
-    if (eyeAngle<135)
-      direct = eyeAngle*1.5;
-    else if (eyeAngle>225)
-      direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
-    else {
-      if (ultrasonic[left] > ultrasonic[right])
-        direct = eyeAngle*1.5;
-      else
-        direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
-    }
+  //   if (eyeAngle<135)
+  //     direct = eyeAngle*1.5;
+  //   else if (eyeAngle>225)
+  //     direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
+  //   else {
+  //     if (ultrasonic[left] > ultrasonic[right])
+  //       direct = eyeAngle*1.5;
+  //     else
+  //       direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
+  //   }
     
     /*
     uint16_t moveAngle = direct;
@@ -850,28 +666,28 @@ void PeanutKingSoccerV4::Chase(int& direct, int& speed, int& rotation) {
 }
 
 void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
-  int16_t 
-    defendSpeed = 50 + btAttributes[2]*12,          // 80
-    y = ultrasonic[back] - (11 - btAttributes[2]) * 8,
-    x = (ultrasonic[left] - ultrasonic[right])/2;
+  // int16_t 
+  //   defendSpeed = 50 + btAttributes[2]*12,          // 80
+  //   y = ultrasonic[back] - (11 - btAttributes[2]) * 8,
+  //   x = (ultrasonic[left] - ultrasonic[right])/2;
 
-  speed = defendSpeed;
-  if ( abs(x) > 50 || ultrasonic[left]+ultrasonic[right]<130 )
-    y -= 25;
-  if ( y > 30 )
-    direct = atan( (float)x/y)*180+180;
-  else if ( x > 4 )
-    direct = 270;
-  else if ( x < -4 )
-    direct = 90;
-  else if ( y > 4 )
-    direct = 180;
-  else if ( y < -4 )
-    direct = 0;
-  else {
-    direct = 0;
-    speed = 0;
-  }
+  // speed = defendSpeed;
+  // if ( abs(x) > 50 || ultrasonic[left]+ultrasonic[right]<130 )
+  //   y -= 25;
+  // if ( y > 30 )
+  //   direct = atan( (float)x/y)*180+180;
+  // else if ( x > 4 )
+  //   direct = 270;
+  // else if ( x < -4 )
+  //   direct = 90;
+  // else if ( y > 4 )
+  //   direct = 180;
+  // else if ( y < -4 )
+  //   direct = 0;
+  // else {
+  //   direct = 0;
+  //   speed = 0;
+  // }
 }
 
 
@@ -1074,92 +890,92 @@ typedef enum
   PAUSE ='P'
 }BluetoothCmd;
 void PeanutKingSoccerV4::bluetoothRemote(void) {
-  static uint32_t last_ticks = 0;
-  static BluetoothCmd v = PAUSE;
-  static char msg[2] = {0};
-  // if(millis() - last_ticks>80){
-    // Serial.print("Hi");
-  //   Serial1.println(millis());
-  //   Serial1.print("$");
-  //   bluetoothSendStr();
-  //   Serial1.print("$");
-  //   last_ticks = millis();
-  // }
-  if (Serial1.available()) {
-    // v = Serial1.read();
-    Serial1.readBytes(msg, 2);
-    Serial.print("2char:");
-    Serial.print(msg[0]);
-    Serial.print(" ");
-    Serial.println(msg[1]);
-    if(msg[1] == '0'){
-      v = msg[0];
-    }else if(msg[1] == '1'){
-      v = PAUSE;
-    }
+  // static uint32_t last_ticks = 0;
+  // static BluetoothCmd v = PAUSE;
+  // static char msg[2] = {0};
+  // // if(millis() - last_ticks>80){
+  //   // Serial.print("Hi");
+  // //   Serial1.println(millis());
+  // //   Serial1.print("$");
+  // //   bluetoothSendStr();
+  // //   Serial1.print("$");
+  // //   last_ticks = millis();
+  // // }
+  // if (Serial1.available()) {
+  //   // v = Serial1.read();
+  //   Serial1.readBytes(msg, 2);
+  //   Serial.print("2char:");
+  //   Serial.print(msg[0]);
+  //   Serial.print(" ");
+  //   Serial.println(msg[1]);
+  //   if(msg[1] == '0'){
+  //     v = msg[0];
+  //   }else if(msg[1] == '1'){
+  //     v = PAUSE;
+  //   }
     
   
-      switch (v) {
-          case FORWARD:
-            Serial.println("front");
-            motorSet(0,120);
-            motorSet(1,120);
-            motorSet(2,-120);
-            motorSet(3,-120);
-            // setLED( 1 << 3 | 1<<4, 0, 255, 0, 0);
-            break;
-          case BACKWARD:
-            Serial.println("back");
-            motorSet(0,-120);
-            motorSet(1,-120);
-            motorSet(2,120);
-            motorSet(3,120);
-            // setLED(1<<0 | 1<<7, 0, 255, 0, 0);
-            break;
-          case RIGHT:
-            Serial.println("left");
+  //     switch (v) {
+  //         case FORWARD:
+  //           Serial.println("front");
+  //           motorSet(0,120);
+  //           motorSet(1,120);
+  //           motorSet(2,-120);
+  //           motorSet(3,-120);
+  //           // setLED( 1 << 3 | 1<<4, 0, 255, 0, 0);
+  //           break;
+  //         case BACKWARD:
+  //           Serial.println("back");
+  //           motorSet(0,-120);
+  //           motorSet(1,-120);
+  //           motorSet(2,120);
+  //           motorSet(3,120);
+  //           // setLED(1<<0 | 1<<7, 0, 255, 0, 0);
+  //           break;
+  //         case RIGHT:
+  //           Serial.println("left");
             
-            motorSet(0,-120);
-            motorSet(1,120);
-            motorSet(2,120);
-            motorSet(3,-120);
-            // setLED(1<<2 | 1<<1, 0, 255, 0, 0);
-            break;
-          case LEFT:
-            Serial.println("right");
-            motorSet(0,120);
-            motorSet(1,-120);
-            motorSet(2,-120);
-            motorSet(3,120);
-            // setLED(1<<6 | 1<<5, 0, 255, 0, 0);
-            break;
-          case CIRCLE:
-            Serial.println("rot ccw");
-            motorSet(0,120);
-            motorSet(1,120);
-            motorSet(2,120);
-            motorSet(3,120);
-            break;
-          case SQUARE:
-            Serial.println("rot cw");
-            motorSet(0,-120);
-            motorSet(1,-120);
-            motorSet(2,-120);
-            motorSet(3,-120);
-            break;
-          case PAUSE:
-            Serial.println("Stop");
-            motorSet(0,0);
-            motorSet(1,0);
-            motorSet(2,0);
-            motorSet(3,0);
-            // setLED(255, 0, 0, 0, 0);
-            break;
-          case START:
-            // setLED(255, 255, 255, 0, 0);
-            break;
-        }
-    }
+  //           motorSet(0,-120);
+  //           motorSet(1,120);
+  //           motorSet(2,120);
+  //           motorSet(3,-120);
+  //           // setLED(1<<2 | 1<<1, 0, 255, 0, 0);
+  //           break;
+  //         case LEFT:
+  //           Serial.println("right");
+  //           motorSet(0,120);
+  //           motorSet(1,-120);
+  //           motorSet(2,-120);
+  //           motorSet(3,120);
+  //           // setLED(1<<6 | 1<<5, 0, 255, 0, 0);
+  //           break;
+  //         case CIRCLE:
+  //           Serial.println("rot ccw");
+  //           motorSet(0,120);
+  //           motorSet(1,120);
+  //           motorSet(2,120);
+  //           motorSet(3,120);
+  //           break;
+  //         case SQUARE:
+  //           Serial.println("rot cw");
+  //           motorSet(0,-120);
+  //           motorSet(1,-120);
+  //           motorSet(2,-120);
+  //           motorSet(3,-120);
+  //           break;
+  //         case PAUSE:
+  //           Serial.println("Stop");
+  //           motorSet(0,0);
+  //           motorSet(1,0);
+  //           motorSet(2,0);
+  //           motorSet(3,0);
+  //           // setLED(255, 0, 0, 0, 0);
+  //           break;
+  //         case START:
+  //           // setLED(255, 255, 255, 0, 0);
+  //           break;
+  //       }
+  //   }
 }
 
 //command(uint8_t value)   send(value, 0);
