@@ -7,7 +7,7 @@
  * @author      Jack Kwok
  * @date        2 January 2024
  *
- * @log         4.0.0 - 9  Jul 2024 - Code reorganization
+ * @log         4.0.0 - 9  Jul 2024 - Extract Compass module
  *              3.3.0 - 5  Jun 2023
  *              3.1.0 - 26 Jul 2022
  */
@@ -24,6 +24,7 @@
 #include "utils/PIDController.h"
 #include "modules/Motor/Motor.h"
 #include "modules/Movement/Movement.h"
+#include "modules/Compass/Compass.h"
 
 #include <SPI.h>                   // must include this here (or else IDE can't find it)
 #include <pcint.h>                 // Pin Change Interrupt Library
@@ -82,20 +83,9 @@
 #define  LED_RGB        0xa0   // 4byte*8 32 (0xa0 - 0xbf)
 #define  LED_HSV        0xc0   // 4byte*8 32 (0xc0 - 0xdf)
 
-// Compass Module Register Address
-#define  ACC_RAW        0x40   // 6byte  (0-5)
-#define  GYR_RAW        0x46   // 6byte  (6-b)
-#define  MAG_RAW        0x4c   // 6byte  (c-2)
-
-#define  GET_COMPASS    0x55   // 3byte
-#define  GET_ROLL       0x54   // 2byte
-#define  GET_YAW        0x56   // 2byte
-#define  GET_PITCH      0x58   // 2byte
-#define  MAG_CENT       0x5a   // xxyyzz
-
 // TFT Display Pins
 #define TFT_CS  0   // TFT LCD的CS PIN腳
-#define TFT_DC  53  // TFT DC(A0、RS)
+#define TFT_DC  53  // TFT DC(A0、RS) 
 #define TFT_RST 50  // TFT Reset
 #define TFT_SCL 52  // TFT SCL
 #define TFT_SDA 51  // TFT SDA
@@ -151,15 +141,13 @@ public:
   // Initialize the robot's modules
   void init(uint8_t = 0);
 
-  // Read all sensor data from the robot's modules
+	// Read all sensor data from the robot's modules
   void dataFetch(void);
 
-  // ─── Converters' instances ────────────────────────────────────────────
-  Converter compassConverter;
-
-  // ─── Modules' instances (sequence of initialization is important) ─────
+  // ─── Module Instances ────────────────────────────────────────────────
   Motor     motor;
   Movement  move;
+  Compass   compass;
   PDQ_ST7735 tft;
 
   // ─── Button Functions ─────────────────────────────────────────────────
@@ -202,8 +190,7 @@ public:
   void bluetoothRemote(void);
   void bluetoothAttributes(void);
 
-  // ─── Compass Functions ────────────────────────────────────────────────
-  // Read the compass value, unit: degree (0~360), clockwise
+  // ─── Compass Functions (wrapper for compatibility) ────────────────────
   uint16_t compassRead(void);
   int16_t* getAccelerometerRaw(void);
   int16_t* getGyroscopeRaw(void);
@@ -219,26 +206,9 @@ public:
   void I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length);
   void I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length);
 
-  // ─── Constants ────────────────────────────────────────────────────────
-  const int8_t  PAGEUPPERLIMIT = 6;
-  const int8_t  PAGELOWERLIMIT = 0;
-  const uint8_t sensorBoardAddr = 0x13;
-  const uint8_t compass_address = 0x08;
-  const uint8_t numLEDs = 8;  // Number of RGB LEDs in strip
-
-  // ─── Pin Allocation ───────────────────────────────────────────────────
-  const uint8_t buttonPin[4];
-  const uint8_t ledPin[3];
-  const uint8_t APin[4];
-  const uint8_t DPin[6];
-  const uint8_t pwmPin[4];
-  const uint8_t ULTPin_trig[4];
-  uint8_t  ULTPin_echo[4];
-  SlowSoftI2CMaster swiic[8];
-
-  // ─── Sensor Data Variables ────────────────────────────────────────────
+  // ─── Public Sensor Data ───────────────────────────────────────────────
   // Compass
-  uint16_t compass;
+  uint16_t heading;           // Compass heading (0~360 degrees)
 
   // Compound eye
   uint8_t  eye[12];           // 12 IR readings
@@ -273,9 +243,6 @@ public:
 
   // Misc
   uint8_t  led[33];
-  bool     buttonPressed[3];
-  bool     onBound[8];
-  bool     outBound[8];
   bool     ledEnabled = false;
   bool     ledFlashEnabled = false;
   uint16_t EYEBOUNDARY = 20;
@@ -283,15 +250,39 @@ public:
   uint32_t screenTicks = 0;
   uint32_t sysTicks = 0;
   uint16_t tim1Count = 0;
-  uint8_t  rxBuff[50];
-  uint8_t  txBuff[50];
 
+  // ─── Constants ────────────────────────────────────────────────────────
+  const int8_t  PAGEUPPERLIMIT = 6;
+  const int8_t  PAGELOWERLIMIT = 0;
+  const uint8_t numLEDs = 8;
+  const uint8_t sensorBoardAddr = 0x13;
+
+private:
   // ─── I2C Handles ──────────────────────────────────────────────────────
-  IICIT::Handle compssHandle;
   IICIT::Handle senbrdHandle;
   IICIT::Handle topbrdHandle;
 
-private:
+  // ─── I2C Buffers ──────────────────────────────────────────────────────
+  uint8_t rxBuff[50];
+  uint8_t txBuff[50];
+
+  // ─── Pin Allocation ───────────────────────────────────────────────────
+  const uint8_t buttonPin[4];
+  const uint8_t ledPin[3];
+  const uint8_t APin[4];
+  const uint8_t DPin[6];
+  const uint8_t pwmPin[4];
+  const uint8_t ULTPin_trig[4];
+  uint8_t ULTPin_echo[4];
+
+  // ─── Software I2C (8 channels for color sensors) ─────────────────────
+  SlowSoftI2CMaster swiic[8];
+
+  // ─── Internal Button State ───────────────────────────────────────────
+  bool buttonPressed[3];
+  bool onBound[8];
+  bool outBound[8];
+
   // ─── Internal Ultrasonic ISR ─────────────────────────────────────────
   void ULT_Echo_dect(uint8_t);
   static void ULT_Echo_dect_0();
@@ -301,7 +292,7 @@ private:
   static void (*ULT_Echo_dect_ptr[4])();
   uint32_t ULT_dt[4];
   uint32_t ULT_get_interval;
-  uint8_t  ultra_send_seq = 0;
+  uint8_t ultra_send_seq = 0;
 };
 
 #endif // PeanutKing_Soccer_V4_H

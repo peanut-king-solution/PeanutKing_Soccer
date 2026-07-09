@@ -1,14 +1,13 @@
 #include <PeanutKingSoccerV4.h>
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
+static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
 void setup() {
   robot.init();
 }
 
 void loop() {
-  Serial.print("Angle:");
-  Serial.println(robot.compassRead());
-  
-  delay(10);
+  Serial.print("Heading:");
+  Serial.println(robot.compass.read());
+  delay(100);
 }
