@@ -145,10 +145,10 @@ public:
   void dataFetch(void);
 
   // ─── Module Instances ────────────────────────────────────────────────
-  Motor     motor;
-  Movement  move;
-  Compass   compass;
-  PDQ_ST7735 tft;
+  Motor     motor;  // Motor instance for controlling the robot's motors
+  Movement  move;   // Movement instance for controlling the robot's movement
+  Compass   compass;  // Compass instance for reading compass heading
+  PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
 
   // ─── Button Functions ─────────────────────────────────────────────────
   bool buttonRead(uint8_t);
