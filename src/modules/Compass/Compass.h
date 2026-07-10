@@ -28,7 +28,7 @@
 class Compass
 {
 private:
-  uint8_t _address; // I2C address of the compass module
+  uint8_t _address;   // I2C address of the compass module
   I2C_Handle _handle; // I2C handle for communication with the compass module
 
   uint16_t compass = 0; // Variable to store the compass reading
@@ -43,13 +43,13 @@ private:
 public:
   /**
    * Constructor
-   * `address` - I2C address of the compass module (default: 0x08)
+   * `address` - I2C address of the compass module (default: `0x08`)
    */
   Compass(uint8_t address = COMPASS_I2C_ADDRESS);
 
   /**
    * Initialize the compass module
-   * `speed` - I2C bus speed in Hz (default: 400000)
+   * `speed` - I2C bus speed in `Hz` (default: `400000`)
    *
    * `Returns` - `true` if successful, `false` otherwise
    */
@@ -58,7 +58,7 @@ public:
   /**
    * Read the compass heading
    *
-   * `Returns` - heading in degrees (`0`~`360`), clockwise
+   * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
   uint16_t read(void);
 

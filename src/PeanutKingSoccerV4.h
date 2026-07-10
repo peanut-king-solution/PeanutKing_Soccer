@@ -147,14 +147,16 @@ public:
 // =============================================================================
 //                      Module Instances
 // =============================================================================
-  Motor     motor;  // Motor instance for controlling the robot's motors
-  Movement  move;   // Movement instance for controlling the robot's movement
+
+  Motor     motor;    // Motor instance for controlling the robot's motors
+  Movement  move;     // Movement instance for controlling the robot's movement
   Compass   compass;  // Compass instance for reading compass heading
   PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
 
 // =============================================================================
 //                       Button Functions
 // =============================================================================
+
   bool buttonRead(uint8_t);
   bool buttTrigRead(uint8_t);
   void buttons(void);
@@ -162,6 +164,7 @@ public:
 // =============================================================================
 //                    IR Compound Eye Functions
 // =============================================================================
+
   uint8_t* compoundEyeRead();
   uint8_t  compoundMaxEye(void);
   uint8_t  compoundMaxEyeVal(void);
@@ -171,6 +174,7 @@ public:
 // =============================================================================
 //                     Color Sensor Functions
 // =============================================================================
+
   uint8_t  getColorSensor(uint8_t);
   rgb_t    getColorSensorRGB(uint8_t);
   hsl_t    getColorSensorHSL(uint8_t);
@@ -185,17 +189,20 @@ public:
 // =============================================================================
 //                      Ultrasonic Functions
 // =============================================================================
+
   uint16_t ultrasonicRead(uint8_t);
 
 // =============================================================================
 //                         LED Functions
 // =============================================================================
+
   void setOnBrdLED(uint8_t color);
   void setOnBrdLED(uint8_t LED, uint8_t status);
 
 // =============================================================================
 //                     TFT Display Functions
 // =============================================================================
+
   void setScreen(uint8_t col, uint8_t row, char string[]);
   void setScreen(uint8_t col, uint8_t row, int16_t numbers);
   void clearScreen(void);
@@ -203,16 +210,18 @@ public:
 // =============================================================================
 //                      Bluetooth Functions
 // =============================================================================
+
   void bluetoothRemote(void);
   void bluetoothAttributes(void);
 
 // =============================================================================
 //              Compass Functions (wrapper for compatibility)
 // =============================================================================
+
   /**
    * Read the compass heading
    *
-   * `Returns` - heading in degrees (`0`~`360`), clockwise
+   * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
   uint16_t compassRead(void);
   /**
@@ -237,12 +246,14 @@ public:
 // =============================================================================
 //                      Strategy Functions
 // =============================================================================
+
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
 
 // =============================================================================
 //                    I2C Low-Level Functions
 // =============================================================================
+
   IICIT::status_t rxCpltCallback(const IICIT::status_t status);
   void enableScanning(bool, uint16_t, bool);
   void I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length);
@@ -251,6 +262,7 @@ public:
 // =============================================================================
 //                      Public Sensor Data
 // =============================================================================
+
   // Compass
   uint16_t heading;   // Compass heading (0~360 degrees)
 
@@ -298,6 +310,7 @@ public:
 // =============================================================================
 //                        Constants
 // =============================================================================
+
   const int8_t  PAGEUPPERLIMIT = 6;
   const int8_t  PAGELOWERLIMIT = 0;
   const uint8_t numLEDs = 8;
@@ -307,6 +320,7 @@ private:
 // =============================================================================
 //                        I2C Handles
 // =============================================================================
+
   IICIT::Handle senbrdHandle;   // I2C handle for the sensor board
   IICIT::Handle topbrdHandle;   // I2C handle for the top board
 
@@ -338,6 +352,7 @@ private:
 // =============================================================================
 //                        Internal Button State
 // =============================================================================
+
   bool buttonPressed[3];
   bool onBound[8];
   bool outBound[8];
@@ -345,6 +360,7 @@ private:
 // =============================================================================
 //                        Internal Ultrasonic ISR
 // =============================================================================
+
   void ULT_Echo_dect(uint8_t);
   static void ULT_Echo_dect_0();
   static void ULT_Echo_dect_1();

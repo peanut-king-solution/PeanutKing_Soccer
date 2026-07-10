@@ -26,9 +26,9 @@ enum class BusIndex : uint8_t
 
 /**
  * I2C device handle structure
- * `busIndex`     - Index of I2C bus (`0`-`7` for software, `8` for hardware)
+ * `busIndex`      - Index of I2C bus (`0-7` for software, `8` for hardware)
  * `deviceAddress` - I2C device address
- * `speed`        - I2C speed in Hz
+ * `speed`         - I2C speed in `Hz`
  */
 struct I2C_Handle
 {
@@ -40,7 +40,7 @@ struct I2C_Handle
    * Constructor to initialize the I2C handle
    * `index`    - Bus index
    * `address`  - Device address
-   * `i2cSpeed` - I2C speed in Hz
+   * `i2cSpeed` - I2C speed in `Hz`
    */
   I2C_Handle(BusIndex index, uint8_t address, uint32_t i2cSpeed)
       : busIndex(index), deviceAddress(address), speed(i2cSpeed) {}
@@ -92,7 +92,7 @@ public:
    * Register an I2C device
    * `busIndex`      - Bus index (`BusIndex::SW0`-`SW7` or `BusIndex::HW`)
    * `deviceAddress` - I2C device address
-   * `speed`         - I2C speed in Hz
+   * `speed`         - I2C speed in `Hz`
    *
    * `Returns` - I2C handle for subsequent operations
    */

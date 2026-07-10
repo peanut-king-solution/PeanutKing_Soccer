@@ -3,7 +3,14 @@
 
 class PIDController {
 public:
+  // Constructor to initialize PID coefficients
   PIDController(double kp, double ki, double kd);
+
+  /* Update the PID controller with the current value and return the control output.
+   * `currentValue` - The current value of the process variable
+
+   * `Returns` - The control output based on the PID calculation
+   */
   double update(double currentValue);
 
 // variables

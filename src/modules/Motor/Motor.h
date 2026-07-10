@@ -26,15 +26,15 @@ typedef enum
   M4 = 3, // Left Back
 } MOTOR_ID;
 
-// Motor class to control 4 motors (M1-M4) with direction and speed control
+// Motor class to control 4 motors ( `M1` - `M4` ) with direction and speed control
 class Motor
 {
 private:
   const uint8_t in1Pin[4]; // motors' ch1 pins
   const uint8_t in2Pin[4]; // motors' ch2 pins
 
-  // Motor mapping array to determine which motor is connected to which port (M1/M2/M3/M4)
-  // Order: Left Front, Right Front, Right Back, Left Back
+  // Motor mapping array to determine which motor is connected to which port ( `M1` / `M2` / `M3` / `M4` )
+  // Order: `Left Front`, `Right Front`, `Right Back`, `Left Back`
   // Default mapping: `M1`, `M2`, `M3`, `M4` (no mapping applied)
   MOTOR_ID motorMap[4];
   
@@ -42,18 +42,14 @@ private:
   bool motorflip[4];
 
 public:
-  /**
-   * Constructor
-   */
+  // Constructor
   Motor();
 
-  /**
-   * Initialize motor pins as OUTPUT
-   */
+  // Initialize motor pins as OUTPUT
   void init(void);
 
   /**
-   * Remap motor ports (`M1`/`M2`/`M3`/`M4`) to physical positions
+   * Remap motor ports ( `M1` / `M2` / `M3` / `M4` ) to physical positions
    * `LeftFront`  - Motor port
    * `RightFront` - Motor port
    * `RightBack`  - Motor port
@@ -63,7 +59,7 @@ public:
 
   /**
    * Flip single motor rotation direction
-   * `mi`    - Motor ID (`M1`-`M4`)
+   * `mi`    - Motor ID ( `M1` - `M4` )
    */
   void flipMotor(MOTOR_ID mi);
 
@@ -75,8 +71,8 @@ public:
 
   /**
    * Set single motor speed
-   * `mi`     - Motor ID (`M1`-`M4`)
-   * `speed`  - Speed (`-255` to `+255`), positive=`CCW,` negative=`CW`, `0`=`brake`
+   * `mi`     - Motor ID ( `M1` - `M4` )
+   * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
    */
   void setSpeed(MOTOR_ID mi, int16_t speed);
 
@@ -86,8 +82,8 @@ public:
   void stopAll(void);
 
   /**
-   * Test motors sequentially (`M1`->`M2`->`M3`->`M4`)
-   * `speed` - Test speed (`0`-`255`)
+   * Test motors sequentially ( `M1` -> `M2` -> `M3` -> `M4` )
+   * `speed` - Test speed `(0~255)`
    */
   void testAll(int16_t speed);
 };

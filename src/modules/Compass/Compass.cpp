@@ -38,10 +38,14 @@ uint16_t Compass::read() {
   return compass;
 }
 
-// Helper: read 6 bytes from a given register, store into class member array
 int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
+  // Clear the receive buffer before reading
   rxbufferClear();
+
+  // Read 6 bytes of raw sensor data from the specified register
   I2CManager::getInstance().SensorRead(_handle, reg, rxBuff, 6);
+
+  // Combine the received bytes into 16-bit signed integers
   dataArr[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
   dataArr[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
   dataArr[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
@@ -61,6 +65,7 @@ int16_t* Compass::getMagnetometerRaw(void) {
 }
 
 void Compass::rxbufferClear(void) {
+  // Clear the receive buffer by setting all bytes to zero
   for (uint8_t i = 0; i < COMPASS_RX_BUFFER_SIZE; i++) {
     rxBuff[i] = 0;
   }

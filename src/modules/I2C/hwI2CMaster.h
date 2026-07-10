@@ -1,7 +1,7 @@
 #ifndef HW_I2CMASTER_H
 #define HW_I2CMASTER_H
 
-#define I2C_DEFAULT_SPEED 400000 // Default I2C speed in Hz (400kHz)
+#define I2C_DEFAULT_SPEED 400000 // Default I2C speed in `Hz` (`400kHz`)
 #define I2C_MAX_BUFFER_SIZE 64   // Maximum buffer size for I2C transactions
 
 #include <Arduino.h>
@@ -14,14 +14,12 @@
 class hwI2CMaster
 {
 public:
-  /**
-   * Constructor
-   */
+  // Constructor
   hwI2CMaster();
 
   /**
    * Initialize the hardware I2C with specified speed
-   * `speed` - I2C speed in Hz (default: 400000)
+   * `speed` - I2C speed in `Hz` (default: `400000`)
    *
    * `Returns` - `true` if successful, `false` otherwise
    */
@@ -73,10 +71,10 @@ private:
   uint32_t defaultSpeed;
 
   /**
-   * Convert speed in Hz to IICIT::Speed enum
-   * `speed` - Speed in Hz
+   * Convert speed in `Hz` to `IICIT::Speed` enum
+   * `speed` - Speed in `Hz`
    *
-   * `Returns` - IICIT::Speed enum value
+   * `Returns` - `IICIT::Speed` enum value
    */
   IICIT::Speed speedToIICIT(uint32_t speed) const;
 };

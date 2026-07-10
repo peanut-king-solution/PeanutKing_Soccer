@@ -36,7 +36,7 @@ public:
   void byAnglePID(float mAngle, float mSpeed, float compassReading);
 
   /**
-   * Test movement patterns (`forward` -> `right front` -> `rightward`)
+   * Test movement patterns ( `forward` -> `right front` -> `rightward` )
    * `speed` - Test speed `(0-255)`
    */
   void test(float speed);
