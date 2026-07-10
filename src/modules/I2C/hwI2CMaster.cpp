@@ -2,14 +2,12 @@
 
 hwI2CMaster::hwI2CMaster() {}
 
-// Initialize the hardware I2C with specified speed
 bool hwI2CMaster::init(uint32_t speed) {
   defaultSpeed = speed;
   gIIC->SetSpeed(speedToIICIT(speed));
   return true;
 }
 
-// Read data from a device at the specified address
 bool hwI2CMaster::read(uint8_t deviceAddress, uint8_t *rxBuffer, uint8_t length) {
   // Register the temp device with IICIT
   IICIT::Handle handle = gIIC->RegisterDevice(deviceAddress, 1, speedToIICIT(defaultSpeed));
@@ -22,7 +20,6 @@ bool hwI2CMaster::read(uint8_t deviceAddress, uint8_t *rxBuffer, uint8_t length)
   return (status == IICIT::STATUS_OK);
 }
 
-// Write data to a device at the specified address
 bool hwI2CMaster::write(uint8_t deviceAddress, const uint8_t *txBuffer, uint8_t length) {
   // Register the temp device with IICIT
   IICIT::Handle handle = gIIC->RegisterDevice(deviceAddress, 1, speedToIICIT(defaultSpeed));
@@ -57,7 +54,6 @@ bool hwI2CMaster::writeReg(uint8_t deviceAddress, uint8_t reg, const uint8_t *tx
   return write(deviceAddress, tempBuffer, length + 1);
 }
 
-// Convert speed in Hz to IICIT::Speed enum
 IICIT::Speed hwI2CMaster::speedToIICIT(uint32_t speed) const {
   return (speed >= 400000) ? IICIT::Speed::FAST : IICIT::Speed::SLOW;
 }

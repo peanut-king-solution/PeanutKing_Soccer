@@ -1,6 +1,5 @@
 #include "i2cManager.h"
 
-// Singleton instance of I2CManager
 I2CManager *I2CManager = &I2CManager::getInstance();
 
 I2CManager::I2CManager()
@@ -16,7 +15,6 @@ I2CManager::I2CManager()
 {
 }
 
-// Initialize all I2C instances
 bool I2CManager::init(void)
 {
   // (software I2C is initialized in PeanutKingSoccerV4::init()
@@ -58,7 +56,6 @@ bool I2CManager::SensorRead(const I2C_Handle &handle, uint8_t reg, uint8_t *rxBu
   }
 }
 
-// txbuffer shd include the register address as the first byte, followed by the data to be sent
 bool I2CManager::SensorSend(const I2C_Handle &handle, const uint8_t *txBuffer, uint8_t length)
 {
   // Validate the I2C handle and buffer parameters
@@ -69,7 +66,7 @@ bool I2CManager::SensorSend(const I2C_Handle &handle, const uint8_t *txBuffer, u
 
   // Select the appropriate I2C instance based on the bus index
   // Use software I2C for writing
-  if (handle.busIndex < BusIndex::HW) {               
+  if (handle.busIndex < BusIndex::HW) {
     return false; // Software I2C write not yet implemented
   }
   // Use hardware I2C for writing
