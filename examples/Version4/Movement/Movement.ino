@@ -42,4 +42,14 @@ void loop()
   // Move left at speed 100 with compass correction
   move.byAnglePID(270, 100, robot.compass.read());
   delay(2000);  // Wait for 2 seconds
+
+  // Rotate the robot clockwise and counterclockwise
+
+  // Rotate the robot clockwise at speed 100
+  move.byAngle(0, 0, 100);
+  delay(2000);  // Wait for 2 seconds
+
+  // Rotate the robot counterclockwise at speed 100
+  move.byAngle(0, 0, -100);
+  delay(2000);  // Wait for 2 seconds
 }
