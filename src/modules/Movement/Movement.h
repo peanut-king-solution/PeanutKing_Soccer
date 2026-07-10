@@ -1,6 +1,7 @@
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
 
+#include "PeanutKingDef.h"
 #include "utils/Converter.h"
 #include "utils/PIDController.h"
 #include "modules/Motor/Motor.h"
