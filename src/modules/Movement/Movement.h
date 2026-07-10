@@ -12,18 +12,33 @@ private:
   Motor &motor;
 
 public:
-  // Constructor
+  /**
+   * Constructor with Motor reference injection
+   * `m` - Motor instance reference
+   */
   Movement(Motor &m);
-  
-  // robot movement based on angle, speed, and rotation
+
+  /**
+   * Move robot at angle with speed and rotation
+   * `mAngle`  - Movement angle `(0-360°)`
+   * `mSpeed`  - Movement speed `(0-255)`
+   * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
+   */
   void byAngle(float mAngle, float mSpeed, float rotate);
-  // robot movement based on X and Y speed components
-  void bySpeedVector(int16_t speed_X, int16_t speed_Y);
-  // robot movement based on angle, speed, and compass correction with PID control
-  void byAngleWithSmart(float mAngle, float mSpeed, float compassReading);
-  void byAngleWithJason(float mAngle, float mSpeed, float compassReading);
-  // motor move + compass as reference
-  void Smart(uint16_t angular_direction, int16_t speed, int16_t angle = 0, uint8_t precision = 5);
+
+  /**
+   * Move robot with compass correction and speed scaling
+   * `mAngle`          - Movement angle `(0-360°)`
+   * `mSpeed`          - Movement speed `(0-255)`
+   * `compassReading`  - Current compass heading `(0-360°)`
+   */
+  void byAnglePID(float mAngle, float mSpeed, float compassReading);
+
+  /**
+   * Test movement patterns (`forward` -> `right front` -> `rightward`)
+   * `speed` - Test speed `(0-255)`
+   */
+  void test(float speed);
 
   // Converters' instances
   Converter converter;

@@ -9,7 +9,7 @@
 // #define  ENCODER   0xf8    // 4 encoder* byte
 
 /*  ================== Motor Mapping ==================
- *  All motors +ve speed -> rotate clockwise
+ *  All motors +ve speed -> rotate counter-clockwise (CCW)
  *  Default Motor Mapping | index in in1Pin/in2Pin arrays
  *  Left Front  -> M1     |              0
  *  Right Front -> M2     |              1
@@ -17,6 +17,7 @@
  *  Left Back   -> M4     |              3
  *  =================================================== */
 
+// Motor ID enumeration for identifying motors
 typedef enum
 {
   M1 = 0, // Left Front
@@ -25,6 +26,7 @@ typedef enum
   M4 = 3, // Left Back
 } MOTOR_ID;
 
+// Motor class to control 4 motors (M1-M4) with direction and speed control
 class Motor
 {
 private:
@@ -33,27 +35,61 @@ private:
 
   // Motor mapping array to determine which motor is connected to which port (M1/M2/M3/M4)
   // Order: Left Front, Right Front, Right Back, Left Back
-  // Default mapping: M1, M2, M3, M4 (no mapping applied)
+  // Default mapping: `M1`, `M2`, `M3`, `M4` (no mapping applied)
   MOTOR_ID motorMap[4];
+  
+  // change motor rotation direction, `true` = flip, `false` = normal
+  bool motorflip[4];
 
 public:
-  // Constructor
+  /**
+   * Constructor
+   */
   Motor();
 
-  // init motor pins
+  /**
+   * Initialize motor pins as OUTPUT
+   */
   void init(void);
-  /* Check which motor is connected to which port (M1/M2/M3/M4),
-   * then allocate the motor port to the correct motor position in void setup() function.
-   * e.g. motor.mapMotors(M3, M1, M4, M2); */
+
+  /**
+   * Remap motor ports (`M1`/`M2`/`M3`/`M4`) to physical positions
+   * `LeftFront`  - Motor port
+   * `RightFront` - Motor port
+   * `RightBack`  - Motor port
+   * `LeftBack`   - Motor port
+   */
   void mapMotors(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBack, MOTOR_ID LeftBack);
 
-  /* Set single motor speed, mi: motor index (0-3), speed: -255 to 255
-   *
-   * All speed are < 0 -> robot rotates clockwise */
-  void SetSpeed(MOTOR_ID mi, int16_t speed);
-  // stop all motors
-  void StopAll(void);
-  void motorTest(void);
+  /**
+   * Flip single motor rotation direction
+   * `mi`    - Motor ID (`M1`-`M4`)
+   */
+  void flipMotor(MOTOR_ID mi);
+
+  /**
+   * Flip all motors rotation direction
+   * `m1, m2, m3, m4` - `true`=flip, `false`=normal
+   */
+  void flipMotors(bool m1, bool m2, bool m3, bool m4);
+
+  /**
+   * Set single motor speed
+   * `mi`     - Motor ID (`M1`-`M4`)
+   * `speed`  - Speed (`-255` to `+255`), positive=`CCW,` negative=`CW`, `0`=`brake`
+   */
+  void setSpeed(MOTOR_ID mi, int16_t speed);
+
+  /**
+   * Stop all motors (brake mode)
+   */
+  void stopAll(void);
+
+  /**
+   * Test motors sequentially (`M1`->`M2`->`M3`->`M4`)
+   * `speed` - Test speed (`0`-`255`)
+   */
+  void testAll(int16_t speed);
 };
 
 #endif // MOTOR_H
