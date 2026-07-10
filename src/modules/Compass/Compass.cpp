@@ -16,8 +16,9 @@ bool Compass::init(uint32_t speed) {
   // Read multiple samples to calculate the average compass reading
   uint16_t sum = 0; int8_t sampleCount = 10;
   for (int i = 0; i < sampleCount; i++) sum += this->read();
+  
   // Set 0° as the direction of the robot facing at starting
-  converter.config().shift(-(int16_t)(sum / sampleCount));
+  // converter.config().shift(-(int16_t)(sum / sampleCount));
 
   return true; // Return true if initialization is successful
 }
@@ -37,27 +38,26 @@ uint16_t Compass::read() {
   return compass;
 }
 
-// Helper: read 6 bytes from a given register, return as int16_t[3] (x, y, z)
-int16_t* Compass::readRaw6(uint8_t reg) {
+// Helper: read 6 bytes from a given register, store into class member array
+int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   rxbufferClear();
   I2CManager::getInstance().SensorRead(_handle, reg, rxBuff, 6);
-  static int16_t data[3];
-  data[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
-  data[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
-  data[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
-  return data;
+  dataArr[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
+  dataArr[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
+  dataArr[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
+  return dataArr;
 }
 
 int16_t* Compass::getAccelerometerRaw(void) {
-  return readRaw6(ACC_RAW);
+  return readRaw6(ACC_RAW, accelData);
 }
 
 int16_t* Compass::getGyroscopeRaw(void) {
-  return readRaw6(GYR_RAW);
+  return readRaw6(GYR_RAW, gyroData);
 }
 
 int16_t* Compass::getMagnetometerRaw(void) {
-  return readRaw6(MAG_RAW);
+  return readRaw6(MAG_RAW, magData);
 }
 
 void Compass::rxbufferClear(void) {

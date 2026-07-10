@@ -22,6 +22,7 @@
 
 // Size of the receive buffer for I2C read operations
 #define COMPASS_RX_BUFFER_SIZE 8
+// Size of the transmit buffer for I2C write operations
 #define COMPASS_TX_BUFFER_SIZE 8
 
 class Compass
@@ -34,29 +35,70 @@ private:
   uint8_t rxBuff[COMPASS_RX_BUFFER_SIZE];  // Buffer for I2C read operations
   uint8_t txBuff[COMPASS_TX_BUFFER_SIZE];  // Buffer for I2C write operations
 
+  // Raw sensor data arrays
+  int16_t accelData[3];  // Accelerometer raw data (X, Y, Z)
+  int16_t gyroData[3];   // Gyroscope raw data (X, Y, Z)
+  int16_t magData[3];    // Magnetometer raw data (X, Y, Z)
+
 public:
-  // Constructor
+  /**
+   * Constructor
+   * `address` - I2C address of the compass module (default: 0x08)
+   */
   Compass(uint8_t address = COMPASS_I2C_ADDRESS);
 
-  // Initialize the compass module with optional bus speed
+  /**
+   * Initialize the compass module
+   * `speed` - I2C bus speed in Hz (default: 400000)
+   *
+   * `Returns` - `true` if successful, `false` otherwise
+   */
   bool init(uint32_t speed = 400000L);
 
-  // Read the compass value, unit: degree (0~360), clockwise
+  /**
+   * Read the compass heading
+   *
+   * `Returns` - heading in degrees (`0`~`360`), clockwise
+   */
   uint16_t read(void);
 
-  // Read 9-DOF raw data (each returns pointer to int16_t[3])
+  /**
+   * Get raw accelerometer data
+   *
+   * `Returns` - pointer to `accelData[3]` (X, Y, Z)
+   */
   int16_t* getAccelerometerRaw(void);
+
+  /**
+   * Get raw gyroscope data
+   *
+   * `Returns` - pointer to `gyroData[3]` (X, Y, Z)
+   */
   int16_t* getGyroscopeRaw(void);
+
+  /**
+   * Get raw magnetometer data
+   *
+   * `Returns` - pointer to `magData[3]` (X, Y, Z)
+   */
   int16_t* getMagnetometerRaw(void);
 
-  // Set all bytes in the receive buffer to 0
+  /**
+   * Clear the receive buffer
+   */
   void rxbufferClear(void);
 
   Converter converter; // Converter for compass readings
 
 private:
-  // Helper: read raw 6-byte sensor data into int16_t[3]
-  int16_t* readRaw6(uint8_t reg);
+  /**
+   * Read raw 6-byte sensor data
+   * `reg`      - Register address to read from
+   * `dataArr`  - Output array to store data (int16_t[3])
+   *
+   * `Returns` - pointer to the data array
+   */
+  int16_t* readRaw6(uint8_t reg, int16_t* dataArr);
 };
 
 #endif // COMPASS_H
