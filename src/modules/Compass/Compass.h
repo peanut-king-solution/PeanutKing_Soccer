@@ -65,21 +65,21 @@ public:
   /**
    * Get raw accelerometer data
    *
-   * `Returns` - pointer to `accelData[3]` (X, Y, Z)
+   * `Returns` - array of `accelData[3]` (X, Y, Z)
    */
   int16_t* getAccelerometerRaw(void);
 
   /**
    * Get raw gyroscope data
    *
-   * `Returns` - pointer to `gyroData[3]` (X, Y, Z)
+   * `Returns` - array of `gyroData[3]` (X, Y, Z)
    */
   int16_t* getGyroscopeRaw(void);
 
   /**
    * Get raw magnetometer data
    *
-   * `Returns` - pointer to `magData[3]` (X, Y, Z)
+   * `Returns` - array of `magData[3]` (X, Y, Z)
    */
   int16_t* getMagnetometerRaw(void);
 

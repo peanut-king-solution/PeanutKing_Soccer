@@ -135,7 +135,7 @@ typedef enum {
 
 class PeanutKingSoccerV4 {
 public:
-  // ─── Constructor & Init ─────────────────────────────────────────────
+  // Constructor
   PeanutKingSoccerV4(void);
 
   // Initialize the robot's modules
@@ -144,25 +144,33 @@ public:
 	// Read all sensor data from the robot's modules
   void dataFetch(void);
 
-  // ─── Module Instances ────────────────────────────────────────────────
+// =============================================================================
+//                      Module Instances
+// =============================================================================
   Motor     motor;  // Motor instance for controlling the robot's motors
   Movement  move;   // Movement instance for controlling the robot's movement
   Compass   compass;  // Compass instance for reading compass heading
   PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
 
-  // ─── Button Functions ─────────────────────────────────────────────────
+// =============================================================================
+//                       Button Functions
+// =============================================================================
   bool buttonRead(uint8_t);
   bool buttTrigRead(uint8_t);
   void buttons(void);
 
-  // ─── IR Compound Eye Functions ────────────────────────────────────────
+// =============================================================================
+//                    IR Compound Eye Functions
+// =============================================================================
   uint8_t* compoundEyeRead();
   uint8_t  compoundMaxEye(void);
   uint8_t  compoundMaxEyeVal(void);
   uint8_t  compoundEyeVal(uint8_t n);
   void     compoundEyeCal(float* calData);
 
-  // ─── Color Sensor Functions ───────────────────────────────────────────
+// =============================================================================
+//                     Color Sensor Functions
+// =============================================================================
   uint8_t  getColorSensor(uint8_t);
   rgb_t    getColorSensorRGB(uint8_t);
   hsl_t    getColorSensorHSL(uint8_t);
@@ -174,46 +182,82 @@ public:
   bool     whiteLineCheck(uint8_t, uint16_t);
   void     setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 
-  // ─── Ultrasonic Functions ─────────────────────────────────────────────
+// =============================================================================
+//                      Ultrasonic Functions
+// =============================================================================
   uint16_t ultrasonicRead(uint8_t);
 
-  // ─── LED Functions ────────────────────────────────────────────────────
+// =============================================================================
+//                         LED Functions
+// =============================================================================
   void setOnBrdLED(uint8_t color);
   void setOnBrdLED(uint8_t LED, uint8_t status);
 
-  // ─── TFT Display Functions ────────────────────────────────────────────
+// =============================================================================
+//                     TFT Display Functions
+// =============================================================================
   void setScreen(uint8_t col, uint8_t row, char string[]);
   void setScreen(uint8_t col, uint8_t row, int16_t numbers);
   void clearScreen(void);
 
-  // ─── Bluetooth Functions ───────────────────────────────────────────────
+// =============================================================================
+//                      Bluetooth Functions
+// =============================================================================
   void bluetoothRemote(void);
   void bluetoothAttributes(void);
 
-  // ─── Compass Functions (wrapper for compatibility) ────────────────────
+// =============================================================================
+//              Compass Functions (wrapper for compatibility)
+// =============================================================================
+  /**
+   * Read the compass heading
+   *
+   * `Returns` - heading in degrees (`0`~`360`), clockwise
+   */
   uint16_t compassRead(void);
+  /**
+   * Get raw accelerometer data
+   *
+   * `Returns` - array of `accelData[3]` (X, Y, Z)
+   */
   int16_t* getAccelerometerRaw(void);
+  /**
+   * Get raw gyroscope data
+   *
+   * `Returns` - array of `gyroData[3]` (X, Y, Z)
+   */
   int16_t* getGyroscopeRaw(void);
+  /**
+   * Get raw magnetometer data
+   *
+   * `Returns` - array of `magData[3]` (X, Y, Z)
+   */
   int16_t* getMagnetometerRaw(void);
 
-  // ─── Strategy Functions ───────────────────────────────────────────────
+// =============================================================================
+//                      Strategy Functions
+// =============================================================================
   void Chase(int& direct, int& speed, int& rotation);
   void Back(int& direct, int& speed, int& rotation);
 
-  // ─── I2C Low-Level Functions ──────────────────────────────────────────
+// =============================================================================
+//                    I2C Low-Level Functions
+// =============================================================================
   IICIT::status_t rxCpltCallback(const IICIT::status_t status);
   void enableScanning(bool, uint16_t, bool);
   void I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length);
   void I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length);
 
-  // ─── Public Sensor Data ───────────────────────────────────────────────
+// =============================================================================
+//                      Public Sensor Data
+// =============================================================================
   // Compass
-  uint16_t heading;           // Compass heading (0~360 degrees)
+  uint16_t heading;   // Compass heading (0~360 degrees)
 
   // Compound eye
-  uint8_t  eye[12];           // 12 IR readings
-  uint16_t eyeAngle;
-  uint8_t  maxEye;
+  uint8_t  eye[12];   // 12 IR readings
+  uint16_t eyeAngle;  
+  uint8_t  maxEye;    // Index of the maximum IR reading
 
   // Color sensor
   uint8_t  groundColor[4];
@@ -251,22 +295,32 @@ public:
   uint32_t sysTicks = 0;
   uint16_t tim1Count = 0;
 
-  // ─── Constants ────────────────────────────────────────────────────────
+// =============================================================================
+//                        Constants
+// =============================================================================
   const int8_t  PAGEUPPERLIMIT = 6;
   const int8_t  PAGELOWERLIMIT = 0;
   const uint8_t numLEDs = 8;
   const uint8_t sensorBoardAddr = 0x13;
 
 private:
-  // ─── I2C Handles ──────────────────────────────────────────────────────
-  IICIT::Handle senbrdHandle;
-  IICIT::Handle topbrdHandle;
+// =============================================================================
+//                        I2C Handles
+// =============================================================================
+  IICIT::Handle senbrdHandle;   // I2C handle for the sensor board
+  IICIT::Handle topbrdHandle;   // I2C handle for the top board
 
-  // ─── I2C Buffers ──────────────────────────────────────────────────────
-  uint8_t rxBuff[50];
-  uint8_t txBuff[50];
+// =============================================================================
+//                        I2C Buffers
+// =============================================================================
 
-  // ─── Pin Allocation ───────────────────────────────────────────────────
+  uint8_t rxBuff[50];   // Buffer for I2C read operations
+  uint8_t txBuff[50];   // Buffer for I2C write operations
+
+// =============================================================================
+//                        Pin Allocation
+// =============================================================================
+
   const uint8_t buttonPin[4];
   const uint8_t ledPin[3];
   const uint8_t APin[4];
@@ -275,15 +329,22 @@ private:
   const uint8_t ULTPin_trig[4];
   uint8_t ULTPin_echo[4];
 
-  // ─── Software I2C (8 channels for color sensors) ─────────────────────
-  SlowSoftI2CMaster swiic[8];
+// =============================================================================
+//                        Software I2C Instances
+// =============================================================================
 
-  // ─── Internal Button State ───────────────────────────────────────────
+  SlowSoftI2CMaster swiic[8];   // Software I2C instances for color sensors
+
+// =============================================================================
+//                        Internal Button State
+// =============================================================================
   bool buttonPressed[3];
   bool onBound[8];
   bool outBound[8];
 
-  // ─── Internal Ultrasonic ISR ─────────────────────────────────────────
+// =============================================================================
+//                        Internal Ultrasonic ISR
+// =============================================================================
   void ULT_Echo_dect(uint8_t);
   static void ULT_Echo_dect_0();
   static void ULT_Echo_dect_1();
