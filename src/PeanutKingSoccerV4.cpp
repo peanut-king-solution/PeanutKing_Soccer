@@ -435,6 +435,28 @@ int16_t* PeanutKingSoccerV4::getGyroscopeRaw(void) { return compass.getGyroscope
 int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void) { return compass.getMagnetometerRaw(); }
 
 /* =============================================================================
+ *                              Motor (wrapper)
+ * ============================================================================= */
+
+  void PeanutKingSoccerV4::setMotorSpeed(MOTOR_ID mi, int16_t speed) {
+    motor.setSpeed(mi, speed);
+  }
+  void PeanutKingSoccerV4::stopAllMotors(void) {
+    motor.stopAll();
+  }
+
+/* =============================================================================
+*                              Movement (wrapper)
+* ============================================================================= */
+
+  void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
+    move.byAngle(mAngle, mSpeed, rotate);
+  }
+  void PeanutKingSoccerV4::moveByAnglePID(float mAngle, float mSpeed) {
+    move.byAnglePID(mAngle, mSpeed, compass.read());
+  }
+
+/* =============================================================================
  *                              Strategy Functions
  * ============================================================================= */
 

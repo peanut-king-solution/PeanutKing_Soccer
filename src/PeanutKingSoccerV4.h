@@ -244,6 +244,39 @@ public:
   int16_t* getMagnetometerRaw(void);
 
 // =============================================================================
+//                Motor Functions (wrapper for compatibility)
+// =============================================================================
+
+  /**
+   * Set the speed of a single motor
+   * `mi`     - Motor ID ( `M1` - `M4` )
+   * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
+   */
+  void setMotorSpeed(MOTOR_ID mi, int16_t speed);
+  /**
+   * Stop all motors (brake mode)
+   */
+  void stopAllMotors(void);
+
+// =============================================================================
+//               Movement Functions (wrapper for compatibility)
+// =============================================================================
+
+  /**
+   * Move robot at angle with speed and rotation
+   * `mAngle`  - Movement angle `(0-360°)`
+   * `mSpeed`  - Movement speed `(0-255)`
+   * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
+   */
+  void moveByAngle(float mAngle, float mSpeed, float rotate);
+  /**
+   * Move robot with compass correction and speed scaling
+   * `mAngle`          - Movement angle `(0-360°)`
+   * `mSpeed`          - Movement speed `(0-255)`
+   */
+  void moveByAnglePID(float mAngle, float mSpeed);
+
+// =============================================================================
 //                      Strategy Functions
 // =============================================================================
 
