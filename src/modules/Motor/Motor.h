@@ -9,7 +9,8 @@
 // #define  ENCODER   0xf8    // 4 encoder* byte
 
 /*  ================== Motor Mapping ==================
- *  All motors +ve speed -> rotate counter-clockwise (CCW)
+ *  Motor +ve speed -> motor rotate counter-clockwise (CCW)
+ *  All speed +ve -> robot rotate clockwise (CW)
  *  Default Motor Mapping | index in in1Pin/in2Pin arrays
  *  Left Front  -> M1     |              0
  *  Right Front -> M2     |              1
@@ -49,7 +50,7 @@ public:
   void init(void);
 
   /**
-   * Remap motor ports ( `M1` / `M2` / `M3` / `M4` ) to physical positions
+   * Assign which motor port ( `M1` - `M4` ) controls which wheel position
    * `LeftFront`  - Motor port
    * `RightFront` - Motor port
    * `RightBack`  - Motor port
