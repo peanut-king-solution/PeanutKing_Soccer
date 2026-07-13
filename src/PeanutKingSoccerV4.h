@@ -26,6 +26,7 @@
 #include "modules/Movement/Movement.h"
 #include "modules/Compass/Compass.h"
 #include "modules/ButtonManager/ButtonManager.h"
+#include "modules/LedController/LedController.h"
 
 #include <SPI.h>                   // must include this here (or else IDE can't find it)
 #include <pcint.h>                 // Pin Change Interrupt Library
@@ -36,16 +37,6 @@
 // =============================================================================
 //                              Macro Definitions
 // =============================================================================
-
-// LED Bitmask
-#define LED1   0x01
-#define LED2   0x02
-#define LED3   0x04
-#define LED4   0x08
-#define LED5   0x10
-#define LED6   0x20
-#define LED7   0x40
-#define LED8   0x80
 
 // Number Base
 #define DEC 10
@@ -95,17 +86,6 @@
 //                              Type Definitions
 // =============================================================================
 
-typedef enum { // RGB
-  LED_OFF,    // 000
-  LED_BLUE,   // 001
-  LED_GREEN,  // 010
-  LED_CYAN,   // 011
-  LED_RED,    // 100
-  LED_PURPLE, // 101
-  LED_YELLOW, // 110
-  LED_WHITE   // 111
-} obBrdLEDCL;
-
 typedef enum {
   CL1, CL2, CL3, CL4, CL5, CL6, CL7, CL8
 } CL_SENSOR;
@@ -150,6 +130,7 @@ public:
 // =============================================================================
 
   ButtonManager buttonMgr;  // ButtonManager instance for reading button states
+  LedController ledCtrl;    // LedController instance for controlling on-board LEDs
   Motor     motor;    // Motor instance for controlling the robot's motors
   Movement  move;     // Movement instance for controlling the robot's movement
   Compass   compass;  // Compass instance for reading compass heading
@@ -211,10 +192,19 @@ public:
   uint16_t ultrasonicRead(uint8_t);
 
 // =============================================================================
-//                         LED Functions
+//                LED Functions (wrapper for compatibility)
 // =============================================================================
 
+  /**
+   * Set all on-board LEDs to a specific color
+   * `color` - Color to set (`LED_OFF` - `LED_WHITE`)
+   */
   void setOnBrdLED(uint8_t color);
+  /**
+   * Set a single on-board LED `on`/`off`
+   * `LED`    - LED index (`0-2`)
+   * `status` - `0` = off, `1` = on
+   */
   void setOnBrdLED(uint8_t LED, uint8_t status);
 
 // =============================================================================
@@ -346,9 +336,6 @@ public:
   int16_t  btRotate = 0;
 
   // Misc
-  uint8_t  led[33];
-  bool     ledEnabled = false;
-  bool     ledFlashEnabled = false;
   uint16_t EYEBOUNDARY = 20;
   uint16_t systemTime;
   uint32_t screenTicks = 0;
@@ -361,7 +348,6 @@ public:
 
   const int8_t  PAGEUPPERLIMIT = 6;
   const int8_t  PAGELOWERLIMIT = 0;
-  const uint8_t numLEDs = 8;
   const uint8_t sensorBoardAddr = 0x13;
 
 private:
@@ -383,7 +369,6 @@ private:
 //                        Pin Allocation
 // =============================================================================
 
-  const uint8_t ledPin[3];
   const uint8_t APin[4];
   const uint8_t DPin[6];
   const uint8_t pwmPin[4];

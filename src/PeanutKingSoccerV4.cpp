@@ -46,7 +46,6 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
     SlowSoftI2CMaster(39, 40, 1),
     SlowSoftI2CMaster(41, 42, 1),
     SlowSoftI2CMaster(43, 44, 1)},
-  ledPin{26, 28, 27},
   ULTPin_trig{49, 48, 47, 46},
   ULTPin_echo{A15, A14, A13, A12},
   pwmPin{10, 11, 12, 13},
@@ -79,9 +78,8 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   // Initialize button module
   buttonMgr.init();
 
-  // Initialize LED pins
-  for (uint8_t i=0; i<3; i++)
-    pinMode(ledPin[i], OUTPUT);
+  // Initialize LED module
+  ledCtrl.init();
 
   // Initialize ultrasonic pins and interrupts
   for (uint8_t i=0; i<4; i++) {
@@ -335,17 +333,15 @@ bool PeanutKingSoccerV4::whiteLineCheck(uint8_t i, uint16_t thresh) {
 }
 
 /* =============================================================================
- *                              LED
+ *                       LED (wrapper for compatibility)
  * ============================================================================= */
 
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
-  digitalWrite(ledPin[0], color & 1);
-  digitalWrite(ledPin[1], color & 2);
-  digitalWrite(ledPin[2], color & 4);
+  ledCtrl.setOnBrdLED((obBrdLEDCL)color);
 }
 
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
-  digitalWrite(ledPin[LED], status);
+  ledCtrl.setOnBrdLED(LED, status);
 }
 
 /* =============================================================================
