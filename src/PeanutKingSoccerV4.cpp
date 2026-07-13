@@ -46,7 +46,6 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
     SlowSoftI2CMaster(39, 40, 1),
     SlowSoftI2CMaster(41, 42, 1),
     SlowSoftI2CMaster(43, 44, 1)},
-  buttonPin{22, 23, 24, 25},
   ledPin{26, 28, 27},
   ULTPin_trig{49, 48, 47, 46},
   ULTPin_echo{A15, A14, A13, A12},
@@ -77,9 +76,8 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
     swiic[i].i2c_init();
   }
 
-  // Initialize button pins
-  for (uint8_t i=0; i<4; i++)
-    pinMode(buttonPin[i], INPUT_PULLUP);
+  // Initialize button module
+  buttonMgr.init();
 
   // Initialize LED pins
   for (uint8_t i=0; i<3; i++)
@@ -211,61 +209,19 @@ hsl_t PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num) {
 }
 
 /* =============================================================================
- *                              Button
+ *                       Button (wrapper for compatibility)
  * ============================================================================= */
 
-bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
-  if (button_no == 1 || button_no == 2 || button_no == 3 || button_no == 4)
-    return !digitalRead(buttonPin[button_no-1]);
-  return 0;
+bool PeanutKingSoccerV4::buttonRead(BUTTON_ID btn) {
+  return buttonMgr.read(btn);
 }
 
-bool PeanutKingSoccerV4::buttTrigRead(uint8_t pin) {
-  return digitalRead(buttonPin[pin]);
+void PeanutKingSoccerV4::buttonUpdate(void) {
+  buttonMgr.update();
 }
 
-void PeanutKingSoccerV4::buttons(void) {
-  static uint32_t holdTimer[4] = {0};
-  uint32_t currentTime = millis();
-
-  for (uint8_t i=0; i<4; i++) {
-    bool b = !digitalRead(buttonPin[i]);
-    if (b) {
-      switch(button[i]) {
-        case NONE:  button[i] = TAP; holdTimer[i] = currentTime; break;
-        case TAP:   button[i] = PRESS; break;
-        case TAP2:  if (currentTime - holdTimer[i] > HOLD_DURATION) button[i] = HOLD2; break;
-        case TAP3:  if (currentTime - holdTimer[i] > HOLD_DURATION) button[i] = RELEASE; break;
-        case PRESS: if (currentTime - holdTimer[i] > HOLD_DURATION) button[i] = HOLD; break;
-        case TAP1_W:  holdTimer[i] = currentTime; button[i] = TAP2; break;
-        case TAP2_W:  holdTimer[i] = currentTime; button[i] = TAP3; break;
-        case TAP3_W:  if (currentTime - holdTimer[i] > HOLD_DURATION) button[i] = RELEASE; break;
-        case RELEASE:
-        case RELEASE_S:
-        case RELEASE_L: button[i] = TAP; break;
-        case HOLD: break;
-        default: break;
-      }
-    }
-    else {
-      switch(button[i]) {
-        case TAP:   button[i] = TAP1_W; holdTimer[i] = currentTime; break;
-        case TAP2:  button[i] = TAP2_W; holdTimer[i] = currentTime; break;
-        case TAP3:  button[i] = RELEASE; holdTimer[i] = currentTime; break;
-        case PRESS: button[i] = RELEASE_S; break;
-        case TAP1_W: if (currentTime - holdTimer[i] > WAIT_DURATION) button[i] = RELEASE_S; break;
-        case HOLD:  button[i] = RELEASE_L; break;
-        case TAP2_W: if (currentTime - holdTimer[i] > WAIT_DURATION) button[i] = TAP2_R; break;
-        case TAP3_W: if (currentTime - holdTimer[i] > WAIT_DURATION) button[i] = TAP3_R; break;
-        case RELEASE:
-        case RELEASE_S:
-        case RELEASE_L:
-        case TAP2_R:
-        case TAP3_R: button[i] = NONE; break;
-        default: button[i] = NONE; break;
-      }
-    }
-  }
+buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
+  return buttonMgr.getStatus(btn);
 }
 
 /* =============================================================================

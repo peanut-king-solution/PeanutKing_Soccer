@@ -25,6 +25,7 @@
 #include "modules/Motor/Motor.h"
 #include "modules/Movement/Movement.h"
 #include "modules/Compass/Compass.h"
+#include "modules/ButtonManager/ButtonManager.h"
 
 #include <SPI.h>                   // must include this here (or else IDE can't find it)
 #include <pcint.h>                 // Pin Change Interrupt Library
@@ -148,18 +149,35 @@ public:
 //                      Module Instances
 // =============================================================================
 
+  ButtonManager buttonMgr;  // ButtonManager instance for reading button states
   Motor     motor;    // Motor instance for controlling the robot's motors
   Movement  move;     // Movement instance for controlling the robot's movement
   Compass   compass;  // Compass instance for reading compass heading
   PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
 
 // =============================================================================
-//                       Button Functions
+//                Button Functions (wrapper for compatibility)
 // =============================================================================
 
-  bool buttonRead(uint8_t);
-  bool buttTrigRead(uint8_t);
-  void buttons(void);
+  /**
+   * Read button state (pressed or not)
+   * `btn` - Button ID (`BTN_1` - `BTN_4`)
+   *
+   * `Returns` - `true` if pressed, `false` otherwise
+   */
+  bool buttonRead(BUTTON_ID btn);
+  /**
+   * Update button state machine
+   * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
+   */
+  void buttonUpdate(void);
+  /**
+   * Get the current status of a button
+   * `btn` - Button ID (`BTN_1` - `BTN_4`)
+   * 
+   * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
+   */
+  buttonStatus_t buttonGetStatus(BUTTON_ID btn);
 
 // =============================================================================
 //                    IR Compound Eye Functions
@@ -315,9 +333,6 @@ public:
   // Ultrasonic
   uint16_t ultrasonic[4];
 
-  // Button state
-  buttonStatus_t button[3] = {NONE};
-
   // Bluetooth data
   uint8_t  btButton[10];
   uint8_t  btButtonIndex;
@@ -368,7 +383,6 @@ private:
 //                        Pin Allocation
 // =============================================================================
 
-  const uint8_t buttonPin[4];
   const uint8_t ledPin[3];
   const uint8_t APin[4];
   const uint8_t DPin[6];
@@ -381,14 +395,6 @@ private:
 // =============================================================================
 
   SlowSoftI2CMaster swiic[8];   // Software I2C instances for color sensors
-
-// =============================================================================
-//                        Internal Button State
-// =============================================================================
-
-  bool buttonPressed[3];
-  bool onBound[8];
-  bool outBound[8];
 
 // =============================================================================
 //                        Internal Ultrasonic ISR

@@ -6,17 +6,24 @@ void setup() {
 }
 
 void loop() {
-  if (robot.buttonRead(1))                      // If pressed button 1
-    robot.setOnBrdLED(LED_YELLOW);        // Turn on all led on top board (255,r,g,b,w)
-
-  else if(robot.buttonRead(2))                  // If pressed button 2
-    robot.setOnBrdLED(LED_BLUE);                // Turn off all led on top board (255,r,g,b,w)
-
-  else if(robot.buttonRead(3))                  // If pressed button 2
-    robot.setOnBrdLED(LED_RED);                // Turn off all led on top board (255,r,g,b,w)
-
-  else if(robot.buttonRead(4))                  // If pressed button 2
-    robot.setOnBrdLED(LED_CYAN);                // Turn off all led on top board (255,r,g,b,w)
-  else
-     robot.setOnBrdLED(LED_OFF);
+  bool noButtonPressed = true;
+  // Check all buttons' state (pressed or not) and print the result to Serial Monitor
+  for (int i = 1; i <=4; i++) {
+    // Parameter `i` is changed to `BUTTON_ID` enum type to read the button state
+    // if call singlely, can use `robot.buttonRead(BTN_1)` or `robot.buttonRead(BTN_2)` etc.
+    
+    // Check if the button is pressed
+    if (robot.buttonRead((BUTTON_ID) i)) {
+      // Print the button state to Serial Monitor
+      Serial.print("Button ");
+      Serial.print(i);
+      Serial.println(" pressed");
+      // Have at least one button pressed, so set the flag to false
+      noButtonPressed = false;
+    }
+  }
+  // No button pressed
+  if (noButtonPressed) {
+    Serial.println("No button pressed");
+  }
 }
