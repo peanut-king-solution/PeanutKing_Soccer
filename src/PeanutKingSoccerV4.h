@@ -211,9 +211,50 @@ public:
 //                     TFT Display Functions
 // =============================================================================
 
+  /**
+   * Set the foreground color for text on the TFT display
+   * `color` - 16-bit color value (e.g., `ST7735_WHITE`, `ST7735_YELLOW`, `ST7735_BLACK`)
+   */
+  void setTextColor(uint16_t color);
+  /**
+   * Set the foreground and background color for text on the TFT display
+   * `fg` - Foreground color
+   * `bg` - Background color
+   */
+  void setTextColor(uint16_t fg, uint16_t bg);
+  /**
+   * Set the text size for the TFT display
+   * `size` - Text size
+   */
+  void setTextSize(uint8_t size);
+
+  /**
+   * Display a text on the TFT screen at the specified column and row
+   * `col` - Column position (`0-based`, each column is `6 pixels` wide)
+   * `row` - Row position (`0-based`, each row is `10 pixels` high)
+   * `string` - Text string to display
+   */
   void setScreen(uint8_t col, uint8_t row, char string[]);
+  /**
+   * Display a `number` on the TFT screen at the specified column and row
+   * `col` - Column position (`0-based`, each column is `6 pixels` wide)
+   * `row` - Row position (`0-based`, each row is `10 pixels` high)
+   * `numbers` - Number to display
+   */
   void setScreen(uint8_t col, uint8_t row, int16_t numbers);
+  /**
+   * Clear the entire TFT screen (fill with `black`)
+   */
   void clearScreen(void);
+  /**
+   * Draw a angle pointer (arrow + circle + N/S/E/W markers) on the TFT screen
+   * `x` - Center X coordinate of the compass (pixels)
+   * `y` - Center Y coordinate of the compass (pixels)
+   * `radius` - Radius of the compass circle (pixels)
+   * `angle` - Angle in degrees (`0~360`), clockwise
+   * `arrowColor` - Color of the pointer arrow
+   */
+  void drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor);
 
 // =============================================================================
 //                      Bluetooth Functions

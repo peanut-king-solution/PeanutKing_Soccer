@@ -348,6 +348,18 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
  *                              TFT Display
  * ============================================================================= */
 
+void PeanutKingSoccerV4::setTextColor(uint16_t color) {
+  tft.setTextColor(color);
+}
+
+void PeanutKingSoccerV4::setTextColor(uint16_t fg, uint16_t bg) {
+  tft.setTextColor(fg, bg);
+}
+
+void PeanutKingSoccerV4::setTextSize(uint8_t size) {
+  tft.setTextSize(size);
+}
+
 void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, char string[]) {
   tft.setCursor(col*6, row*10);
   tft.print(string);
@@ -360,6 +372,47 @@ void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
 
 void PeanutKingSoccerV4::clearScreen(void) {
   tft.fillScreen(ST7735_BLACK);
+}
+
+void PeanutKingSoccerV4::drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor) {
+  // Normalize angle to [0, 360) range
+  angle = angle % 360;
+  
+  // Clear previous indicator circle
+  tft.fillCircle(x, y, radius + 2, ST7735_BLACK);
+
+  // Draw compass circle outline
+  tft.drawCircle(x, y, radius, ST7735_WHITE);
+
+  // Draw N/S/E/W markers
+  tft.setTextColor(ST7735_RED);
+  tft.setTextSize(1);
+  tft.setCursor(x - 3, y - radius - 10);
+  tft.print("N");
+  tft.setTextColor(ST7735_WHITE);
+  tft.setCursor(x - 3, y + radius + 2);
+  tft.print("S");
+  tft.setCursor(x + radius + 2, y - 3);
+  tft.print("E");
+  tft.setCursor(x - radius - 6, y - 3);
+  tft.print("W");
+
+  // Calculate arrow position based on heading angle
+  float angleRad = angle * 3.14159 / 180.0;
+  int arrowTipX = x + (int)(sin(angleRad) * radius);
+  int arrowTipY = y - (int)(cos(angleRad) * radius);
+
+  // Draw arrow line from center to tip
+  tft.drawLine(x, y, arrowTipX, arrowTipY, arrowColor);
+
+  // Draw arrow head (filled triangle at tip)
+  int headSize = 5;
+  float perpAngle = angleRad + 3.14159 / 2.0;
+  int head1X = arrowTipX - (int)(sin(angleRad) * headSize) + (int)(cos(perpAngle) * headSize / 2);
+  int head1Y = arrowTipY + (int)(cos(angleRad) * headSize) + (int)(sin(perpAngle) * headSize / 2);
+  int head2X = arrowTipX - (int)(sin(angleRad) * headSize) - (int)(cos(perpAngle) * headSize / 2);
+  int head2Y = arrowTipY + (int)(cos(angleRad) * headSize) - (int)(sin(perpAngle) * headSize / 2);
+  tft.fillTriangle(arrowTipX, arrowTipY, head1X, head1Y, head2X, head2Y, arrowColor);
 }
 
 /* =============================================================================
