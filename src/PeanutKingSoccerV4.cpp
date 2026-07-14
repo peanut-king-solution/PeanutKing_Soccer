@@ -87,8 +87,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
   // Compound eye
   compoundEyeRead();
 
-  // Note: Ultrasonic data is managed by xsound module via ISR
-  // Access via robot.ultrasonicRead(U1) or robot.xsound.read(U1)
+  // Ultrasonic (not sure will it have any effect on the performance)
+  for (uint8_t i=0; i<4; i++) {
+    ultrasonic[i] = xsound.read(i);
+  }
 
   // Color sensor - RGB
   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;

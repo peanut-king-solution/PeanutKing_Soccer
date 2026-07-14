@@ -351,6 +351,9 @@ public:
 
   // Compass
   uint16_t heading;   // Compass heading (0~360 degrees)
+
+  // Ultrasonic
+  uint16_t ultrasonic[4]; // Ultrasonic readings (U1~U4)
   
   // Compound eye
   uint8_t  eye[12];   // 12 IR readings

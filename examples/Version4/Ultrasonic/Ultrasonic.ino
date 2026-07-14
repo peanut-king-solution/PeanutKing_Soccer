@@ -59,6 +59,13 @@ void loop() {
   // int xu3 = robot.ultrasonicRead(U3);
   // int xu4 = robot.ultrasonicRead(U4);
 
+  // Or you can read all ultrasonic sensors at once using the dataFetch() method:
+  // robot.dataFetch();
+  // int xu1 = robot.ultrasonic[0];
+  // int xu2 = robot.ultrasonic[1];
+  // int xu3 = robot.ultrasonic[2];
+  // int xu4 = robot.ultrasonic[3];
+
   // Print the readings to the Serial Monitor
   Serial.print("U1: ");
   Serial.print(xu1);
