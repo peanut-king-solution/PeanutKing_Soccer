@@ -27,6 +27,7 @@
 #include "modules/Compass/Compass.h"
 #include "modules/ButtonManager/ButtonManager.h"
 #include "modules/LedController/LedController.h"
+#include "modules/Ultrasonic/Ultrasonic.h"
 
 #include <SPI.h>                   // must include this here (or else IDE can't find it)
 #include <pcint.h>                 // Pin Change Interrupt Library
@@ -91,10 +92,6 @@ typedef enum {
 } CL_SENSOR;
 
 typedef enum {
-  U1, U2, U3, U4
-} ULTR_SENSOR;
-
-typedef enum {
   S1_P = 10, S2_P, S3_P, S4_P
 } S_PIN;
 
@@ -134,6 +131,7 @@ public:
   Motor     motor;    // Motor instance for controlling the robot's motors
   Movement  move;     // Movement instance for controlling the robot's movement
   Compass   compass;  // Compass instance for reading compass heading
+  Ultrasonic xsound;  // Ultrasonic instance for managing 4 ultrasonic sensors
   PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
 
 // =============================================================================
@@ -189,7 +187,13 @@ public:
 //                      Ultrasonic Functions
 // =============================================================================
 
-  uint16_t ultrasonicRead(uint8_t);
+  /**
+   * Read the distance from an ultrasonic sensor
+   * `n` - Sensor ID (`U1` - `U4`)
+   *
+   * `Returns` - Distance in mm (0~4500mm)
+   */
+  uint16_t ultrasonicRead(ULTR_SENSOR n);
 
 // =============================================================================
 //                LED Functions (wrapper for compatibility)
@@ -347,7 +351,7 @@ public:
 
   // Compass
   uint16_t heading;   // Compass heading (0~360 degrees)
-
+  
   // Compound eye
   uint8_t  eye[12];   // 12 IR readings
   uint16_t eyeAngle;  
@@ -360,9 +364,6 @@ public:
   hsv_t    colorHSV[8];
   bool     isWhite[8] = {false};
   uint16_t whiteLineThreshold[8] = {30, 30, 30, 30};
-
-  // Ultrasonic
-  uint16_t ultrasonic[4];
 
   // Bluetooth data
   uint8_t  btButton[10];
@@ -413,28 +414,12 @@ private:
   const uint8_t APin[4];
   const uint8_t DPin[6];
   const uint8_t pwmPin[4];
-  const uint8_t ULTPin_trig[4];
-  uint8_t ULTPin_echo[4];
 
 // =============================================================================
 //                        Software I2C Instances
 // =============================================================================
 
   SlowSoftI2CMaster swiic[8];   // Software I2C instances for color sensors
-
-// =============================================================================
-//                        Internal Ultrasonic ISR
-// =============================================================================
-
-  void ULT_Echo_dect(uint8_t);
-  static void ULT_Echo_dect_0();
-  static void ULT_Echo_dect_1();
-  static void ULT_Echo_dect_2();
-  static void ULT_Echo_dect_3();
-  static void (*ULT_Echo_dect_ptr[4])();
-  uint32_t ULT_dt[4];
-  uint32_t ULT_get_interval;
-  uint8_t ultra_send_seq = 0;
 };
 
 #endif // PeanutKing_Soccer_V4_H

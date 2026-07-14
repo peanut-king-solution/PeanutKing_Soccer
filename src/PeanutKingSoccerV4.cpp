@@ -15,24 +15,6 @@
 #include "PeanutKingSoccerV4.h"
 
 /* =============================================================================
- *                              Static ISR Wrappers (Ultrasonic)
- * ============================================================================= */
-
-static PeanutKingSoccerV4* V4bot = NULL;
-
-static void PeanutKingSoccerV4::ULT_Echo_dect_0() { V4bot->ULT_Echo_dect(0); }
-static void PeanutKingSoccerV4::ULT_Echo_dect_1() { V4bot->ULT_Echo_dect(1); }
-static void PeanutKingSoccerV4::ULT_Echo_dect_2() { V4bot->ULT_Echo_dect(2); }
-static void PeanutKingSoccerV4::ULT_Echo_dect_3() { V4bot->ULT_Echo_dect(3); }
-
-void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
-  PeanutKingSoccerV4::ULT_Echo_dect_0,
-  PeanutKingSoccerV4::ULT_Echo_dect_1,
-  PeanutKingSoccerV4::ULT_Echo_dect_2,
-  PeanutKingSoccerV4::ULT_Echo_dect_3
-};
-
-/* =============================================================================
  *                              Constructor
  * ============================================================================= */
 
@@ -46,14 +28,9 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
     SlowSoftI2CMaster(39, 40, 1),
     SlowSoftI2CMaster(41, 42, 1),
     SlowSoftI2CMaster(43, 44, 1)},
-  ULTPin_trig{49, 48, 47, 46},
-  ULTPin_echo{A15, A14, A13, A12},
   pwmPin{10, 11, 12, 13},
   move(motor)   // Initialize Movement module with Motor instance
 {
-  if (V4bot == NULL) {
-    V4bot = this;
-  }
 }
 
 /* =============================================================================
@@ -81,13 +58,8 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   // Initialize LED module
   ledCtrl.init();
 
-  // Initialize ultrasonic pins and interrupts
-  for (uint8_t i=0; i<4; i++) {
-    pinMode(ULTPin_trig[i], OUTPUT);
-    pinMode(ULTPin_echo[i], INPUT);
-    PcInt::attachInterrupt(ULTPin_echo[i], ULT_Echo_dect_ptr[i], CHANGE);
-  }
-  delay(10);
+  // Initialize ultrasonic module
+  xsound.init();
 
   // Register I2C devices via legacy IICIT
   senbrdHandle = gIIC->RegisterDevice(sensorBoardAddr, 1, IICIT::Speed::SLOW);
@@ -114,6 +86,9 @@ void PeanutKingSoccerV4::dataFetch(void) {
 
   // Compound eye
   compoundEyeRead();
+
+  // Note: Ultrasonic data is managed by xsound module via ISR
+  // Access via robot.ultrasonicRead(U1) or robot.xsound.read(U1)
 
   // Color sensor - RGB
   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
@@ -264,30 +239,11 @@ void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
 }
 
 /* =============================================================================
- *                              Ultrasonic
+ *                       Ultrasonic (wrapper)
  * ============================================================================= */
 
-uint16_t PeanutKingSoccerV4::ultrasonicRead(uint8_t n) {
-  if (millis() - ULT_get_interval < 30) return ultrasonic[n];
-  ultra_send_seq = (ultra_send_seq >= 3) ? 0 : ultra_send_seq + 1;
-  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
-  delayMicroseconds(2);
-  digitalWrite(ULTPin_trig[ultra_send_seq], HIGH);
-  delayMicroseconds(10);
-  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
-  ULT_get_interval = millis();
-  return ultrasonic[n];
-}
-
-void PeanutKingSoccerV4::ULT_Echo_dect(uint8_t n) {
-  if (ultra_send_seq != n) return;
-  if (digitalRead(ULTPin_echo[n])) {
-    ULT_dt[n] = micros();
-  } else {
-    ULT_dt[n] = micros() - ULT_dt[n];
-  }
-  float dist = (float)ULT_dt[n] * 0.17f;
-  if (dist < 4500) ultrasonic[n] = (uint16_t)round(dist);
+uint16_t PeanutKingSoccerV4::ultrasonicRead(ULTR_SENSOR n) {
+  return xsound.read(n);
 }
 
 /* =============================================================================

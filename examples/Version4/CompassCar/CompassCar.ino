@@ -1,8 +1,6 @@
 #include <PeanutKingSoccerV4.h>
 
 static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
-static Motor&             motor = robot.motor;
-static Movement&           move = robot.move;
 
 void setup() {
   robot.init();
@@ -10,10 +8,10 @@ void setup() {
 
 // Set the speed of each motor
 void motors(int LF_spd, int RF_spd, int RB_spd, int LB_spd) {
-  motor.setSpeed(M1, LF_spd);
-  motor.setSpeed(M2, RF_spd);
-  motor.setSpeed(M3, RB_spd);
-  motor.setSpeed(M4, LB_spd);
+  robot.motor.setSpeed(M1, LF_spd);
+  robot.motor.setSpeed(M2, RF_spd);
+  robot.motor.setSpeed(M3, RB_spd);
+  robot.motor.setSpeed(M4, LB_spd);
 }
 
 void loop() {
