@@ -19,15 +19,6 @@
  * ============================================================================= */
 
 PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
-  swiic{
-    SlowSoftI2CMaster(29, 30, 1),
-    SlowSoftI2CMaster(31, 32, 1),
-    SlowSoftI2CMaster(33, 34, 1),
-    SlowSoftI2CMaster(35, 36, 1),
-    SlowSoftI2CMaster(37, 38, 1),
-    SlowSoftI2CMaster(39, 40, 1),
-    SlowSoftI2CMaster(41, 42, 1),
-    SlowSoftI2CMaster(43, 44, 1)},
   pwmPin{10, 11, 12, 13},
   move(motor)   // Initialize Movement module with Motor instance
 {
@@ -44,13 +35,14 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   // Initialize motor pins
   motor.init();
 
-  // Initialize Compass module (I2CManager is initialized inside Compass::init())
+  // Initialize I2C Manager (software + hardware I2C)
+  I2CManager::getInstance().init();
+
+  // Initialize Compass module
   compass.init();
 
-  // Initialize soft I2C instances for color sensors
-  for (uint8_t i=0; i<8; i++){
-    swiic[i].i2c_init();
-  }
+  // Initialize color sensor module
+  colorSensor.init();
 
   // Initialize button module
   buttonMgr.init();
@@ -92,32 +84,14 @@ void PeanutKingSoccerV4::dataFetch(void) {
     ultrasonic[i] = xsound.read(i);
   }
 
-  // Color sensor - RGB
-  for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW, 28);
-  for (uint8_t i=0; i<4; i++) {
-    colorRGB[i].r  = rxBuff[6*i]   | rxBuff[6*i+1]<<8;
-    colorRGB[i].g  = rxBuff[6*i+2] | rxBuff[6*i+3]<<8;
-    colorRGB[i].b  = rxBuff[6*i+4] | rxBuff[6*i+5]<<8;
-    groundColor[i] = rxBuff[24+i];
+  // Color sensor - RGB (via SW I2C)
+  for (uint8_t i = CL1; i <= CL4; i++) {
+    colorRGB[i] = colorSensor.readRGB((CLR_SENSOR_ID)i);
   }
 
-  // Color sensor - HSL
-  for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_HSL, 16);
-  for (uint8_t i=0; i<4; i++) {
-    colorHSL[i].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-    colorHSL[i].s  = rxBuff[4*i+2];
-    colorHSL[i].l  = rxBuff[4*i+3];
-  }
-
-  // Color sensor - HSV
-  for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_HSV, 16);
-  for (uint8_t i=0; i<4; i++) {
-    colorHSV[i].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-    colorHSV[i].s  = rxBuff[4*i+2];
-    colorHSV[i].v  = rxBuff[4*i+3];
+  // Color sensor - HSL (via SW I2C)
+  for (uint8_t i = CL1; i <= CL4; i++) {
+    colorHSL[i] = colorSensor.readHSL((CLR_SENSOR_ID)i);
   }
 }
 
@@ -149,38 +123,27 @@ IICIT::status_t PeanutKingSoccerV4::rxCpltCallback(const IICIT::status_t status)
  *                              Color Sensor (soft I2C)
  * ============================================================================= */
 
-uint8_t PeanutKingSoccerV4::getColorSensor(uint8_t color_sensor_num) {
-  uint8_t val = 0;
-  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { return val; }
-  swiic[color_sensor_num].i2c_write(0x01);
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ);
-  val = swiic[color_sensor_num].i2c_read(true);
-  swiic[color_sensor_num].i2c_stop();
-  return val;
+uint8_t PeanutKingSoccerV4::getColorSensor(CLR_SENSOR_ID color_sensor_num) {
+  return colorSensor.readColor(color_sensor_num);
 }
 
-rgb_t PeanutKingSoccerV4::getColorSensorRGB(uint8_t color_sensor_num) {
-  rgb_t temp;
-  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { return temp; }
-  swiic[color_sensor_num].i2c_write(0x08);
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ);
-  temp.r = swiic[color_sensor_num].i2c_read(false);
-  temp.g = swiic[color_sensor_num].i2c_read(false);
-  temp.b = swiic[color_sensor_num].i2c_read(true);
-  swiic[color_sensor_num].i2c_stop();
-  return temp;
+rgb_t PeanutKingSoccerV4::getColorSensorRGB(CLR_SENSOR_ID color_sensor_num) {
+  return colorSensor.readRGB(color_sensor_num);
 }
 
-hsl_t PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num) {
-  hsl_t temp;
-  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { return temp; }
-  swiic[color_sensor_num].i2c_write(0x03);
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ);
-  temp.h = (uint16_t)(swiic[color_sensor_num].i2c_read(0) | swiic[color_sensor_num].i2c_read(0)<<8);
-  temp.s = swiic[color_sensor_num].i2c_read(0);
-  temp.l = swiic[color_sensor_num].i2c_read(1);
-  swiic[color_sensor_num].i2c_stop();
-  return temp;
+hsl_t PeanutKingSoccerV4::getColorSensorHSL(CLR_SENSOR_ID color_sensor_num) {
+  return colorSensor.readHSL(color_sensor_num);
+}
+
+uint16_t PeanutKingSoccerV4::whiteLineCal(CLR_SENSOR_ID pin_no) {
+  whiteLineThreshold[pin_no] = getColorSensorHSL(pin_no).h;
+  return whiteLineThreshold[pin_no];
+}
+
+bool PeanutKingSoccerV4::whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh) {
+  colorHSL[i] = getColorSensorHSL(i);
+  isWhite[i] = (abs((int)colorHSL[i].h - (int)thresh) < 10 && colorHSL[i].l >= 50);
+  return isWhite[i];
 }
 
 /* =============================================================================
@@ -249,53 +212,11 @@ uint16_t PeanutKingSoccerV4::ultrasonicRead(ULTR_SENSOR n) {
 }
 
 /* =============================================================================
- *                              Color Sensor (via Sensor Board)
- * ============================================================================= */
-
-void PeanutKingSoccerV4::setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  txBuff[0] = COLOR_BL;
-  for (uint8_t i=0; i<4; i++) {
-    uint8_t *p = &txBuff[1 + i*4];
-    p[0] = r; p[1] = g; p[2] = b; p[3] = w;
-  }
-  gIIC->Write(senbrdHandle, txBuff, 17);
-}
-
-uint16_t PeanutKingSoccerV4::getRedColor(uint8_t i) {
-  const uint8_t ci[4] = {0, 3, 1, 2};
-  for (uint8_t j=0; j<2; j++) rxBuff[j] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 2);
-  colorRGB[i].r = rxBuff[0] | rxBuff[1]<<8;
-  return colorRGB[i].r;
-}
-
-uint16_t PeanutKingSoccerV4::floorColorRead(uint8_t i) {
-  const uint8_t ci[4] = {0, 3, 1, 2};
-  for (uint8_t j=0; j<6; j++) rxBuff[j] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 6);
-  colorRGB[i].r = rxBuff[0] | rxBuff[1]<<8;
-  colorRGB[i].g = rxBuff[2] | rxBuff[3]<<8;
-  colorRGB[i].b = rxBuff[4] | rxBuff[5]<<8;
-  return colorRGB[i].r + colorRGB[i].g + colorRGB[i].b;
-}
-
-uint16_t PeanutKingSoccerV4::whiteLineCal(uint8_t pin_no) {
-  whiteLineThreshold[pin_no] = getColorSensorHSL(pin_no).h;
-  return whiteLineThreshold[pin_no];
-}
-
-bool PeanutKingSoccerV4::whiteLineCheck(uint8_t i, uint16_t thresh) {
-  colorHSL[i] = getColorSensorHSL(i);
-  isWhite[i] = (abs((int)colorHSL[i].h - (int)thresh) < 10 && colorHSL[i].l >= 50);
-  return isWhite[i];
-}
-
-/* =============================================================================
  *                       LED (wrapper for compatibility)
  * ============================================================================= */
 
-void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
-  ledCtrl.setOnBrdLED((obBrdLEDCL)color);
+void PeanutKingSoccerV4::setOnBrdLED(obBrdLEDCL color) {
+  ledCtrl.setOnBrdLED(color);
 }
 
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
@@ -524,7 +445,6 @@ void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
 //   //     p[2] = 200;                   // B
 //   //   }
 //   // }
-//   // I2CSensorSend(senbrdHandle,LED_RGB,l,12);
 
 //   delay(1500);
 
@@ -539,43 +459,6 @@ void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
 //   Wire.requestFrom((int)addr, (int)length);
 //   while (Wire.available()) {
 //     data[i++] = Wire.read();
-//   }
-// }
-
-// uint8_t PeanutKingSoccerV4::colorReadAll(void) {
-//   const uint8_t ci[4] = {0, 3, 1, 2};
-
-//   for (uint8_t i=0; i<32; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_RAW, 32);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorRGB[ci[i]].r  = rxBuff[8*i]   | rxBuff[8*i+1]<<8;
-//     colorRGB[ci[i]].g  = rxBuff[8*i+2] | rxBuff[8*i+3]<<8;
-//     colorRGB[ci[i]].b  = rxBuff[8*i+4] | rxBuff[8*i+5]<<8;
-//   }
-//     groundColor[i] = rxBuff[24+i];
-
-//   for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_HSL, 16);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorHSL[ci[i]].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-//     colorHSL[ci[i]].s  = rxBuff[4*i+2];
-//     colorHSL[ci[i]].l  = rxBuff[4*i+3];
-//   }
-
-//   for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_HSV, 16);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorHSV[ci[i]].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-//     colorHSV[ci[i]].s  = rxBuff[4*i+2];
-//     colorHSV[ci[i]].v  = rxBuff[4*i+3];
-//   }
-//   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_RAW, 28);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorRGB[i].r  = rxBuff[6*i]   | rxBuff[6*i+1]<<8;
-//     colorRGB[i].g  = rxBuff[6*i+2] | rxBuff[6*i+3]<<8;
-//     colorRGB[i].b  = rxBuff[6*i+4] | rxBuff[6*i+5]<<8;
-//     groundColor[i] = rxBuff[24+i];
 //   }
 // }
 

@@ -7,7 +7,8 @@ Compass::Compass(uint8_t address)
 
 bool Compass::init(uint32_t speed) {
   // Register the compass device with the I2C manager
-  _handle = I2CManager::getInstance().RegisterDevice(BusIndex::HW, _address, speed);
+  I2CManager &i2cManager = I2CManager::getInstance();
+  _handle = i2cManager.RegisterDevice(BusIndex::HW, _address, speed);
 
   if (!_handle.isValid()) { return false; } // Return false if the handle is invalid
 
@@ -28,13 +29,14 @@ uint16_t Compass::read() {
   rxbufferClear();
 
   // Read the compass value from the compass module using the I2C manager
-  I2CManager::getInstance().SensorRead(_handle, GET_YAW, rxBuff, 2);
+  I2CManager &i2cManager = I2CManager::getInstance();
+  i2cManager.SensorRead(_handle, GET_YAW, rxBuff, 2);
   compass = rxBuff[0] & 0xff;
   compass |= rxBuff[1] << 8;
   compass = compass / 100;
 
   // Apply the conversion using the compassConverter
-  compass = converter.convert(compass);
+  // compass = converter.convert(compass);
   return compass;
 }
 
@@ -43,7 +45,8 @@ int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   rxbufferClear();
 
   // Read 6 bytes of raw sensor data from the specified register
-  I2CManager::getInstance().SensorRead(_handle, reg, rxBuff, 6);
+  I2CManager &i2cManager = I2CManager::getInstance();
+  i2cManager.SensorRead(_handle, reg, rxBuff, 6);
 
   // Combine the received bytes into 16-bit signed integers
   dataArr[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));

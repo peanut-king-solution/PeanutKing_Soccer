@@ -13,15 +13,7 @@
  */
 enum class BusIndex : uint8_t
 {
-  SW0 = 0,
-  SW1 = 1,
-  SW2 = 2,
-  SW3 = 3,
-  SW4 = 4,
-  SW5 = 5,
-  SW6 = 6,
-  SW7 = 7,
-  HW  = 8
+  SW0 = 0, SW1, SW2, SW3, SW4, SW5, SW6, SW7, HW = 8
 };
 
 /**
@@ -66,8 +58,9 @@ private:
   I2CManager(const I2CManager &) = delete;
   I2CManager &operator=(const I2CManager &) = delete;
 
-  hwI2CMaster hwiic;  // Hardware I2C master instance
-  uint8_t regBuf[1];  // Buffer for register address during read operations
+  SlowSoftI2CMaster swiic[8];  // Software I2C instances for color sensors
+  hwI2CMaster hwiic;           // Hardware I2C master instance
+  uint8_t regBuf[1];           // Buffer for register address during read operations
 
 public:
   /**

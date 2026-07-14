@@ -18,7 +18,6 @@
 #include "PeanutKingDef.h"
 
 #include "IICIT.h"
-#include "SlowSoftI2CMaster.h"
 
 #include "utils/Converter.h"
 #include "utils/PIDController.h"
@@ -28,6 +27,7 @@
 #include "modules/ButtonManager/ButtonManager.h"
 #include "modules/LedController/LedController.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
+#include "modules/ColorSensor/ColorSensor.h"
 
 #include <SPI.h>                   // must include this here (or else IDE can't find it)
 #include <pcint.h>                 // Pin Change Interrupt Library
@@ -61,20 +61,8 @@
 #define  IR_LEDEN       0x2f
 #define  IR_CAL         0x30   // 2byte*12   (0x30 - 0x47)
 
-#define  COLOR_RGB      0x50   // 3byte*4    (0x50 - 0x5b)
-#define  COLOR_DEC      0x5c   // 1byte*4    (0x5c - 0x5f)
-#define  COLOR_RAW      0x60   // 2byte*4*4  (0x60 - 0x7f)
-#define  COLOR_HSL      0x80   // 4byte*4    (0x80 - 0x8f)
-#define  COLOR_HSV      0x90   // 4byte*4    (0x90 - 0x9f)
-#define  COLOR_BL       0xa0   // 4byte*4    (0xa0 - 0xaf)
-
 #define  IR_ARR_MAX     0xb0   // 2byte*12   (0xb0 - 0xc7)
 #define  IR_ARR_MIN     0xc8   // 2byte*12   (0xc8 - 0xdf)
-
-// Soccer Topboard Register Address
-#define  ULT_DATA       0x30   // 2byte*4    (0x30 - 0x37)
-#define  LED_RGB        0xa0   // 4byte*8 32 (0xa0 - 0xbf)
-#define  LED_HSV        0xc0   // 4byte*8 32 (0xc0 - 0xdf)
 
 // TFT Display Pins
 #define TFT_CS  0   // TFT LCD的CS PIN腳
@@ -88,10 +76,6 @@
 // =============================================================================
 
 typedef enum {
-  CL1, CL2, CL3, CL4, CL5, CL6, CL7, CL8
-} CL_SENSOR;
-
-typedef enum {
   S1_P = 10, S2_P, S3_P, S4_P
 } S_PIN;
 
@@ -102,10 +86,6 @@ typedef enum {
 typedef enum {
   A4_P = 62, A3_P, A2_P, A1_P
 } A_PIN;
-
-typedef enum {
-  BLACK, WHITE, GREY, RED, GREEN, BLUE, YELLOW, CYAN
-} color_sensor_color;
 
 // =============================================================================
 //                              Main Class
@@ -126,6 +106,7 @@ public:
 //                      Module Instances
 // =============================================================================
 
+  ColorSensor colorSensor;  // ColorSensor instance for reading color sensors
   ButtonManager buttonMgr;  // ButtonManager instance for reading button states
   LedController ledCtrl;    // LedController instance for controlling on-board LEDs
   Motor     motor;    // Motor instance for controlling the robot's motors
@@ -169,19 +150,45 @@ public:
   void     compoundEyeCal(float* calData);
 
 // =============================================================================
-//                     Color Sensor Functions
+//                     Color Sensor Functions (wrapper)
 // =============================================================================
 
-  uint8_t  getColorSensor(uint8_t);
-  rgb_t    getColorSensorRGB(uint8_t);
-  hsl_t    getColorSensorHSL(uint8_t);
-  uint8_t  floorColorReadRaw(uint8_t, uint8_t = 0);
-  uint16_t floorColorRead(uint8_t);
-  uint16_t getRedColor(uint8_t i);
-  uint8_t  colorReadAll(void);
-  uint16_t whiteLineCal(uint8_t = 00);
-  bool     whiteLineCheck(uint8_t, uint16_t);
-  void     setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+  /**
+   * Read color index from a sensor
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - Color index (`0`=Black ... `7`=Cyan)
+   */
+  uint8_t  getColorSensor(CLR_SENSOR_ID sensorNum);
+  /**
+   * Read RGB values from a sensor
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - RGB structure
+   */
+  rgb_t    getColorSensorRGB(CLR_SENSOR_ID sensorNum);
+  /**
+   * Read HSL values from a sensor
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - HSL structure
+   */
+  hsl_t    getColorSensorHSL(CLR_SENSOR_ID sensorNum);
+  /**
+   * Calibrate white line threshold from a sensor
+   * `pin_no` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - Hue threshold value
+   */
+  uint16_t whiteLineCal(CLR_SENSOR_ID pin_no = CL1);
+  /**
+   * Check if a sensor detects white line
+   * `i`      - Sensor ID (`CL1` - `CL8`)
+   * `thresh` - Hue threshold from `whiteLineCal()`
+   *
+   * `Returns` - `true` if white line detected
+   */
+  bool     whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh);
 
 // =============================================================================
 //                      Ultrasonic Functions
@@ -203,7 +210,7 @@ public:
    * Set all on-board LEDs to a specific color
    * `color` - Color to set (`LED_OFF` - `LED_WHITE`)
    */
-  void setOnBrdLED(uint8_t color);
+  void setOnBrdLED(obBrdLEDCL color);
   /**
    * Set a single on-board LED `on`/`off`
    * `LED`    - LED index (`0-2`)
@@ -361,10 +368,8 @@ public:
   uint8_t  maxEye;    // Index of the maximum IR reading
 
   // Color sensor
-  uint8_t  groundColor[4];
   rgb_t    colorRGB[8];
   hsl_t    colorHSL[8];
-  hsv_t    colorHSV[8];
   bool     isWhite[8] = {false};
   uint16_t whiteLineThreshold[8] = {30, 30, 30, 30};
 
@@ -400,8 +405,7 @@ private:
 //                        I2C Handles
 // =============================================================================
 
-  IICIT::Handle senbrdHandle;   // I2C handle for the sensor board
-  IICIT::Handle topbrdHandle;   // I2C handle for the top board
+  IICIT::Handle senbrdHandle;   // I2C handle for the sensor board (IR Compound Eye)
 
 // =============================================================================
 //                        I2C Buffers
@@ -417,12 +421,6 @@ private:
   const uint8_t APin[4];
   const uint8_t DPin[6];
   const uint8_t pwmPin[4];
-
-// =============================================================================
-//                        Software I2C Instances
-// =============================================================================
-
-  SlowSoftI2CMaster swiic[8];   // Software I2C instances for color sensors
 };
 
 #endif // PeanutKing_Soccer_V4_H
