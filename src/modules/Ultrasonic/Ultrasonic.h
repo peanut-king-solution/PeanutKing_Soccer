@@ -37,6 +37,9 @@ private:
   // Distance results (mm)
   uint16_t distance[4];
 
+  // Enabled sensors bitmask (bit 0=U1, bit 1=U2, bit 2=U3, bit 3=U4)
+  uint8_t enabledMask;
+
   // ISR infrastructure (static pointer pattern)
   static Ultrasonic *_instance;    // Pointer to the single instance of Ultrasonic for ISR access
   void handleEcho(uint8_t n);      // Handle echo signal for sensor `n`
@@ -66,6 +69,34 @@ public:
    *   `Right pin` is actually sensor `U1`, etc.
    */
   void mapXsounds(ULTR_SENSOR Front, ULTR_SENSOR Right, ULTR_SENSOR Back, ULTR_SENSOR Left);
+
+  /**
+   * Set which sensors are enabled
+   * Disabled sensors won't be triggered and return 0 when read
+   *
+   * `u1` - `true` to enable U1, `false` to disable
+   * `u2` - `true` to enable U2, `false` to disable
+   * `u3` - `true` to enable U3, `false` to disable
+   * `u4` - `true` to enable U4, `false` to disable
+   *
+   * Default: all enabled
+   */
+  void setEnabled(bool u1, bool u2, bool u3, bool u4);
+
+  /**
+   * Enable or disable a single sensor
+   *
+   * `sensor`  - Sensor ID (`U1`, `U2`, `U3`, `U4`)
+   * `enabled` - `true` to enable, `false` to disable
+   */
+  void enableSensor(ULTR_SENSOR sensor, bool enabled);
+
+  /**
+   * Enable or disable all sensors at once
+   *
+   * `enabled` - `true` to enable all, `false` to disable all
+   */
+  void enableAll(bool enabled);
 
   /**
    * Read distance from a specified sensor

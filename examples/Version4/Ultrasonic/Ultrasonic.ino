@@ -21,6 +21,29 @@ void setup() {
   configure by uncommenting the below line of code
   */
   // robot.xsound.mapXsounds(U2, U1, U3, U4); // swap Front and Right
+
+  /*
+  If you only have 2 or 3 sensors connected,
+  you can disable the unused sensors to save time.
+  Disabled sensors will not be triggered and return 0 when read.
+
+  Method 1: Use setEnabled() with 4 booleans
+  */
+  // robot.xsound.setEnabled(true, false, true, false);  // Enable U1, U3 only
+
+  /*
+  Method 2: Use enableSensor() to control individual sensors
+  */
+  // robot.xsound.enableSensor(U1, true);   // Enable U1
+  // robot.xsound.enableSensor(U2, false);  // Disable U2
+  // robot.xsound.enableSensor(U3, true);   // Enable U3
+  // robot.xsound.enableSensor(U4, false);  // Disable U4
+
+  /*
+  Method 3: Use enableAll() to enable/disable all sensors at once
+  */
+  // robot.xsound.enableAll(false);  // Disable all sensors
+  // robot.xsound.enableAll(true);   // Enable all sensors
 }
 
 void loop() {
