@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // On-board RGB LED color enumeration
-typedef enum {
+typedef enum : uint8_t {
   LED_OFF,    // 000
   LED_BLUE,   // 001
   LED_GREEN,  // 010

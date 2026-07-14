@@ -6,7 +6,7 @@
 #include "PeanutKingDef.h"
 
 // Button ID enumeration for identifying buttons
-typedef enum
+typedef enum : uint8_t
 {
   BTN_1 = 1,
   BTN_2 = 2,

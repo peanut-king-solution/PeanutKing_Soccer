@@ -5,7 +5,7 @@
 #include <pcint.h>
 
 // Ultrasonic Sensor ID enumeration
-typedef enum
+typedef enum : uint8_t
 {
   U1 = 0, // Front
   U2 = 1, // Right

@@ -19,7 +19,7 @@
  *  =================================================== */
 
 // Motor ID enumeration for identifying motors
-typedef enum
+typedef enum : uint8_t
 {
   M1 = 0, // Left Front
   M2 = 1, // Right Front
