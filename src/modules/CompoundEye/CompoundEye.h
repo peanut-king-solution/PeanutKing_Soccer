@@ -14,7 +14,7 @@
 #define IR_RAW     0x00    // 12 bytes (IR1-IR12 readings)
 #define IR_MAX     0x0C    // 1 byte  (maximum IR value)
 #define IR_MAX_IDX 0x0D    // 1 byte  (maximum IR index)
-#define IR_ANGLE   0x0E    // 2 bytes (angle 0-360)
+#define IR_ANGLE   0x0E    // 1 bytes (need *2 for angle 0-360)
 #define IR_MODE    0x0F    // 1 byte  (0=single, 1=double)
 
 // Default I2C address for the sensor board
