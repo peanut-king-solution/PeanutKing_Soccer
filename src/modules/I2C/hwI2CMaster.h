@@ -67,6 +67,14 @@ public:
    */
   bool writeReg(uint8_t deviceAddress, uint8_t reg, const uint8_t *txBuffer, uint8_t length);
 
+  /**
+   * I2C receive complete callback
+   * `status` - Status of the I2C operation
+   *
+   * `Returns` - The status value
+   */
+  static IICIT::status_t rxCpltCallback(const IICIT::status_t status);
+
 private:
   uint32_t defaultSpeed;
 

@@ -53,8 +53,8 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   // Initialize ultrasonic module
   xsound.init();
 
-  // Register I2C devices via legacy IICIT
-  senbrdHandle = gIIC->RegisterDevice(sensorBoardAddr, 1, IICIT::Speed::SLOW);
+  // Initialize compound eye module
+  compoundEye.init();
 
   // Initialize TFT
   #if defined(ST7735_RST_PIN)
@@ -77,7 +77,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
   heading = compass.read();
 
   // Compound eye
-  compoundEyeRead();
+  uint8_t* eyePtr = compoundEye.readAll();
+  for (uint8_t i = 0; i < 12; i++) {
+    eye[i] = eyePtr[i];
+  }
 
   // Ultrasonic (not sure will it have any effect on the performance)
   for (uint8_t i=0; i<4; i++) {
@@ -93,30 +96,6 @@ void PeanutKingSoccerV4::dataFetch(void) {
   for (uint8_t i = CL1; i <= CL4; i++) {
     colorHSL[i] = colorSensor.readHSL((CLR_SENSOR_ID)i);
   }
-}
-
-/* =============================================================================
- *                              I2C Low-Level (Legacy IICIT)
- * ============================================================================= */
-
-void PeanutKingSoccerV4::I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length) {
-  uint8_t _status;
-  txBuff[0] = sensor;
-  _status = gIIC->Write(handle, txBuff, 1);
-  _status = gIIC->Read(handle, rxBuff, length);
-}
-
-void PeanutKingSoccerV4::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length) {
-  uint8_t _status;
-  txBuff[0] = sensor;
-  for (uint8_t i=0; i<length; i++) {
-    txBuff[i+1] = data[i];
-  }
-  _status = gIIC->Write(handle, txBuff, length+1);
-}
-
-IICIT::status_t PeanutKingSoccerV4::rxCpltCallback(const IICIT::status_t status) {
-  return status;
 }
 
 /* =============================================================================
@@ -163,44 +142,31 @@ buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
 }
 
 /* =============================================================================
- *                              IR Compound Eye
+ *                       IR Compound Eye (wrapper)
  * ============================================================================= */
 
-uint8_t PeanutKingSoccerV4::compoundMaxEye() {
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, 13, 1);
-  return rxBuff[0];
-}
-
-uint8_t PeanutKingSoccerV4::compoundMaxEyeVal() {
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, 12, 1);
-  return rxBuff[0];
-}
-
-uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n) {
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, n, 1);
-  return rxBuff[0];
-}
-
 uint8_t* PeanutKingSoccerV4::compoundEyeRead() {
-  for (uint8_t i=0; i<12; i++) rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, IR_RAW, 12);
-  for (uint8_t i=0; i<12; i++) { eye[i] = rxBuff[i]; }
+  uint8_t* eyePtr = compoundEye.readAll();
+  for (uint8_t i = 0; i < 12; i++) {
+    eye[i] = eyePtr[i];
+  }
   return eye;
 }
 
+uint8_t PeanutKingSoccerV4::compoundMaxEye() {
+  return compoundEye.getMaxEye();
+}
+
+uint8_t PeanutKingSoccerV4::compoundMaxEyeVal() {
+  return compoundEye.getMaxEyeVal();
+}
+
+uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n) {
+  return compoundEye.getEyeVal(n);
+}
+
 void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
-  uint8_t msg[25] = {0};
-  uint16_t eyeCal[12] = {0};
-  msg[0] = IR_CAL;
-  for (uint8_t i=0; i<12; i++) eyeCal[i] = 4096.0 / calData[i];
-  for (uint8_t i=0; i<12; i++) {
-    msg[2*i+1] = eyeCal[i] & 0xff;
-    msg[2*i+2] = eyeCal[i] >> 8;
-  }
-  gIIC->Write(senbrdHandle, msg, 25);
+  compoundEye.calibrate(calData);
 }
 
 /* =============================================================================
@@ -297,10 +263,6 @@ void PeanutKingSoccerV4::drawAnglePointer(int x, int y, int radius, uint16_t ang
 /* =============================================================================
  *                              Bluetooth
  * ============================================================================= */
-
-void PeanutKingSoccerV4::enableScanning(bool enable, uint16_t sensorType, bool enableLED) {
-  (void)enable; (void)sensorType; (void)enableLED;
-}
 
 void PeanutKingSoccerV4::bluetoothAttributes() {}
 void PeanutKingSoccerV4::bluetoothRemote(void) {}

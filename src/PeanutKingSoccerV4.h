@@ -17,10 +17,6 @@
 
 #include "PeanutKingDef.h"
 
-#include "IICIT.h"
-
-#include "utils/Converter.h"
-#include "utils/PIDController.h"
 #include "modules/Motor/Motor.h"
 #include "modules/Movement/Movement.h"
 #include "modules/Compass/Compass.h"
@@ -28,12 +24,13 @@
 #include "modules/LedController/LedController.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/ColorSensor/ColorSensor.h"
+#include "modules/CompoundEye/CompoundEye.h"
 
-#include <SPI.h>                   // must include this here (or else IDE can't find it)
-#include <pcint.h>                 // Pin Change Interrupt Library
-#include <PDQ_GFX.h>               // PDQ: Core graphics library
-#include <PDQ_ST7735.h>            // PDQ: Hardware-specific driver library
-#include <pins_arduino.h>          // Arduino pin definitions
+#include <SPI.h>            // must include this here (or else IDE can't find it)
+#include <pcint.h>          // Pin Change Interrupt Library
+#include <PDQ_GFX.h>        // PDQ: Core graphics library
+#include <PDQ_ST7735.h>     // PDQ: Hardware-specific driver library
+#include <pins_arduino.h>   // Arduino pin definitions
 
 // =============================================================================
 //                              Macro Definitions
@@ -49,20 +46,7 @@
 #define BIN 2
 
 // Debug Mode
-#define DEBUGMODE       1
-
-// Soccer Sensorboard Register Address
-#define  IR_RAW         0x0    // 2byte*12   (0x10 - 0x27)
-#define  IR_MAX         0x11
-#define  IR_MIN         0x12
-#define  IR_ANGLE       0x13   // 2byte
-// IR_LIMIT 0x2c
-#define  IR_COUNT       0x2d   // 2byte
-#define  IR_LEDEN       0x2f
-#define  IR_CAL         0x30   // 2byte*12   (0x30 - 0x47)
-
-#define  IR_ARR_MAX     0xb0   // 2byte*12   (0xb0 - 0xc7)
-#define  IR_ARR_MIN     0xc8   // 2byte*12   (0xc8 - 0xdf)
+#define DEBUGMODE 1
 
 // TFT Display Pins
 #define TFT_CS  0   // TFT LCD的CS PIN腳
@@ -107,6 +91,7 @@ public:
 // =============================================================================
 
   ColorSensor colorSensor;  // ColorSensor instance for reading color sensors
+  CompoundEye compoundEye;  // CompoundEye instance for reading IR sensors
   ButtonManager buttonMgr;  // ButtonManager instance for reading button states
   LedController ledCtrl;    // LedController instance for controlling on-board LEDs
   Motor     motor;    // Motor instance for controlling the robot's motors
@@ -143,10 +128,35 @@ public:
 //                    IR Compound Eye Functions
 // =============================================================================
 
+  /**
+   * Read all 12 IR sensor values
+   *
+   * `Returns` - Pointer to the `eye[12]` array
+   */
   uint8_t* compoundEyeRead();
+  /**
+   * Get the index of the IR sensor with maximum reading
+   *
+   * `Returns` - Index `(0-11)` of the sensor with max value
+   */
   uint8_t  compoundMaxEye(void);
+  /**
+   * Get the maximum IR sensor value
+   *
+   * `Returns` - Maximum value among all 12 sensors
+   */
   uint8_t  compoundMaxEyeVal(void);
+  /**
+   * Get the value of a specific IR sensor
+   * `n` - Sensor index `(0-11)`
+   *
+   * `Returns` - IR sensor value
+   */
   uint8_t  compoundEyeVal(uint8_t n);
+  /**
+   * Calibrate the IR sensors with calibration data
+   * `calData` - Array of 12 calibration float values
+   */
   void     compoundEyeCal(float* calData);
 
 // =============================================================================
@@ -344,15 +354,6 @@ public:
   void Back(int& direct, int& speed, int& rotation);
 
 // =============================================================================
-//                    I2C Low-Level Functions
-// =============================================================================
-
-  IICIT::status_t rxCpltCallback(const IICIT::status_t status);
-  void enableScanning(bool, uint16_t, bool);
-  void I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length);
-  void I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length);
-
-// =============================================================================
 //                      Public Sensor Data
 // =============================================================================
 
@@ -364,14 +365,14 @@ public:
   
   // Compound eye
   uint8_t  eye[12];   // 12 IR readings
-  uint16_t eyeAngle;  
+  uint16_t eyeAngle;  // Ball angle (0~360 degrees)
   uint8_t  maxEye;    // Index of the maximum IR reading
 
   // Color sensor
-  rgb_t    colorRGB[8];
-  hsl_t    colorHSL[8];
-  bool     isWhite[8] = {false};
-  uint16_t whiteLineThreshold[8] = {30, 30, 30, 30};
+  rgb_t    colorRGB[8];   // RGB values
+  hsl_t    colorHSL[8];   // HSL values
+  bool     isWhite[8] = {0};  // Set all to false
+  uint16_t whiteLineThreshold[8] = {30, 30, 30, 30, 30, 30, 30, 30};
 
   // Bluetooth data
   uint8_t  btButton[10];
@@ -385,35 +386,7 @@ public:
   int16_t  btDistance = 0;
   int16_t  btRotate = 0;
 
-  // Misc
-  uint16_t EYEBOUNDARY = 20;
-  uint16_t systemTime;
-  uint32_t screenTicks = 0;
-  uint32_t sysTicks = 0;
-  uint16_t tim1Count = 0;
-
-// =============================================================================
-//                        Constants
-// =============================================================================
-
-  const int8_t  PAGEUPPERLIMIT = 6;
-  const int8_t  PAGELOWERLIMIT = 0;
-  const uint8_t sensorBoardAddr = 0x13;
-
 private:
-// =============================================================================
-//                        I2C Handles
-// =============================================================================
-
-  IICIT::Handle senbrdHandle;   // I2C handle for the sensor board (IR Compound Eye)
-
-// =============================================================================
-//                        I2C Buffers
-// =============================================================================
-
-  uint8_t rxBuff[50];   // Buffer for I2C read operations
-  uint8_t txBuff[50];   // Buffer for I2C write operations
-
 // =============================================================================
 //                        Pin Allocation
 // =============================================================================

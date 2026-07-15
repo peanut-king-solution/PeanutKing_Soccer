@@ -57,3 +57,7 @@ bool hwI2CMaster::writeReg(uint8_t deviceAddress, uint8_t reg, const uint8_t *tx
 IICIT::Speed hwI2CMaster::speedToIICIT(uint32_t speed) const {
   return (speed >= 400000) ? IICIT::Speed::FAST : IICIT::Speed::SLOW;
 }
+
+IICIT::status_t hwI2CMaster::rxCpltCallback(const IICIT::status_t status) {
+  return status;
+}
