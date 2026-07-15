@@ -165,8 +165,8 @@ uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n) {
   return compoundEye.getEyeVal(n);
 }
 
-void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
-  compoundEye.calibrate(calData);
+uint16_t PeanutKingSoccerV4::compoundEyeAngle(void) {
+  return compoundEye.getAngle();
 }
 
 /* =============================================================================

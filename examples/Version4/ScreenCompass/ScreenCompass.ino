@@ -41,7 +41,7 @@ void loop() {
   prevHeading = heading;
 
   // Draw heading direction indicator
-  robot.drawAnglePointer(64, 120, 25, heading, ST7735_MAGENTA);
+  robot.drawAnglePointer(64, 120, 25, heading);
 
   delay(50);
 }

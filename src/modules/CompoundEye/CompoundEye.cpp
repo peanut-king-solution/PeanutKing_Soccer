@@ -28,7 +28,7 @@ uint8_t CompoundEye::getMaxEye(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
-  i2cManager.SensorRead(_handle, 0x0D, &val, 1);  // Register 13
+  i2cManager.SensorRead(_handle, IR_MAX_IDX, &val, 1);  // Register 13
   return val;
 }
 
@@ -36,7 +36,7 @@ uint8_t CompoundEye::getMaxEyeVal(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
-  i2cManager.SensorRead(_handle, 0x0C, &val, 1);  // Register 12
+  i2cManager.SensorRead(_handle, IR_MAX, &val, 1);  // Register 12
   return val;
 }
 
@@ -50,17 +50,18 @@ uint8_t CompoundEye::getEyeVal(uint8_t n)
   return val;
 }
 
-void CompoundEye::calibrate(float *calData)
+uint16_t CompoundEye::getAngle(void)
 {
-  uint8_t msg[25] = {IR_CAL};
-  uint16_t eyeCal[12];
-
-  for (uint8_t i = 0; i < 12; i++) {
-    eyeCal[i] = 4096.0 / calData[i];
-    msg[2*i + 1] = eyeCal[i] & 0xff;
-    msg[2*i + 2] = eyeCal[i] >> 8;
-  }
-
+  uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
-  i2cManager.SensorSend(_handle, msg, 25);
+  i2cManager.SensorRead(_handle, IR_ANGLE, &val, 1);  // 1 byte from firmware
+  return (uint16_t)val * 2;  // Firmware /2, multiply back to 0-360
+}
+
+uint8_t CompoundEye::getMode(void)
+{
+  uint8_t val = 0;
+  I2CManager &i2cManager = I2CManager::getInstance();
+  i2cManager.SensorRead(_handle, IR_MODE, &val, 1);  // Register 15
+  return val;
 }

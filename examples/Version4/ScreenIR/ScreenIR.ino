@@ -1,6 +1,7 @@
 /**
  * This example demonstrates how to read IR compound eye sensors and display
- * the individual IR readings and the maximum eye value on the TFT screen.
+ * the individual IR readings, the ball angle indicator, and the maximum eye
+ * value on the TFT screen.
  */
 
 #include <PeanutKingSoccerV4.h>
@@ -11,6 +12,7 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 uint16_t prevEye[12] = {0};
 uint16_t prevMaxEye = 0;
 uint16_t prevMaxEyeVal = 0;
+uint16_t prevAngle = 0;
 
 void setup() {
   robot.init();
@@ -22,6 +24,20 @@ void setup() {
 
   // Display title
   robot.setScreen(0, 0, "Comp Eye");
+
+  // Draw sensor labels once
+  robot.setTextSize(1);
+  robot.setTextColor(ST7735_CYAN);
+  for (uint8_t i = 0; i < 6; i++) {
+    robot.setScreen(0, 2 + i, "E");
+    robot.setScreen(1, 2 + i, (int16_t)i);
+    robot.setScreen(8, 2 + i, "E");
+    robot.setScreen(9, 2 + i, (int16_t)(i + 6));
+  }
+
+  // Draw angle label
+  robot.setTextColor(ST7735_WHITE);
+  robot.setScreen(0, 9, "Angle:");
 }
 
 void loop() {
@@ -32,19 +48,10 @@ void loop() {
   uint8_t maxEye = robot.compoundMaxEye();
   uint8_t maxEyeVal = robot.compoundMaxEyeVal();
 
-  // Sensor labels (drawn once, no need to clear)
-  robot.setTextSize(1);
-  robot.setTextColor(ST7735_CYAN);
+  // Read ball angle
+  uint16_t ballAngle = robot.compoundEyeAngle();
 
   // Display IR readings in a 6x2 grid
-  for (uint8_t i = 0; i < 6; i++) {
-    robot.setScreen(0, 2 + i, "E");
-    robot.setScreen(1, 2 + i, (int16_t)i);
-    robot.setScreen(8, 2 + i, "E");
-    robot.setScreen(9, 2 + i, (int16_t)(i + 6));
-  }
-
-  // Display IR values with clear of previous values
   robot.setTextSize(1);
   for (uint8_t i = 0; i < 6; i++) {
     // Clear previous values
@@ -63,24 +70,38 @@ void loop() {
   }
 
   // Display max eye info
-  robot.setTextSize(1);
   robot.setTextColor(ST7735_WHITE);
-  robot.setScreen(0, 9, "Max:");
-  robot.setScreen(7, 9, "Val:");
+  robot.setScreen(0, 11, "Max:");
+  robot.setScreen(0, 13, "Val:");
 
   // Clear previous max eye values
   robot.setTextColor(ST7735_BLACK);
-  robot.setScreen(4, 9, (int16_t)prevMaxEye);
-  robot.setScreen(11, 9, (int16_t)prevMaxEyeVal);
+  robot.setScreen(4, 11, (int16_t)prevMaxEye);
+  robot.setScreen(4, 13, (int16_t)prevMaxEyeVal);
 
   // Display current max eye values
   robot.setTextColor(ST7735_YELLOW);
-  robot.setScreen(4, 9, (int16_t)maxEye);
-  robot.setScreen(11, 9, (int16_t)maxEyeVal);
+  robot.setScreen(4, 11, (int16_t)maxEye);
+  robot.setScreen(4, 13, (int16_t)maxEyeVal);
 
   // Update previous values
   prevMaxEye = maxEye;
   prevMaxEyeVal = maxEyeVal;
+
+  // Display ball angle on the compass pointer
+  // Clear previous angle text
+  robot.setTextColor(ST7735_BLACK);
+  robot.setScreen(6, 9, (int16_t)prevAngle);
+  // Display current ball angle
+  robot.setTextColor(ST7735_YELLOW);
+  robot.setScreen(6, 9, (int16_t)ballAngle);
+
+  // Draw ball angle pointer (compass-style)
+  // Center at (90, 100), radius 30
+  robot.drawAnglePointer(90, 120, 30, ballAngle);
+
+  // Update previous angle
+  prevAngle = ballAngle;
 
   delay(100);
 }

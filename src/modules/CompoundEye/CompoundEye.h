@@ -5,19 +5,20 @@
 #include "modules/I2C/i2cManager.h"
 
 // IR Compound Eye Register Addresses
-#define IR_RAW     0x00    // 12 bytes (raw readings)
-#define IR_MAX     0x11    // max value index
-#define IR_MIN     0x12    // min value index
-#define IR_ANGLE   0x13    // 2 bytes
-#define IR_COUNT   0x2d    // 2 bytes
-#define IR_LEDEN   0x2f
-#define IR_CAL     0x30    // 24 bytes (calibration data)
-#define IR_ARR_MAX 0xb0    // 24 bytes
-#define IR_ARR_MIN 0xc8    // 24 bytes
+// Command Map (in decimal):
+//  0-11 : Reading of IR1-IR12 (0-255)
+//  12   : Maximum IR reading  (0-255)
+//  13   : Maximum IR          (1-12)
+//  14   : Angle               (0-360)
+//  15   : Mode                (0=single, 1=double)
+#define IR_RAW     0x00    // 12 bytes (IR1-IR12 readings)
+#define IR_MAX     0x0C    // 1 byte  (maximum IR value)
+#define IR_MAX_IDX 0x0D    // 1 byte  (maximum IR index)
+#define IR_ANGLE   0x0E    // 2 bytes (angle 0-360)
+#define IR_MODE    0x0F    // 1 byte  (0=single, 1=double)
 
 // Default I2C address for the sensor board
 #define COMPOUND_EYE_I2C_ADDRESS 0x13
-
 /**
  * CompoundEye class for reading IR sensor values via Hardware I2C
  * Manages 12 IR sensors arranged in a circle for ball detection
@@ -73,11 +74,18 @@ public:
   uint8_t getEyeVal(uint8_t n);
 
   /**
-   * Calibrate the IR sensors with calibration data
-   * Writes calibration values to sensor board registers
-   * `calData` - Array of 12 calibration float values
+   * Get the angle of the detected object
+   *
+   * `Returns` - Angle in degrees `(0-360)`
    */
-  void calibrate(float *calData);
+  uint16_t getAngle(void);
+
+  /**
+   * Get the detection mode
+   *
+   * `Returns` - Mode `(0=single, 1=double)`
+   */
+  uint8_t getMode(void);
 };
 
 #endif // COMPOUND_EYE_H

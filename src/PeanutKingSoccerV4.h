@@ -17,6 +17,7 @@
 
 #include "PeanutKingDef.h"
 
+// Include all module headers
 #include "modules/Motor/Motor.h"
 #include "modules/Movement/Movement.h"
 #include "modules/Compass/Compass.h"
@@ -26,6 +27,7 @@
 #include "modules/ColorSensor/ColorSensor.h"
 #include "modules/CompoundEye/CompoundEye.h"
 
+// Include external libraries
 #include <SPI.h>            // must include this here (or else IDE can't find it)
 #include <pcint.h>          // Pin Change Interrupt Library
 #include <PDQ_GFX.h>        // PDQ: Core graphics library
@@ -154,10 +156,11 @@ public:
    */
   uint8_t  compoundEyeVal(uint8_t n);
   /**
-   * Calibrate the IR sensors with calibration data
-   * `calData` - Array of 12 calibration float values
+   * Get the angle of the detected object
+   *
+   * `Returns` - Angle in degrees `(0-360)`
    */
-  void     compoundEyeCal(float* calData);
+  uint16_t compoundEyeAngle(void);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)
@@ -273,9 +276,9 @@ public:
    * `y` - Center Y coordinate of the compass (pixels)
    * `radius` - Radius of the compass circle (pixels)
    * `angle` - Angle in degrees (`0~360`), clockwise
-   * `arrowColor` - Color of the pointer arrow
+   * `arrowColor` - Color of the pointer arrow (default: `ST7735_MAGENTA`)
    */
-  void drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor);
+  void drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor = ST7735_MAGENTA);
 
 // =============================================================================
 //                      Bluetooth Functions

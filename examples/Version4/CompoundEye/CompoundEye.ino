@@ -23,10 +23,14 @@ void loop() {
   int maxEye = robot.compoundMaxEye();
   // Maximum Eye Reading - The reading from the Maximum Eye
   int maxEyeReading = robot.compoundMaxEyeVal();
+  // Ball Angle - The angle of the detected object based on the IR sensor readings
+  int ballAngle = robot.compoundEyeAngle();
 
   // Print the maximum eye and its reading to the Serial Monitor
-  Serial.print("MaxEye:");
+  Serial.print("MaxEye: ");
   Serial.print(maxEye);
-  Serial.print("EyeVal:");
-  Serial.println(maxEyeReading);
+  Serial.print(", EyeVal:" );
+  Serial.print(maxEyeReading);
+  Serial.print(", BallAngle: ");
+  Serial.println(ballAngle);
 }
