@@ -1,4 +1,5 @@
 #include <PeanutKingSoccerV4.h>
+
 static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 char* color_name[] = {
   "BLACK",
@@ -11,49 +12,86 @@ char* color_name[] = {
   "CYAN"
 };
 
-// Replace the following with the printed values
-uint16_t WhiteLineThres_1 = 190;
-uint16_t WhiteLineThres_2 = 190;
-uint16_t WhiteLineThres_3 = 190;
-uint16_t WhiteLineThres_4 = 190;
 void setup() {
   robot.init();
-  for (int CL; CL < 4; CL++) {
-    Serial.print("uint16_t WhiteLineThres_");
-    Serial.print(CL);
-    Serial.print(" = ");
-    Serial.print(robot.whiteLineCal(CL));
-    Serial.println(";");
-  }
-}
-rgb_t rgb;
-hsl_t hsl;
-void loop() {
 
-  // get rgb and hsl of 1
-  rgb = robot.getColorSensorRGB(CL7);
-  hsl = robot.getColorSensorHSL(CL7);
-  Serial.print("RGB:");
-  Serial.print(rgb.r);
-  Serial.print("||");
-  Serial.print(rgb.g);
-  Serial.print("||");
-  Serial.println(rgb.b);
-  Serial.print("HSL:");
-  Serial.print(hsl.h);
-  Serial.print("||");
-  Serial.print(hsl.s);
-  Serial.print("||");
-  Serial.println(hsl.l);
-  if(robot.whiteLineCheck(CL1,WhiteLineThres_1)){
-    robot.setOnBrdLED(LED_BLUE);
-  }else if(robot.whiteLineCheck(CL2,WhiteLineThres_2)){
-    robot.setOnBrdLED(LED_GREEN);
-  }else if(robot.whiteLineCheck(CL3,WhiteLineThres_3)){
-    robot.setOnBrdLED(LED_CYAN);
-  }else if(robot.whiteLineCheck(CL4,WhiteLineThres_4)){
-    robot.setOnBrdLED(LED_RED);
-  }else{
-    robot.setOnBrdLED(LED_OFF);
+  /*
+  By default, only CL1-CL4 sensors are enabled (mask 0x0F).
+  CL5-CL8 are disabled and will return 0 when read.
+
+  If you have fewer sensors connected, you can disable unused ones:
+
+  Method 1: Use setEnabled() with a bitmask
+  */
+  // robot.colorSensor.setEnabled(0b00001111);  // Enable CL1-CL4 only
+
+  /*
+  Method 2: Use enableSensor() to control individual sensors
+  */
+  // robot.colorSensor.enableSensor(CL1, true);   // Enable CL1
+  // robot.colorSensor.enableSensor(CL2, false);  // Disable CL2
+  // robot.colorSensor.enableSensor(CL3, true);   // Enable CL3
+  // robot.colorSensor.enableSensor(CL4, false);  // Disable CL4
+}
+
+void loop() {
+  // Read color index from CL1 sensor
+  uint8_t colorIdx = robot.colorSensor.readColor(CL1);
+
+  // Alternatively, use the wrapper function for compatibility:
+  // uint8_t colorIdx = robot.getColorSensor(CL1);
+
+  // Read RGB values from CL1 sensor
+  rgb_t rgb = robot.colorSensor.readRGB(CL1);
+
+  // Alternatively, use the wrapper function:
+  // rgb_t rgb = robot.getColorSensorRGB(CL1);
+
+  // Read HSL values from CL1 sensor
+  hsl_t hsl = robot.colorSensor.readHSL(CL1);
+
+  // Alternatively, use the wrapper function:
+  // hsl_t hsl = robot.getColorSensorHSL(CL1);
+
+  // Read RGBC raw values from CL1 sensor
+  rgbc_t rgbc = robot.colorSensor.readRGBRaw(CL1);
+
+  // Or you can read all sensors at once using dataFetch()
+  // robot.dataFetch();
+  // uint8_t colorIdx = robot.colorRGB[CL1];
+  // hsl_t hsl = robot.colorHSL[CL1];
+
+  // Print the readings to the Serial Monitor
+  Serial.print("CL1 - Color: ");
+  if (colorIdx <= 7) {
+    Serial.print(color_name[colorIdx]);
+  } else {
+    Serial.print("UNKNOWN");
   }
+
+  // Print RGB values
+  Serial.print(", RGB: ");
+  Serial.print(rgb.r);
+  Serial.print(", ");
+  Serial.print(rgb.g);
+  Serial.print(", ");
+  Serial.print(rgb.b);
+  // Print HSL values
+  Serial.print(", HSL: ");
+  Serial.print(hsl.h);
+  Serial.print(", ");
+  Serial.print(hsl.s);
+  Serial.print(", ");
+  Serial.print(hsl.l);
+  // Print RGBC raw values
+  Serial.print(", RGBC: ");
+  Serial.print(rgbc.r);
+  Serial.print(", ");
+  Serial.print(rgbc.g);
+  Serial.print(", ");
+  Serial.print(rgbc.b);
+  Serial.print(", ");
+  Serial.println(rgbc.c);
+
+  delay(100);
 }

@@ -6,20 +6,27 @@ void setup() {
 }
 
 void loop() {
-  // print all Eyes (Infrared eyering has 12 infrared sensor)
+  // Read all 12 IR sensor values
   uint8_t* ir = robot.compoundEyeRead();
-  Serial.print("Eye:");
+  
+  // Print the readings to the Serial Monitor
   for(int i = 0;i<12;i++){
+    Serial.print("eye");
+    Serial.print(i);
+    Serial.print(": ");
     Serial.print(ir[i]);
     Serial.print(" ");
   }
-  
-  // print maxEye, maxEyeReading
-  int maxEye = robot.compoundMaxEye();             // Maximum Eye         - The infrared senor with highest reading
-  int maxEyeReading = robot.compoundMaxEyeVal();      // Maximum Eye Reading - The reading from the Maximum Eye
+  Serial.println();
 
+  // Maximum Eye - The infrared senor with highest reading
+  int maxEye = robot.compoundMaxEye();
+  // Maximum Eye Reading - The reading from the Maximum Eye
+  int maxEyeReading = robot.compoundMaxEyeVal();
+
+  // Print the maximum eye and its reading to the Serial Monitor
   Serial.print("MaxEye:");
-  Serial.print(maxEye);               // Show data on LCD monitor (Column, row, number, digit)
+  Serial.print(maxEye);
   Serial.print("EyeVal:");
-  Serial.println(maxEyeReading);         // Show data on LCD monitor (Column, row, number, digit)
+  Serial.println(maxEyeReading);
 }
