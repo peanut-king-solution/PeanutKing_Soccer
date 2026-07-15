@@ -38,11 +38,11 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   // Initialize I2C Manager (software + hardware I2C)
   I2CManager::getInstance().init();
 
-  // Initialize Compass module
-  compass.init();
-
   // Initialize color sensor module
   colorSensor.init();
+
+  // Initialize compound eye module
+  compoundEye.init();
 
   // Initialize button module
   buttonMgr.init();
@@ -52,9 +52,9 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
 
   // Initialize ultrasonic module
   xsound.init();
-
-  // Initialize compound eye module
-  compoundEye.init();
+  
+  // Initialize Compass module
+  compass.init();
 
   // Initialize TFT
   #if defined(ST7735_RST_PIN)
@@ -73,30 +73,58 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
  * ============================================================================= */
 
 void PeanutKingSoccerV4::dataFetch(void) {
-  // Compass
-  heading = compass.read();
+  // Color sensor - RGB (via SW I2C)
+  for (uint8_t i = CL1; i <= CL8; i++) {
+    if (colorSensor.isEnabled((CLR_SENSOR_ID)i)) {
+      colorRGB[i] = colorSensor.readRGB((CLR_SENSOR_ID)i);
+    }
+  }
+
+  // Color sensor - HSL (via SW I2C)
+  for (uint8_t i = CL1; i <= CL8; i++) {
+    if (colorSensor.isEnabled((CLR_SENSOR_ID)i)) {
+      colorHSL[i] = colorSensor.readHSL((CLR_SENSOR_ID)i);
+    }
+  }
 
   // Compound eye
   uint8_t* eyePtr = compoundEye.readAll();
   for (uint8_t i = 0; i < 12; i++) {
     eye[i] = eyePtr[i];
   }
+  maxEye = compoundEye.getMaxEye();
+  eyeAngle = compoundEye.getAngle();
 
   // Ultrasonic (not sure will it have any effect on the performance)
   for (uint8_t i=0; i<4; i++) {
-    ultrasonic[i] = xsound.read(i);
+    ultrasonic[i] = xsound.read((ULTR_SENSOR)i);
   }
 
-  // Color sensor - RGB (via SW I2C)
-  for (uint8_t i = CL1; i <= CL4; i++) {
-    colorRGB[i] = colorSensor.readRGB((CLR_SENSOR_ID)i);
-  }
-
-  // Color sensor - HSL (via SW I2C)
-  for (uint8_t i = CL1; i <= CL4; i++) {
-    colorHSL[i] = colorSensor.readHSL((CLR_SENSOR_ID)i);
-  }
+  // Compass
+  heading = compass.read();
 }
+
+/* =============================================================================
+ *                              Motor (wrapper)
+ * ============================================================================= */
+
+  void PeanutKingSoccerV4::setMotorSpeed(MOTOR_ID mi, int16_t speed) {
+    motor.setSpeed(mi, speed);
+  }
+  void PeanutKingSoccerV4::stopAllMotors(void) {
+    motor.stopAll();
+  }
+
+/* =============================================================================
+*                              Movement (wrapper)
+* ============================================================================= */
+
+  void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
+    move.byAngle(mAngle, mSpeed, rotate);
+  }
+  void PeanutKingSoccerV4::moveByAnglePID(float mAngle, float mSpeed) {
+    move.byAnglePID(mAngle, mSpeed, compass.read());
+  }
 
 /* =============================================================================
  *                              Color Sensor (soft I2C)
@@ -123,22 +151,6 @@ bool PeanutKingSoccerV4::whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh) {
   colorHSL[i] = getColorSensorHSL(i);
   isWhite[i] = (abs((int)colorHSL[i].h - (int)thresh) < 10 && colorHSL[i].l >= 50);
   return isWhite[i];
-}
-
-/* =============================================================================
- *                       Button (wrapper for compatibility)
- * ============================================================================= */
-
-bool PeanutKingSoccerV4::buttonRead(BUTTON_ID btn) {
-  return buttonMgr.read(btn);
-}
-
-void PeanutKingSoccerV4::buttonUpdate(void) {
-  buttonMgr.update();
-}
-
-buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
-  return buttonMgr.getStatus(btn);
 }
 
 /* =============================================================================
@@ -170,11 +182,19 @@ uint16_t PeanutKingSoccerV4::compoundEyeAngle(void) {
 }
 
 /* =============================================================================
- *                       Ultrasonic (wrapper)
+ *                       Button (wrapper for compatibility)
  * ============================================================================= */
 
-uint16_t PeanutKingSoccerV4::ultrasonicRead(ULTR_SENSOR n) {
-  return xsound.read(n);
+bool PeanutKingSoccerV4::buttonRead(BUTTON_ID btn) {
+  return buttonMgr.read(btn);
+}
+
+void PeanutKingSoccerV4::buttonUpdate(void) {
+  buttonMgr.update();
+}
+
+buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
+  return buttonMgr.getStatus(btn);
 }
 
 /* =============================================================================
@@ -188,6 +208,27 @@ void PeanutKingSoccerV4::setOnBrdLED(obBrdLEDCL color) {
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
   ledCtrl.setOnBrdLED(LED, status);
 }
+
+/* =============================================================================
+ *                       Ultrasonic (wrapper)
+ * ============================================================================= */
+
+uint16_t PeanutKingSoccerV4::ultrasonicRead(ULTR_SENSOR n) {
+  return xsound.read(n);
+}
+
+/* =============================================================================
+ *                              Compass (wrapper)
+ * ============================================================================= */
+
+uint16_t PeanutKingSoccerV4::compassRead(void) {
+  heading = compass.read();
+  return heading;
+}
+
+int16_t* PeanutKingSoccerV4::getAccelerometerRaw(void) { return compass.getAccelerometerRaw(); }
+int16_t* PeanutKingSoccerV4::getGyroscopeRaw(void) { return compass.getGyroscopeRaw(); }
+int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void) { return compass.getMagnetometerRaw(); }
 
 /* =============================================================================
  *                              TFT Display
@@ -266,41 +307,6 @@ void PeanutKingSoccerV4::drawAnglePointer(int x, int y, int radius, uint16_t ang
 
 void PeanutKingSoccerV4::bluetoothAttributes() {}
 void PeanutKingSoccerV4::bluetoothRemote(void) {}
-
-/* =============================================================================
- *                              Compass (wrapper)
- * ============================================================================= */
-
-uint16_t PeanutKingSoccerV4::compassRead(void) {
-  heading = compass.read();
-  return heading;
-}
-
-int16_t* PeanutKingSoccerV4::getAccelerometerRaw(void) { return compass.getAccelerometerRaw(); }
-int16_t* PeanutKingSoccerV4::getGyroscopeRaw(void) { return compass.getGyroscopeRaw(); }
-int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void) { return compass.getMagnetometerRaw(); }
-
-/* =============================================================================
- *                              Motor (wrapper)
- * ============================================================================= */
-
-  void PeanutKingSoccerV4::setMotorSpeed(MOTOR_ID mi, int16_t speed) {
-    motor.setSpeed(mi, speed);
-  }
-  void PeanutKingSoccerV4::stopAllMotors(void) {
-    motor.stopAll();
-  }
-
-/* =============================================================================
-*                              Movement (wrapper)
-* ============================================================================= */
-
-  void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
-    move.byAngle(mAngle, mSpeed, rotate);
-  }
-  void PeanutKingSoccerV4::moveByAnglePID(float mAngle, float mSpeed) {
-    move.byAnglePID(mAngle, mSpeed, compass.read());
-  }
 
 /* =============================================================================
  *                              Strategy Functions

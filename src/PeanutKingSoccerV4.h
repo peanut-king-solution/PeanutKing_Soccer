@@ -20,12 +20,12 @@
 // Include all module headers
 #include "modules/Motor/Motor.h"
 #include "modules/Movement/Movement.h"
-#include "modules/Compass/Compass.h"
+#include "modules/ColorSensor/ColorSensor.h"
+#include "modules/CompoundEye/CompoundEye.h"
 #include "modules/ButtonManager/ButtonManager.h"
 #include "modules/LedController/LedController.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
-#include "modules/ColorSensor/ColorSensor.h"
-#include "modules/CompoundEye/CompoundEye.h"
+#include "modules/Compass/Compass.h"
 
 // Include external libraries
 #include <SPI.h>            // must include this here (or else IDE can't find it)
@@ -92,75 +92,48 @@ public:
 //                      Module Instances
 // =============================================================================
 
-  ColorSensor colorSensor;  // ColorSensor instance for reading color sensors
-  CompoundEye compoundEye;  // CompoundEye instance for reading IR sensors
-  ButtonManager buttonMgr;  // ButtonManager instance for reading button states
-  LedController ledCtrl;    // LedController instance for controlling on-board LEDs
-  Motor     motor;    // Motor instance for controlling the robot's motors
-  Movement  move;     // Movement instance for controlling the robot's movement
-  Compass   compass;  // Compass instance for reading compass heading
-  Ultrasonic xsound;  // Ultrasonic instance for managing 4 ultrasonic sensors
-  PDQ_ST7735 tft;     // TFT display instance for displaying graphics and text
+  Motor         motor;        // Motor instance for controlling the robot's motors
+  Movement      move;         // Movement instance for controlling the robot's movement
+  ColorSensor   colorSensor;  // ColorSensor instance for reading color sensors
+  CompoundEye   compoundEye;  // CompoundEye instance for reading IR sensors
+  ButtonManager buttonMgr;    // ButtonManager instance for reading button states
+  LedController ledCtrl;      // LedController instance for controlling on-board LEDs
+  Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
+  Compass       compass;      // Compass instance for reading compass heading
+  PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
 
 // =============================================================================
-//                Button Functions (wrapper for compatibility)
-// =============================================================================
-
-  /**
-   * Read button state (pressed or not)
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
-   *
-   * `Returns` - `true` if pressed, `false` otherwise
-   */
-  bool buttonRead(BUTTON_ID btn);
-  /**
-   * Update button state machine
-   * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
-   */
-  void buttonUpdate(void);
-  /**
-   * Get the current status of a button
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
-   * 
-   * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
-   */
-  buttonStatus_t buttonGetStatus(BUTTON_ID btn);
-
-// =============================================================================
-//                    IR Compound Eye Functions
+//                Motor Functions (wrapper for compatibility)
 // =============================================================================
 
   /**
-   * Read all 12 IR sensor values
-   *
-   * `Returns` - Pointer to the `eye[12]` array
+   * Set the speed of a single motor
+   * `mi`     - Motor ID ( `M1` - `M4` )
+   * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
    */
-  uint8_t* compoundEyeRead();
+  void setMotorSpeed(MOTOR_ID mi, int16_t speed);
   /**
-   * Get the index of the IR sensor with maximum reading
-   *
-   * `Returns` - Index `(0-11)` of the sensor with max value
+   * Stop all motors (brake mode)
    */
-  uint8_t  compoundMaxEye(void);
+  void stopAllMotors(void);
+
+// =============================================================================
+//               Movement Functions (wrapper for compatibility)
+// =============================================================================
+
   /**
-   * Get the maximum IR sensor value
-   *
-   * `Returns` - Maximum value among all 12 sensors
+   * Move robot at angle with speed and rotation
+   * `mAngle`  - Movement angle `(0-360°)`
+   * `mSpeed`  - Movement speed `(0-255)`
+   * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
    */
-  uint8_t  compoundMaxEyeVal(void);
+  void moveByAngle(float mAngle, float mSpeed, float rotate);
   /**
-   * Get the value of a specific IR sensor
-   * `n` - Sensor index `(0-11)`
-   *
-   * `Returns` - IR sensor value
+   * Move robot with compass correction and speed scaling
+   * `mAngle`          - Movement angle `(0-360°)`
+   * `mSpeed`          - Movement speed `(0-255)`
    */
-  uint8_t  compoundEyeVal(uint8_t n);
-  /**
-   * Get the angle of the detected object
-   *
-   * `Returns` - Angle in degrees `(0-360)`
-   */
-  uint16_t compoundEyeAngle(void);
+  void moveByAnglePID(float mAngle, float mSpeed);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)
@@ -204,16 +177,64 @@ public:
   bool     whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh);
 
 // =============================================================================
-//                      Ultrasonic Functions
+//                    IR Compound Eye Functions
 // =============================================================================
 
   /**
-   * Read the distance from an ultrasonic sensor
-   * `n` - Sensor ID (`U1` - `U4`)
+   * Read all 12 IR sensor values
    *
-   * `Returns` - Distance in mm (0~4500mm)
+   * `Returns` - Pointer to the `eye[12]` array
    */
-  uint16_t ultrasonicRead(ULTR_SENSOR n);
+  uint8_t* compoundEyeRead();
+  /**
+   * Get the index of the IR sensor with maximum reading
+   *
+   * `Returns` - Index `(0-11)` of the sensor with max value
+   */
+  uint8_t  compoundMaxEye(void);
+  /**
+   * Get the maximum IR sensor value
+   *
+   * `Returns` - Maximum value among all 12 sensors
+   */
+  uint8_t  compoundMaxEyeVal(void);
+  /**
+   * Get the value of a specific IR sensor
+   * `n` - Sensor index `(0-11)`
+   *
+   * `Returns` - IR sensor value
+   */
+  uint8_t  compoundEyeVal(uint8_t n);
+  /**
+   * Get the angle of the detected object
+   *
+   * `Returns` - Angle in degrees `(0-360)`
+   */
+  uint16_t compoundEyeAngle(void);
+
+// =============================================================================
+//                Button Functions (wrapper for compatibility)
+// =============================================================================
+
+  /**
+   * Read button state (pressed or not)
+   * `btn` - Button ID (`BTN_1` - `BTN_4`)
+   *
+   * `Returns` - `true` if pressed, `false` otherwise
+   */
+  bool buttonRead(BUTTON_ID btn);
+  /**
+   * Update button state machine
+   * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
+   */
+  void buttonUpdate(void);
+  /**
+   * Get the current status of a button
+   * `btn` - Button ID (`BTN_1` - `BTN_4`)
+   * 
+   * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
+   */
+  buttonStatus_t buttonGetStatus(BUTTON_ID btn);
 
 // =============================================================================
 //                LED Functions (wrapper for compatibility)
@@ -230,6 +251,47 @@ public:
    * `status` - `0` = off, `1` = on
    */
   void setOnBrdLED(uint8_t LED, uint8_t status);
+
+// =============================================================================
+//                      Ultrasonic Functions
+// =============================================================================
+
+  /**
+   * Read the distance from an ultrasonic sensor
+   * `n` - Sensor ID (`U1` - `U4`)
+   *
+   * `Returns` - Distance in mm (0~4500mm)
+   */
+  uint16_t ultrasonicRead(ULTR_SENSOR n);
+
+// =============================================================================
+//              Compass Functions (wrapper for compatibility)
+// =============================================================================
+
+  /**
+   * Read the compass heading
+   *
+   * `Returns` - heading in degrees `(0~360°)`, clockwise
+   */
+  uint16_t compassRead(void);
+  /**
+   * Get raw accelerometer data
+   *
+   * `Returns` - array of `accelData[3]` (X, Y, Z)
+   */
+  int16_t* getAccelerometerRaw(void);
+  /**
+   * Get raw gyroscope data
+   *
+   * `Returns` - array of `gyroData[3]` (X, Y, Z)
+   */
+  int16_t* getGyroscopeRaw(void);
+  /**
+   * Get raw magnetometer data
+   *
+   * `Returns` - array of `magData[3]` (X, Y, Z)
+   */
+  int16_t* getMagnetometerRaw(void);
 
 // =============================================================================
 //                     TFT Display Functions
@@ -288,68 +350,6 @@ public:
   void bluetoothAttributes(void);
 
 // =============================================================================
-//              Compass Functions (wrapper for compatibility)
-// =============================================================================
-
-  /**
-   * Read the compass heading
-   *
-   * `Returns` - heading in degrees `(0~360°)`, clockwise
-   */
-  uint16_t compassRead(void);
-  /**
-   * Get raw accelerometer data
-   *
-   * `Returns` - array of `accelData[3]` (X, Y, Z)
-   */
-  int16_t* getAccelerometerRaw(void);
-  /**
-   * Get raw gyroscope data
-   *
-   * `Returns` - array of `gyroData[3]` (X, Y, Z)
-   */
-  int16_t* getGyroscopeRaw(void);
-  /**
-   * Get raw magnetometer data
-   *
-   * `Returns` - array of `magData[3]` (X, Y, Z)
-   */
-  int16_t* getMagnetometerRaw(void);
-
-// =============================================================================
-//                Motor Functions (wrapper for compatibility)
-// =============================================================================
-
-  /**
-   * Set the speed of a single motor
-   * `mi`     - Motor ID ( `M1` - `M4` )
-   * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
-   */
-  void setMotorSpeed(MOTOR_ID mi, int16_t speed);
-  /**
-   * Stop all motors (brake mode)
-   */
-  void stopAllMotors(void);
-
-// =============================================================================
-//               Movement Functions (wrapper for compatibility)
-// =============================================================================
-
-  /**
-   * Move robot at angle with speed and rotation
-   * `mAngle`  - Movement angle `(0-360°)`
-   * `mSpeed`  - Movement speed `(0-255)`
-   * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
-   */
-  void moveByAngle(float mAngle, float mSpeed, float rotate);
-  /**
-   * Move robot with compass correction and speed scaling
-   * `mAngle`          - Movement angle `(0-360°)`
-   * `mSpeed`          - Movement speed `(0-255)`
-   */
-  void moveByAnglePID(float mAngle, float mSpeed);
-
-// =============================================================================
 //                      Strategy Functions
 // =============================================================================
 
@@ -360,22 +360,22 @@ public:
 //                      Public Sensor Data
 // =============================================================================
 
-  // Compass
-  uint16_t heading;   // Compass heading (0~360 degrees)
-
-  // Ultrasonic
-  uint16_t ultrasonic[4]; // Ultrasonic readings (U1~U4)
-  
-  // Compound eye
-  uint8_t  eye[12];   // 12 IR readings
-  uint16_t eyeAngle;  // Ball angle (0~360 degrees)
-  uint8_t  maxEye;    // Index of the maximum IR reading
-
   // Color sensor
   rgb_t    colorRGB[8];   // RGB values
   hsl_t    colorHSL[8];   // HSL values
   bool     isWhite[8] = {0};  // Set all to false
   uint16_t whiteLineThreshold[8] = {30, 30, 30, 30, 30, 30, 30, 30};
+
+  // Compound eye
+  uint8_t  eye[12];   // 12 IR readings
+  uint16_t eyeAngle;  // Ball angle (0~360 degrees)
+  uint8_t  maxEye;    // Index of the maximum IR reading
+  
+  // Ultrasonic
+  uint16_t ultrasonic[4]; // Ultrasonic readings (U1~U4)
+
+  // Compass
+  uint16_t heading;   // Compass heading (0~360 degrees)
 
   // Bluetooth data
   uint8_t  btButton[10];
