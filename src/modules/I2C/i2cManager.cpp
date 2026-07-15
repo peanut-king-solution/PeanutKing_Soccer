@@ -1,7 +1,5 @@
 #include "i2cManager.h"
 
-I2CManager *I2CManager = &I2CManager::getInstance();
-
 I2CManager::I2CManager() : 
   swiic{  // Software I2C pin (sda, scl) & pullup init
     SlowSoftI2CMaster(29, 30, 1),
