@@ -60,9 +60,10 @@ public:
 
   /**
    * Flip single motor rotation direction
-   * `mi`    - Motor ID ( `M1` - `M4` )
+   * `mi`      - Motor ID ( `M1` - `M4` )
+   * `flip`    - `true`=flip, `false`=normal (default: `true`)
    */
-  void flipMotor(MOTOR_ID mi);
+  void flipMotor(MOTOR_ID mi, bool flip = true);
 
   /**
    * Flip all motors rotation direction

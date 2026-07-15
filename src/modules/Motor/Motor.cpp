@@ -25,10 +25,10 @@ void Motor::mapMotors(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBac
   motorMap[3] = LeftBack;
 }
 
-void Motor::flipMotor(MOTOR_ID mi)
+void Motor::flipMotor(MOTOR_ID mi, bool flip)
 {
-  // flip the direction of the specified motor
-  motorflip[mi] = true;
+  // Set the flip state of the specified motor
+  motorflip[mi] = flip;
 }
 
 void Motor::flipMotors(bool m1, bool m2, bool m3, bool m4)
