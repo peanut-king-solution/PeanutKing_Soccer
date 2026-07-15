@@ -33,7 +33,7 @@ typedef struct {
 class ColorSensor {
 private:
   I2C_Handle _handles[8];  // I2C handles for 8 color sensors
-  uint8_t   _rxBuffer[8];  // Buffer for I2C read operations
+  uint8_t   _rxBuffer[16]; // Buffer for I2C read operations
   uint8_t   _enabledMask;  // Enabled sensors bitmask (bit0=CL1, ..., bit7=CL8)
 
   I2C_Handle &getHandle(CLR_SENSOR_ID sensorNum);

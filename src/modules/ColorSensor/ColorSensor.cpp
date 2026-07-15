@@ -93,14 +93,17 @@ rgbc_t ColorSensor::readRGBRaw(CLR_SENSOR_ID sensorNum)
   // Return early if the sensor is disabled
   if (!isEnabled(sensorNum))  { return temp; }
 
-  // Read 8 bytes from register 0x02 (RGBC raw: R=16, G=16, B=16, C=16)
+  // Read 16 bytes from register 0x02
+  // Datasheet order: [127:96] BLUE_RAW [95:64] GREEN_RAW [63:32] RED_RAW [31:0] CLEAR_RAW
+  // I2C transmits LSB first, so actual byte order is: CLEAR, RED, GREEN, BLUE
+  // Each channel is 4 bytes (32 bits), but sensor uses only lower 16 bits
   I2CManager &i2cManager = I2CManager::getInstance();
-  if (i2cManager.SensorRead(_handles[sensorNum], 0x02, _rxBuffer, 8))
+  if (i2cManager.SensorRead(_handles[sensorNum], 0x02, _rxBuffer, 16))
   {
-    temp.r = (uint16_t)(_rxBuffer[0] | (_rxBuffer[1] << 8));
-    temp.g = (uint16_t)(_rxBuffer[2] | (_rxBuffer[3] << 8));
-    temp.b = (uint16_t)(_rxBuffer[4] | (_rxBuffer[5] << 8));
-    temp.c = (uint16_t)(_rxBuffer[6] | (_rxBuffer[7] << 8));
+    temp.c = (uint16_t)(_rxBuffer[0] | (_rxBuffer[1] << 8));  // CLEAR_RAW  [31:0]
+    temp.r = (uint16_t)(_rxBuffer[4] | (_rxBuffer[5] << 8));  // RED_RAW    [63:32]
+    temp.g = (uint16_t)(_rxBuffer[8] | (_rxBuffer[9] << 8));  // GREEN_RAW  [95:64]
+    temp.b = (uint16_t)(_rxBuffer[12] | (_rxBuffer[13] << 8)); // BLUE_RAW   [127:96]
   }
 
   return temp;
