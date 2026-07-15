@@ -68,7 +68,7 @@ public:
    *   `Front pin` is actually sensor `U2`,
    *   `Right pin` is actually sensor `U1`, etc.
    */
-  void mapXsounds(ULTR_SENSOR Front, ULTR_SENSOR Right, ULTR_SENSOR Back, ULTR_SENSOR Left);
+  void configuration(ULTR_SENSOR Front, ULTR_SENSOR Right, ULTR_SENSOR Back, ULTR_SENSOR Left);
 
   /**
    * Set which sensors are enabled

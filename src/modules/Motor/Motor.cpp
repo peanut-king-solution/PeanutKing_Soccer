@@ -16,7 +16,7 @@ void Motor::init(void) {
   }
 }
 
-void Motor::mapMotors(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBack, MOTOR_ID LeftBack)
+void Motor::configuration(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBack, MOTOR_ID LeftBack)
 {
   // Remap motor ports to physical positions
   motorMap[0] = LeftFront;

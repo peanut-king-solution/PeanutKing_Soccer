@@ -53,7 +53,7 @@ void Ultrasonic::init(void)
  *                              Sensor Mapping
  * ============================================================================= */
 
-void Ultrasonic::mapXsounds(ULTR_SENSOR Front, ULTR_SENSOR Right, ULTR_SENSOR Back, ULTR_SENSOR Left)
+void Ultrasonic::configuration(ULTR_SENSOR Front, ULTR_SENSOR Right, ULTR_SENSOR Back, ULTR_SENSOR Left)
 {
   // Map logical sensor IDs to physical positions
   xsoundMap[0] = (uint8_t)Front;

@@ -56,7 +56,7 @@ public:
    * `RightBack`  - Motor port
    * `LeftBack`   - Motor port
    */
-  void mapMotors(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBack, MOTOR_ID LeftBack);
+  void configuration(MOTOR_ID LeftFront, MOTOR_ID RightFront, MOTOR_ID RightBack, MOTOR_ID LeftBack);
 
   /**
    * Flip single motor rotation direction

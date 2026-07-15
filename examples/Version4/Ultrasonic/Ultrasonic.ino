@@ -20,7 +20,7 @@ void setup() {
   then you should swap these two sensors,
   configure by uncommenting the below line of code
   */
-  // robot.xsound.mapXsounds(U2, U1, U3, U4); // swap Front and Right
+  // robot.xsound.configuration(U2, U1, U3, U4); // swap Front and Right
 
   /*
   If you only have 2 or 3 sensors connected,
