@@ -36,9 +36,9 @@ private:
   uint8_t txBuff[COMPASS_TX_BUFFER_SIZE];  // Buffer for I2C write operations
 
   // Raw sensor data arrays
-  int16_t accelData[3];  // Accelerometer raw data (X, Y, Z)
-  int16_t gyroData[3];   // Gyroscope raw data (X, Y, Z)
-  int16_t magData[3];    // Magnetometer raw data (X, Y, Z)
+  int16_t accelData[3] = {0};  // Accelerometer raw data (X, Y, Z)
+  int16_t gyroData[3]  = {0};  // Gyroscope raw data (X, Y, Z)
+  int16_t magData[3]   = {0};  // Magnetometer raw data (X, Y, Z)
 
 public:
   /**

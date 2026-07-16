@@ -22,5 +22,8 @@ void LedController::setOnBrdLED(obBrdLEDCL color)
 
 void LedController::setOnBrdLED(uint8_t LED, uint8_t status)
 {
+  if (LED > 2) {
+    return; // Invalid LED index
+  }
   digitalWrite(ledPin[LED], status);
 }

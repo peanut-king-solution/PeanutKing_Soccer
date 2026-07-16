@@ -13,11 +13,14 @@ bool Compass::init(uint32_t speed) {
   if (!_handle.isValid()) { return false; } // Return false if the handle is invalid
 
   // Compass Reset Heading
-  delay(10); // wait for compass calibration
-  // Read multiple samples to calculate the average compass reading
-  uint16_t sum = 0; int8_t sampleCount = 10;
-  for (int i = 0; i < sampleCount; i++) sum += this->read();
-  
+  // delay(10); // wait for compass calibration
+  // // Read multiple samples to calculate the average compass reading
+  // uint16_t sum = 0; int8_t sampleCount = 10;
+  // for (int i = 0; i < sampleCount; i++) {
+  //   sum += this->read();
+  //   delay(50); // wait for the next sample
+  // }
+
   // Set 0° as the direction of the robot facing at starting
   // converter.config().shift(-(int16_t)(sum / sampleCount));
 
@@ -31,8 +34,7 @@ uint16_t Compass::read() {
   // Read the compass value from the compass module using the I2C manager
   I2CManager &i2cManager = I2CManager::getInstance();
   i2cManager.SensorRead(_handle, GET_YAW, rxBuff, 2);
-  compass = rxBuff[0] & 0xff;
-  compass |= rxBuff[1] << 8;
+  compass = (uint16_t)rxBuff[0] | ((uint16_t)rxBuff[1] << 8);
   compass = compass / 100;
 
   // Apply the conversion using the compassConverter
@@ -49,9 +51,9 @@ int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   i2cManager.SensorRead(_handle, reg, rxBuff, 6);
 
   // Combine the received bytes into 16-bit signed integers
-  dataArr[0] = (int16_t)(rxBuff[0] | (rxBuff[1] << 8));
-  dataArr[1] = (int16_t)(rxBuff[2] | (rxBuff[3] << 8));
-  dataArr[2] = (int16_t)(rxBuff[4] | (rxBuff[5] << 8));
+  dataArr[0] = (int16_t)((uint16_t)rxBuff[0] | ((uint16_t)rxBuff[1] << 8));
+  dataArr[1] = (int16_t)((uint16_t)rxBuff[2] | ((uint16_t)rxBuff[3] << 8));
+  dataArr[2] = (int16_t)((uint16_t)rxBuff[4] | ((uint16_t)rxBuff[5] << 8));
   return dataArr;
 }
 

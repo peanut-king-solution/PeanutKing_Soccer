@@ -13,7 +13,7 @@ typedef enum : uint8_t {
 } CLR_SENSOR_ID;
 
 typedef enum : uint8_t {
-  BLACK = 0, WHITE, GREY, RED, GREEN, BLUE, YELLOW, CYAN
+  CLR_BLACK = 0, CLR_WHITE, CLR_GREY, CLR_RED, CLR_GREEN, CLR_BLUE, CLR_YELLOW, CLR_CYAN
 } COLOR_IDX;
 
 /**
