@@ -1,6 +1,8 @@
 #ifndef COLORSENSOR_H
 #define COLORSENSOR_H
 
+#define COLOR_SENSOR_ADDRESS 0x11 // Color sensor I2C address
+
 #include <Arduino.h>
 #include "PeanutKingDef.h"
 #include "modules/I2C/i2cManager.h"

@@ -1,7 +1,5 @@
 #include "ColorSensor.h"
 
-#define COLOR_SENSOR_ADDRESS 0x11 // Color sensor I2C address
-
 I2C_Handle &ColorSensor::getHandle(CLR_SENSOR_ID sensorNum)
 {
   return _handles[sensorNum];

@@ -2,7 +2,6 @@
 
 [![Arduino Library](https://img.shields.io/badge/Arduino-Library-00979D)](https://www.arduino.cc/reference/en/libraries/)
 [![Version](https://img.shields.io/badge/version-4.2.0-blue)](https://github.com/peanut-king-solution/PeanutKing_Soccer)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Arduino 函式庫，用於控制 **PeanutKing 足球機器人**（V2 / V3 / V4 相容）。
 
@@ -81,7 +80,6 @@ Arduino 函式庫，用於控制 **PeanutKing 足球機器人**（V2 / V3 / V4 �
   - [硬體設定](#硬體設定)
     - [預設腳位配置](#預設腳位配置)
     - [I2C 裝置地址](#i2c-裝置地址)
-  - [授權條款](#授權條款)
 
 ---
 
@@ -214,7 +212,7 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // 重新映射馬達位置（如果接線錯誤，互換左前和右前馬達）
+  // 重新映射馬達位置（互換左前和右前馬達）
   robot.motor.configuration(M2, M1, M3, M4);
 
   // 反轉馬達旋轉方向
@@ -282,9 +280,9 @@ void setup() {
 
 void loop() {
   // 基本移動
-  robot.move.byAngle(0, 100, 0);     // 前進
-  robot.move.byAngle(90, 100, 0);    // 左移 (已反轉)
-  robot.move.byAngle(0, 0, 100);     // 順時針旋轉
+  robot.move.byAngle(0, 100, 0);  // 前進
+  robot.move.byAngle(90, 100, 0); // 左移 (已反轉)
+  robot.move.byAngle(0, 0, 100);  // 順時針旋轉
 
   // 帶羅盤修正的移動
   robot.move.byAnglePID(0, 100, robot.compass.read());
@@ -299,7 +297,7 @@ void loop() {
 
 ### ColorSensor — 色彩感測器
 
-支援最多 8 個色彩感測器（CL1–CL8），透過軟體 I2C 通訊，可讀取顏色索引、RGB、HSL、RGBC 原始值。
+支援最多 `8` 個色彩感測器（`CL1`–`CL8`），透過軟體 I2C 通訊（地址 `0x11`，每個感測器需使用不同的軟體 I2C Master），可讀取顏色索引、RGB、HSL、RGBC 原始值。
 
 **預設感測器編號對照：**
 
@@ -339,17 +337,17 @@ void loop() {
 
 | 方法 | 說明 |
 |------|------|
-| `readColor(CLR_SENSOR_ID)` | 讀取顏色索引（0-7） |
-| `readRGB(CLR_SENSOR_ID)` | 讀取 RGB 值（各 0-255） |
-| `readHSL(CLR_SENSOR_ID)` | 讀取 HSL 值 |
-| `readRGBRaw(CLR_SENSOR_ID)` | 讀取原始 RGBC 值（各 0-65535） |
-| `setEnabled(uint8_t mask)` | 設定啟用遮罩（預設 `0x0F` = CL1-CL4） |
-| `enableSensor(CLR_SENSOR_ID, bool)` | 啟用/停用單一感測器 |
+| `readColor(CLR_SENSOR_ID)` | 讀取`顏色`索引（`0-7`） |
+| `readRGB(CLR_SENSOR_ID)` | 讀取 `RGB` 值（各 `0-255`） |
+| `readHSL(CLR_SENSOR_ID)` | 讀取 `HSL` 值 |
+| `readRGBRaw(CLR_SENSOR_ID)` | 讀取 `原始 RGBC` 值（各 `0-65535`） |
+| `setEnabled(uint8_t mask)` | 設定啟用遮罩（預設 `0x0F` = `CL1-CL4`） |
+| `enableSensor(CLR_SENSOR_ID, bool)` | `啟用` / `停用` 單一感測器 |
 | `isEnabled(CLR_SENSOR_ID)` | 檢查感測器是否啟用 |
-| `whiteLedOn(CLR_SENSOR_ID)` | 開啟底部白色 LED |
-| `whiteLedOff(CLR_SENSOR_ID)` | 關閉底部白色 LED |
-| `rgbwLedOn(CLR_SENSOR_ID)` | 開啟頂部 RGBW LED（顯示偵測顏色） |
-| `rgbwLedOff(CLR_SENSOR_ID)` | 關閉頂部 RGBW LED |
+| `whiteLedOn(CLR_SENSOR_ID)` | `開啟`底部白色 LED |
+| `whiteLedOff(CLR_SENSOR_ID)` | `關閉`底部白色 LED |
+| `rgbwLedOn(CLR_SENSOR_ID)` | `開啟`頂部 RGBW LED（顯示偵測顏色） |
+| `rgbwLedOff(CLR_SENSOR_ID)` | `關閉`頂部 RGBW LED |
 
 #### 範例
 
@@ -362,16 +360,16 @@ void setup() {
   robot.init();
 
   // 啟用/停用感測器
-  robot.colorSensor.setEnabled(0b00001111);  // 啟用 CL1-CL4
+  robot.colorSensor.setEnabled(0b00001111);   // 啟用 CL1-CL4
   robot.colorSensor.enableSensor(CL5, false); // 停用 CL5
 }
 
 void loop() {
   // 讀取顏色
   uint8_t colorIdx = robot.colorSensor.readColor(CL1);
-  rgb_t rgb = robot.colorSensor.readRGB(CL1);
-  hsl_t hsl = robot.colorSensor.readHSL(CL1);
-  rgbc_t raw = robot.colorSensor.readRGBRaw(CL1);
+  rgb_t   rgb      = robot.colorSensor.readRGB(CL1);
+  hsl_t   hsl      = robot.colorSensor.readHSL(CL1);
+  rgbc_t  raw      = robot.colorSensor.readRGBRaw(CL1);
 
   // 控制 LED
   robot.colorSensor.whiteLedOn(CL1);
@@ -382,9 +380,9 @@ void loop() {
 #### 相容性包裝函式
 
 ```cpp
-uint8_t colorIdx = robot.getColorSensor(CL1);    // 同 readColor()
-rgb_t rgb = robot.getColorSensorRGB(CL1);        // 同 readRGB()
-hsl_t hsl = robot.getColorSensorHSL(CL1);        // 同 readHSL()
+uint8_t colorIdx = robot.getColorSensor(CL1);     // 同 readColor()
+rgb_t   rgb      = robot.getColorSensorRGB(CL1);  // 同 readRGB()
+hsl_t   hsl      = robot.getColorSensorHSL(CL1);  // 同 readHSL()
 ```
 
 #### 相關範例
@@ -402,22 +400,22 @@ hsl_t hsl = robot.getColorSensorHSL(CL1);        // 同 readHSL()
 
 | 暫存器 | 偏移 | 說明 |
 |--------|------|------|
-| `0x00` | 12 bytes | IR1–IR12 原始讀值（0-255） |
+| `0x00` | 12 bytes | `IR1–IR12` 原始讀值（`0-255`） |
 | `0x0C` | 1 byte | 最大 IR 值 |
-| `0x0D` | 1 byte | 最大 IR 索引（1-12） |
-| `0x0E` | 1 byte | 角度（需 ×2 得 0-360°） |
-| `0x0F` | 1 byte | 模式（0=單球, 1=雙球） |
+| `0x0D` | 1 byte | 最大 IR 索引（`1-12`） |
+| `0x0E` | 1 byte | 角度（需 ×2 得 `0-360°`） |
+| `0x0F` | 1 byte | 模式（`0`=單IR感測器, `1`=雙IR感測器） |
 
 #### 主要方法
 
 | 方法 | 說明 |
 |------|------|
 | `readAll()` | 讀取全部 12 個 IR 感測器值，回傳 `uint8_t*` 陣列 |
-| `getMaxEye()` | 取得最大值感測器索引（0-11） |
+| `getMaxEye()` | 取得最大值感測器索引（`0-11`） |
 | `getMaxEyeVal()` | 取得最大值感測器讀值 |
-| `getEyeVal(uint8_t n)` | 取得指定索引（0-11）的感測器值 |
-| `getAngle()` | 計算球的方向角度（0-360°） |
-| `getMode()` | 取得偵測模式（0 = 單球, 1 = 雙球） |
+| `getEyeVal(uint8_t n)` | 取得指定索引（`0-11`）的感測器值 |
+| `getAngle()` | 計算球的方向角度（`0-360°`） |
+| `getMode()` | 取得偵測模式（`0` = 單IR感測器, `1` = 雙IR感測器） |
 
 #### 範例
 
@@ -463,7 +461,7 @@ uint16_t angle = robot.compoundEyeAngle(); // 同 getAngle()
 
 ### ButtonManager — 按鈕管理
 
-管理 4 個按鈕（BTN_1–BTN_4），支援按下、放開、長按、雙擊等手勢偵測。
+管理 4 個按鈕（`BTN_1`–`BTN_4`），支援按下、放開、長按、雙擊等手勢偵測。
 
 **按鈕編號對照：**
 
@@ -493,7 +491,7 @@ uint16_t angle = robot.compoundEyeAngle(); // 同 getAngle()
 |------|------|
 | `read(BUTTON_ID btn)` | 讀取按鈕是否按下（`true` / `false`） |
 | `update()` | 更新按鈕狀態機（需在 `loop()` 中定期呼叫） |
-| `getStatus(BUTTON_ID btn)` | 取得按鈕手勢狀態 |
+| `getStatus(BUTTON_ID btn)` | 取得按鈕狀態 |
 
 #### 範例
 
@@ -512,7 +510,7 @@ void loop() {
     Serial.println("Button 1 pressed");
   }
 
-  // 手勢偵測（需定期呼叫 update()）
+  // 按鈕偵測 (未實現)
   robot.buttonMgr.update();
   buttonStatus_t status = robot.buttonMgr.getStatus(BTN_1);
   switch (status) {
@@ -526,8 +524,8 @@ void loop() {
 #### 相容性包裝函式
 
 ```cpp
-bool pressed = robot.buttonRead(BTN_1);  // 同 read()
-robot.buttonUpdate();                    // 同 update()
+bool pressed = robot.buttonRead(BTN_1);          // 同 read()
+robot.buttonUpdate();                            // 同 update()
 buttonStatus_t s = robot.buttonGetStatus(BTN_1); // 同 getStatus()
 ```
 
@@ -559,8 +557,8 @@ buttonStatus_t s = robot.buttonGetStatus(BTN_1); // 同 getStatus()
 
 | 方法 | 說明 |
 |------|------|
-| `setOnBrdLED(obBrdLEDCL color)` | 設定全部 LED 顏色 |
-| `setOnBrdLED(uint8_t LED, uint8_t status)` | 設定單一色 LED（0=紅, 1=綠, 2=藍） |
+| `setLED(obBrdLEDCL color)` | 直接設定 LED 顏色 |
+| `setLED(uint8_t LED, uint8_t status)` | 設定單一色 LED（`0=紅`, `1=綠`, `2=藍`） |
 
 #### 範例
 
@@ -575,12 +573,12 @@ void setup() {
 
 void loop() {
   // 設定顏色
-  robot.ledCtrl.setOnBrdLED(LED_RED);
-  robot.ledCtrl.setOnBrdLED(LED_CYAN);
+  robot.ledCtrl.setLED(LED_RED);
+  robot.ledCtrl.setLED(LED_CYAN);
 
   // 個別控制
-  robot.ledCtrl.setOnBrdLED(0, HIGH);  // 紅 LED 亮
-  robot.ledCtrl.setOnBrdLED(1, LOW);   // 綠 LED 滅
+  robot.ledCtrl.setLED(0, HIGH);  // 紅 LED 亮
+  robot.ledCtrl.setLED(1, LOW);   // 綠 LED 滅
 }
 ```
 
@@ -615,7 +613,7 @@ robot.setOnBrdLED(0, HIGH);
 
 | 方法 | 說明 |
 |------|------|
-| `read(ULTR_SENSOR sensor)` | 讀取距離（mm，範圍 0–4500mm） |
+| `read(ULTR_SENSOR sensor)` | 讀取距離（`mm`，範圍 `0–4500`mm） |
 | `configuration(ULTR_SENSOR Front, Right, Back, Left)` | 重新映射感測器實體位置 |
 | `setEnabled(bool u1, bool u2, bool u3, bool u4)` | 設定啟用狀態 |
 | `enableSensor(ULTR_SENSOR sensor, bool enabled)` | 啟用/停用單一感測器 |
@@ -631,9 +629,9 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // 重新映射感測器位置
-  robot.xsound.configuration(U2, U1, U4, U3);
-
+  // 重新映射感測器位置（互換 U1 和 U2，即前和右互換）
+  robot.xsound.configuration(U2, U1, U3, U4);
+  
   // 啟用/停用
   robot.xsound.enableSensor(U1, true);
   robot.xsound.enableAll(false);
@@ -667,7 +665,7 @@ uint16_t dist = robot.ultrasonicRead(U1);
 
 | 方法 | 說明 |
 |------|------|
-| `read()` | 讀取羅盤方位（0–360°），順時針 |
+| `read()` | 讀取羅盤方位（`0–360°`），順時針 |
 | `getAccelerometerRaw()` | 取得原始加速度計資料 `int16_t[3]`（X, Y, Z） |
 | `getGyroscopeRaw()` | 取得原始陀螺儀資料 `int16_t[3]`（X, Y, Z） |
 | `getMagnetometerRaw()` | 取得原始磁力計資料 `int16_t[3]`（X, Y, Z） |
@@ -963,11 +961,3 @@ robot.move.motorPID.kd = 1.0;
 | 羅盤模組 | `0x08` | 硬體 I2C (HW) |
 | 複眼模組 | `0x13` | 硬體 I2C (HW) |
 | 色彩感測器 CL1–CL8 | 自訂 | 軟體 I2C (SW0–SW7) |
-
----
-
-## 授權條款
-
-本專案採用 MIT 授權條款。詳細內容請參閱 LICENSE 檔案。
-
-Copyright © 2024 PeanutKing Solution
