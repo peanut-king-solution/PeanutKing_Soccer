@@ -49,12 +49,24 @@ void loop()
 
   Left Front -> Right Front -> Right Back -> Left Back (clockwise),
   */
-  robot.motor.testAll(100);
+  for (uint8_t i = 0; i < 4; i++) {
+    robot.motor.setSpeed((MOTOR_ID)i, speed);
+    delay(1000);
+    robot.motor.stopAll();
+    delay(500);
+  }
 
   /*
   if configured correctly, the robot should move
 
   forward (0°) -> right front (45°) -> rightward (90°)
   */
-  robot.move.test(100);
+  robot.move.byAngle(0, speed, 0);
+  delay(1000);
+  robot.move.byAngle(45, speed, 0);
+  delay(1000);
+  robot.move.byAngle(90, speed, 0);
+  delay(1000);
+  robot.motor.stopAll();
+  delay(500);
 }
