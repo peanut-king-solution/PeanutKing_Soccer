@@ -28,6 +28,11 @@
 #ifndef _nI2C_H_
 #define _nI2C_H_
 
+// 當 Wire.h 使用時，IICIT 完全被跳過
+#ifdef HW_I2C_USE_WIRE_H
+  #pragma message "IICIT skipped - HW_I2C_USE_WIRE_H defined"
+#else
+
 #include <Arduino.h>
 #include <inttypes.h>
 #include "queue.h"
@@ -230,4 +235,5 @@ public:
 
 extern IICIT *gIIC;
 extern IICIT::status_t g_status;
-#endif
+#endif // #else (HW_I2C_USE_WIRE_H not defined)
+#endif // _nI2C_H_

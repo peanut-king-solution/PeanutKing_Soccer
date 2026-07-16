@@ -26,7 +26,7 @@ bool Compass::init(uint32_t speed) {
 
 uint16_t Compass::read() {
   // Clear the receive buffer before reading
-  rxbufferClear();
+  clearBuffer();
 
   // Read the compass value from the compass module using the I2C manager
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -42,7 +42,7 @@ uint16_t Compass::read() {
 
 int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   // Clear the receive buffer before reading
-  rxbufferClear();
+  clearBuffer();
 
   // Read 6 bytes of raw sensor data from the specified register
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -67,7 +67,7 @@ int16_t* Compass::getMagnetometerRaw(void) {
   return readRaw6(MAG_RAW, magData);
 }
 
-void Compass::rxbufferClear(void) {
+void Compass::clearBuffer(void) {
   // Clear the receive buffer by setting all bytes to zero
   for (uint8_t i = 0; i < COMPASS_RX_BUFFER_SIZE; i++) {
     rxBuff[i] = 0;

@@ -5,11 +5,30 @@
 #define I2C_MAX_BUFFER_SIZE 64   // Maximum buffer size for I2C transactions
 
 #include <Arduino.h>
-#include "IICIT.h"
+
+// If user explicitly requests Wire library via define or inclusion:
+#if defined(USE_WIRE_H)
+  // User explicitly chose Wire.h
+  #include <Wire.h>
+  #define HW_I2C_USE_WIRE_H
+  #pragma message "Use Wire.h"
+#elif __has_include(<Wire.h>)
+  // Auto-detect: Wire.h is available
+  #include <Wire.h>
+  #define HW_I2C_USE_WIRE_H
+  #pragma message "Auto-detected Wire.h"
+#else
+  // Fall back to IICIT
+  #include "IICIT.h"
+  #pragma message "Using IICIT"
+#endif
 
 /**
  * Hardware I2C master wrapper class
- * Uses IICIT library for low-level I2C communication
+ * Supports both Wire.h and IICIT backends
+ * - Define USE_WIRE_H or include <Wire.h> before this header to use Wire
+ * - Otherwise auto-detects Wire.h availability via __has_include
+ * - Falls back to IICIT when Wire.h is not available
  */
 class hwI2CMaster
 {
@@ -67,24 +86,28 @@ public:
    */
   bool writeReg(uint8_t deviceAddress, uint8_t reg, const uint8_t *txBuffer, uint8_t length);
 
+  #ifndef HW_I2C_USE_WIRE_H
   /**
-   * I2C receive complete callback
+   * I2C receive complete callback (IICIT only)
    * `status` - Status of the I2C operation
    *
    * `Returns` - The status value
    */
   static IICIT::status_t rxCpltCallback(const IICIT::status_t status);
+#endif
 
 private:
   uint32_t defaultSpeed;
 
+#ifndef HW_I2C_USE_WIRE_H
   /**
-   * Convert speed in `Hz` to `IICIT::Speed` enum
+   * Convert speed in `Hz` to `IICIT::Speed` enum (IICIT only)
    * `speed` - Speed in `Hz`
    *
    * `Returns` - `IICIT::Speed` enum value
    */
   IICIT::Speed speedToIICIT(uint32_t speed) const;
+#endif
 };
 
 #endif // HW_I2CMASTER_H

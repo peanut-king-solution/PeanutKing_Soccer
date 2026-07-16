@@ -86,7 +86,7 @@ public:
   /**
    * Clear the receive buffer
    */
-  void rxbufferClear(void);
+  void clearBuffer(void);
 
   Converter converter; // Converter for compass readings
 

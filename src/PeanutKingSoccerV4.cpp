@@ -34,7 +34,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
 
   // Initialize motor pins
   motor.init();
-
+  
   // Initialize I2C Manager (software + hardware I2C)
   I2CManager::getInstance().init();
 
@@ -96,7 +96,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   eyeAngle = compoundEye.getAngle();
 
   // Ultrasonic (not sure will it have any effect on the performance)
-  for (uint8_t i=0; i<4; i++) {
+  for (uint8_t i = U1; i <= U4; i++) {
     ultrasonic[i] = xsound.read((ULTR_SENSOR)i);
   }
 

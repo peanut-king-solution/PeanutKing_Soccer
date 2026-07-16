@@ -25,8 +25,10 @@
  * @data        30 July 2021
  */
 
+#include "modules/I2C/hwI2CMaster.h"  // For HW_I2C_USE_WIRE_H check
 #include "IICIT.h"
 
+#ifndef HW_I2C_USE_WIRE_H // Only implement IICIT if Wire.h is not used
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/twi.h>
@@ -412,9 +414,11 @@ inline void IICIT::InterruptHandlerWrapper(void) {
 }
 
 //! I2C (TWI) interrupt service routine
+#ifndef HW_I2C_USE_WIRE_H // Only define ISR if not using Wire.h
 ISR(TWI_vect) {
   IICIT::InterruptHandlerWrapper();
 }
+#endif
 
 void IICIT::InterruptHandler(void) {
   switch (TW_STATUS) {
@@ -499,3 +503,5 @@ void IICIT::InterruptHandler(void) {
     break;
   }
 }
+
+#endif // HW_I2C_USE_WIRE_H

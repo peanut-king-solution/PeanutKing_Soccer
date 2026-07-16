@@ -162,16 +162,16 @@ void Ultrasonic::handleEcho(uint8_t n)
     pulseStart[n] = micros();
   } else {
     // Falling edge - calculate pulse duration
-    pulseStart[n] = micros() - pulseStart[n];
-  }
+    uint32_t duration = micros() - pulseStart[n];
 
-  // Convert pulse duration to distance (mm)
-  // Sound speed: 340 m/s → 0.34 mm/us, round trip → 0.17 mm/us
-  float dist = (float)pulseStart[n] * 0.17f;
+    // Convert pulse duration to distance (mm)
+    // Sound speed: 340 m/s → 0.34 mm/us, round trip → 0.17 mm/us
+    float dist = (float)duration * 0.17f;
 
-  // Update distance if within valid range (max 4500mm)
-  if (dist < 4500) {
-    distance[n] = (uint16_t)round(dist);
+    // Update distance if within valid range (max 4500mm)
+    if (dist < 4500) {
+      distance[n] = (uint16_t)round(dist);
+    }
   }
 }
 
