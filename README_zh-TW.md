@@ -29,39 +29,40 @@ Arduino 函式庫，用於控制 **PeanutKing 足球機器人**（V2 / V3 / V4 �
       - [主要方法](#主要方法-1)
       - [子類別](#子類別)
       - [範例](#範例-1)
+      - [相容性包裝函式](#相容性包裝函式-1)
       - [相關範例](#相關範例-1)
     - [ColorSensor — 色彩感測器](#colorsensor--色彩感測器)
       - [資料結構](#資料結構)
       - [主要方法](#主要方法-2)
       - [範例](#範例-2)
-      - [相容性包裝函式](#相容性包裝函式-1)
+      - [相容性包裝函式](#相容性包裝函式-2)
       - [相關範例](#相關範例-2)
     - [CompoundEye — 紅外線複眼](#compoundeye--紅外線複眼)
       - [暫存器對應](#暫存器對應)
       - [主要方法](#主要方法-3)
       - [範例](#範例-3)
-      - [相容性包裝函式](#相容性包裝函式-2)
+      - [相容性包裝函式](#相容性包裝函式-3)
       - [相關範例](#相關範例-3)
     - [ButtonManager — 按鈕管理](#buttonmanager--按鈕管理)
       - [主要方法](#主要方法-4)
       - [範例](#範例-4)
-      - [相容性包裝函式](#相容性包裝函式-3)
+      - [相容性包裝函式](#相容性包裝函式-4)
       - [相關範例](#相關範例-4)
     - [LedController — LED 控制](#ledcontroller--led-控制)
       - [主要方法](#主要方法-5)
       - [範例](#範例-5)
-      - [相容性包裝函式](#相容性包裝函式-4)
+      - [相容性包裝函式](#相容性包裝函式-5)
       - [相關範例](#相關範例-5)
     - [Ultrasonic — 超音波感測器](#ultrasonic--超音波感測器)
       - [主要方法](#主要方法-6)
       - [範例](#範例-6)
-      - [相容性包裝函式](#相容性包裝函式-5)
+      - [相容性包裝函式](#相容性包裝函式-6)
       - [相關範例](#相關範例-6)
     - [Compass — 羅盤與 IMU](#compass--羅盤與-imu)
       - [主要方法](#主要方法-7)
       - [子類別](#子類別-1)
       - [範例](#範例-7)
-      - [相容性包裝函式](#相容性包裝函式-6)
+      - [相容性包裝函式](#相容性包裝函式-7)
       - [相關範例](#相關範例-7)
     - [I2C — I2C 匯流排管理](#i2c--i2c-匯流排管理)
       - [主要方法](#主要方法-8)
@@ -132,7 +133,6 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
 void setup() {
   robot.init();          // 初始化所有模組
-  Serial.begin(9600);    // 開啟序列埠
 }
 
 void loop() {
@@ -160,7 +160,7 @@ void loop() {
 | 模組 | 類別 | 功能 |
 |------|------|------|
 | Motor | `robot.motor` | 4 個 DC 馬達控制 |
-| Movement | `robot.move` | 麥克納姆輪全向移動 |
+| Movement | `robot.move` | 45 度佈局全向輪移動 |
 | ColorSensor | `robot.colorSensor` | 最多 8 個色彩感測器（I2C） |
 | CompoundEye | `robot.compoundEye` | 12 頻道紅外線感測器 |
 | ButtonManager | `robot.buttonMgr` | 4 個按鈕狀態管理 |
@@ -182,12 +182,12 @@ void loop() {
 
 | 名稱 | 實際 ID | 位置 |
 |------|---------|------|
-| `M1` | `0` | 左前輪（Left Front） |
-| `M2` | `1` | 右前輪（Right Front） |
-| `M3` | `2` | 右後輪（Right Back） |
-| `M4` | `3` | 左後輪（Left Back） |
+| `M1` | `0` | 左前輪 |
+| `M2` | `1` | 右前輪 |
+| `M3` | `2` | 右後輪 |
+| `M4` | `3` | 左後輪 |
 
-**方向規則：**
+**預設方向規則：**
 - 馬達正速度（`+`）→ 逆時針旋轉（CCW）
 - 全部馬達正速度（`+`）→ 機器人順時針旋轉（CW）
 
@@ -212,7 +212,7 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // 重新映射馬達位置（互換左前和右前馬達）
+  // 如有需要，重新映射馬達位置（互換左前和右前馬達）
   robot.motor.configuration(M2, M1, M3, M4);
 
   // 反轉馬達旋轉方向
@@ -246,7 +246,7 @@ robot.stopAllMotors();          // 同 motor.stopAll()
 
 ### Movement — 全向移動
 
-使用麥克納姆輪（Mecanum wheel）實現全向移動，支援角度控制與羅盤 PID 修正。
+使用 45 度佈局全向輪（Omni wheel）實現全向移動，支援角度控制與羅盤 PID 修正。
 
 #### 主要方法
 
@@ -260,7 +260,7 @@ robot.stopAllMotors();          // 同 motor.stopAll()
 
 | 成員 | 類別 | 用途 |
 |------|------|------|
-| `robot.move.converter` | `Converter` | 角度轉換工具 |
+| `robot.move.converter` | `Converter` | 角度轉換工具（詳細說明見 [#Converter](#converter)） |
 | `robot.move.motorPID` | `PIDController` | PID 控制器（預設 `Kp=300.0`, `Ki=1.0`, `Kd=2.0`） |
 
 #### 範例
@@ -274,8 +274,8 @@ void setup() {
   robot.init();
 
   // 調整座標系統
-  robot.move.converter.config().shift(0);  // 偏移 0 度
-  robot.move.converter.config().flip();    // 翻轉 180 度 (順時針<->逆時針)
+  robot.move.converter.reset().shift(0);  // 重置後, 偏移 0 度
+  robot.move.converter.flip();            // 翻轉 180 度 (順時針<->逆時針)
 }
 
 void loop() {
@@ -287,6 +287,13 @@ void loop() {
   // 帶羅盤修正的移動
   robot.move.byAnglePID(0, 100, robot.compass.read());
 }
+```
+
+#### 相容性包裝函式
+
+```cpp
+robot.moveByAngle(0, 100, 0);   // 同 move.byAngle()
+robot.moveByAnglePID(0, 100);   // 同 move.byAnglePID() — 內部自動讀取羅盤
 ```
 
 #### 相關範例
@@ -365,13 +372,13 @@ void setup() {
 }
 
 void loop() {
-  // 讀取顏色
+  // 讀取CL1感測器的顏色資訊
   uint8_t colorIdx = robot.colorSensor.readColor(CL1);
   rgb_t   rgb      = robot.colorSensor.readRGB(CL1);
   hsl_t   hsl      = robot.colorSensor.readHSL(CL1);
   rgbc_t  raw      = robot.colorSensor.readRGBRaw(CL1);
 
-  // 控制 LED
+  // 控制CL1感測器的LED
   robot.colorSensor.whiteLedOn(CL1);
   robot.colorSensor.rgbwLedOff(CL1);
 }
@@ -388,6 +395,7 @@ hsl_t   hsl      = robot.getColorSensorHSL(CL1);  // 同 readHSL()
 #### 相關範例
 
 [examples/Version4/Colour_Sensor/Colour_Sensor.ino](examples/Version4/Colour_Sensor/Colour_Sensor.ino)
+
 [examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
 
 ---
@@ -436,6 +444,11 @@ void loop() {
     Serial.print(" ");
   }
 
+  // 讀取單一 IR 感測器值（索引 0-11）
+  uint8_t val = robot.compoundEye.getEyeVal(5);
+  Serial.print("IR5: ");
+  Serial.println(val);
+
   // 取得球的位置
   uint8_t maxEye = robot.compoundEye.getMaxEye();
   uint8_t maxVal = robot.compoundEye.getMaxEyeVal();
@@ -446,15 +459,17 @@ void loop() {
 #### 相容性包裝函式
 
 ```cpp
-uint8_t* ir = robot.compoundEyeRead();     // 同 readAll()
-uint8_t maxEye = robot.compoundMaxEye();   // 同 getMaxEye()
-uint8_t maxVal = robot.compoundMaxEyeVal();// 同 getMaxEyeVal()
-uint16_t angle = robot.compoundEyeAngle(); // 同 getAngle()
+uint8_t* ir = robot.compoundEyeRead();        // 同 readAll()
+uint8_t val = robot.compoundEyeVal(5);        // 同 getEyeVal()
+uint8_t maxEye = robot.compoundMaxEye();      // 同 getMaxEye()
+uint8_t maxVal = robot.compoundMaxEyeVal();   // 同 getMaxEyeVal()
+uint16_t angle = robot.compoundEyeAngle();    // 同 getAngle()
 ```
 
 #### 相關範例
 
 [examples/Version4/CompoundEye/CompoundEye.ino](examples/Version4/CompoundEye/CompoundEye.ino)
+
 [examples/Version4/ScreenIR/ScreenIR.ino](examples/Version4/ScreenIR/ScreenIR.ino)
 
 ---
@@ -532,6 +547,7 @@ buttonStatus_t s = robot.buttonGetStatus(BTN_1); // 同 getStatus()
 #### 相關範例
 
 [examples/Version4/Button/Button.ino](examples/Version4/Button/Button.ino)
+
 [examples/Version4/Button_StateMachine/Button_StateMachine.ino](examples/Version4/Button_StateMachine/Button_StateMachine.ino)
 
 ---
@@ -592,7 +608,6 @@ robot.setOnBrdLED(0, HIGH);
 #### 相關範例
 
 [examples/Version4/LED/LED.ino](examples/Version4/LED/LED.ino)
-[examples/Version4/Digital_Analog/Digital_Analog.ino](examples/Version4/Digital_Analog/Digital_Analog.ino)
 
 ---
 
@@ -604,10 +619,10 @@ robot.setOnBrdLED(0, HIGH);
 
 | 名稱 | 實際 ID | 位置 |
 |------|---------|------|
-| `U1` | `0` | 前方（Front） |
-| `U2` | `1` | 右方（Right） |
-| `U3` | `2` | 後方（Back） |
-| `U4` | `3` | 左方（Left） |
+| `U1` | `0` | 前方 |
+| `U2` | `1` | 右方 |
+| `U3` | `2` | 後方 |
+| `U4` | `3` | 左方 |
 
 #### 主要方法
 
@@ -616,8 +631,8 @@ robot.setOnBrdLED(0, HIGH);
 | `read(ULTR_SENSOR sensor)` | 讀取距離（`mm`，範圍 `0–4500`mm） |
 | `configuration(ULTR_SENSOR Front, Right, Back, Left)` | 重新映射感測器實體位置 |
 | `setEnabled(bool u1, bool u2, bool u3, bool u4)` | 設定啟用狀態 |
-| `enableSensor(ULTR_SENSOR sensor, bool enabled)` | 啟用/停用單一感測器 |
-| `enableAll(bool enabled)` | 啟用/停用全部感測器 |
+| `enableSensor(ULTR_SENSOR sensor, bool enabled)` | 啟用/停用`單一`感測器 |
+| `enableAll(bool enabled)` | 啟用/停用`全部`感測器 |
 
 #### 範例
 
@@ -629,12 +644,12 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // 重新映射感測器位置（互換 U1 和 U2，即前和右互換）
+  // 如有需要，重新映射感測器位置（互換 U1 和 U2，即前和右互換）
   robot.xsound.configuration(U2, U1, U3, U4);
   
   // 啟用/停用
   robot.xsound.enableSensor(U1, true);
-  robot.xsound.enableAll(false);
+  robot.xsound.enableAll(true);
 }
 
 void loop() {
@@ -653,6 +668,7 @@ uint16_t dist = robot.ultrasonicRead(U1);
 #### 相關範例
 
 [examples/Version4/Ultrasonic/Ultrasonic.ino](examples/Version4/Ultrasonic/Ultrasonic.ino)
+
 [examples/Version4/ScreenXsound/ScreenXsound.ino](examples/Version4/ScreenXsound/ScreenXsound.ino)
 
 ---
@@ -675,7 +691,7 @@ uint16_t dist = robot.ultrasonicRead(U1);
 
 | 成員 | 用途 |
 |------|------|
-| `robot.compass.converter` | 方向角度轉換工具 |
+| `robot.compass.converter` | 方向角度轉換工具（詳細說明見 [#Converter](#converter)）|
 
 #### 範例
 
@@ -687,8 +703,9 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // 校正零點
-  robot.compass.converter.config().shift(robot.compass.read());
+  // 設定座標系統
+  robot.compass.converter.reset().shift(0);  // 重置後, 偏移 0 度
+  robot.compass.converter.flip();            // 翻轉 180 度 (順時針<->逆時針)
 }
 
 void loop() {
@@ -699,8 +716,8 @@ void loop() {
 
   // 讀取 IMU 原始資料
   int16_t* accel = robot.compass.getAccelerometerRaw();
-  int16_t* gyro = robot.compass.getGyroscopeRaw();
-  int16_t* mag = robot.compass.getMagnetometerRaw();
+  int16_t* gyro  = robot.compass.getGyroscopeRaw();
+  int16_t* mag   = robot.compass.getMagnetometerRaw();
 }
 ```
 
@@ -709,12 +726,16 @@ void loop() {
 ```cpp
 uint16_t heading = robot.compassRead();
 int16_t* accel = robot.getAccelerometerRaw();
+int16_t* gyro  = robot.getGyroscopeRaw();
+int16_t* mag   = robot.getMagnetometerRaw();
 ```
 
 #### 相關範例
 
 [examples/Version4/Compass/Compass.ino](examples/Version4/Compass/Compass.ino)
+
 [examples/Version4/CompassCar/CompassCar.ino](examples/Version4/CompassCar/CompassCar.ino)
+
 [examples/Version4/ScreenCompass/ScreenCompass.ino](examples/Version4/ScreenCompass/ScreenCompass.ino)
 
 ---
@@ -736,7 +757,7 @@ int16_t* accel = robot.getAccelerometerRaw();
 |------|------|
 | `busIndex` | 匯流排索引（`BusIndex`） |
 | `deviceAddress` | I2C 裝置地址（`0x00`–`0x7F`） |
-| `speed` | I2C 速度（Hz） |
+| `speed` | I2C 速度（`Hz`） |
 | `isValid()` | 檢查 Handle 是否有效 |
 
 #### 主要方法
@@ -759,7 +780,6 @@ I2CManager& i2c = I2CManager::getInstance();
 
 void setup() {
   robot.init();
-  i2c.init();
 
   // 註冊裝置
   I2C_Handle device = i2c.RegisterDevice(BusIndex::HW, 0x08, 400000);
@@ -849,10 +869,14 @@ void loop() {
 #### 相關範例
 
 [examples/Version4/LCDScreen/LCDScreen.ino](examples/Version4/LCDScreen/LCDScreen.ino)
-[examples/Version4/ScreenCompass/ScreenCompass.ino](examples/Version4/ScreenCompass/ScreenCompass.ino)
+
 [examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
+
 [examples/Version4/ScreenIR/ScreenIR.ino](examples/Version4/ScreenIR/ScreenIR.ino)
+
 [examples/Version4/ScreenXsound/ScreenXsound.ino](examples/Version4/ScreenXsound/ScreenXsound.ino)
+
+[examples/Version4/ScreenCompass/ScreenCompass.ino](examples/Version4/ScreenCompass/ScreenCompass.ino)
 
 ---
 
@@ -865,7 +889,6 @@ void loop() {
 ```cpp
 class Converter {
 public:
-  Converter& config();          // 開始方法鏈
   Converter& flip();            // 翻轉方向（+/- 反轉）
   Converter& shift(float deg);  // 偏移角度
   float normalize(float angle); // 正規化到 [0, 360)
@@ -877,11 +900,16 @@ public:
 使用範例：
 
 ```cpp
-// 方法鏈
-robot.compass.converter.config().shift(90).flip();
+// 直接鏈式呼叫（先重置再偏移）
+robot.compass.converter.reset().shift(90).flip();
 
-// 或分別設定
-robot.move.converter.config().shift(180);
+// 或分開設定
+robot.compass.converter.reset();
+robot.compass.converter.shift(90);
+robot.compass.converter.flip();
+
+// Movement 座標調整
+robot.move.converter.reset().shift(180);
 ```
 
 #### PIDController
@@ -960,4 +988,4 @@ robot.move.motorPID.kd = 1.0;
 |------|------|--------|
 | 羅盤模組 | `0x08` | 硬體 I2C (HW) |
 | 複眼模組 | `0x13` | 硬體 I2C (HW) |
-| 色彩感測器 CL1–CL8 | 自訂 | 軟體 I2C (SW0–SW7) |
+| 色彩感測器 CL1–CL8 | `0x11` | 軟體 I2C (SW0–SW7) |

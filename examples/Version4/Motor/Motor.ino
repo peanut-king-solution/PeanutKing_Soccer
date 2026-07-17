@@ -39,7 +39,7 @@ void setup()
   then you should adjust the movement direction,
   configure by uncommenting the below line of code
   */
-  // robot.move.converter.config().shift(90).flip();
+  // robot.move.converter.reset().shift(90).flip();
 }
 
 void loop()

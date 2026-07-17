@@ -14,13 +14,6 @@ public:
   // Constructor
   Converter();
 
-  /* Configure the converter by using method chaining.
-   * 
-   * e.g. change the compass angle from clockwise to counter-clockwise:
-   * `robot.compass.converter.config().flip();`
-   */
-  Converter& config();
-
   // Flip the conversion direction (e.g., from clockwise to counter-clockwise)
   Converter& flip();
   

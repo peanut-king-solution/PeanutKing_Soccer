@@ -5,6 +5,13 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup()
 {
   robot.init();
+
+  // allocate the motor port to the correct motor position if necessary
+  // robot.motor.configuration(M2, M1, M3, M4); // swap Left Front and Right Front
+
+  // configure the coordinate system if necessary
+  // robot.move.converter.reset().shift(0);  // Reset and shift 0 degrees
+  // robot.move.converter.flip();            // Flip 180 degrees (CW <-> CCW)
 }
 
 void loop()

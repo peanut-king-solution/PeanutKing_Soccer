@@ -22,7 +22,7 @@ bool Compass::init(uint32_t speed) {
   // }
 
   // Set 0° as the direction of the robot facing at starting
-  // converter.config().shift(-(int16_t)(sum / sampleCount));
+  // converter.reset().shift(-(int16_t)(sum / sampleCount));
 
   return true; // Return true if initialization is successful
 }

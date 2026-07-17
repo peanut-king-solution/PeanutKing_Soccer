@@ -10,11 +10,6 @@ Converter::Converter() {
   reset();
 }
 
-Converter& Converter::config() {
-  reset();
-  return *this;
-}
-
 Converter& Converter::flip() {
   _multiplier = -_multiplier;
   _offset = -_offset;
