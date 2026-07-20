@@ -13,14 +13,14 @@ void LedController::init(void)
   }
 }
 
-void LedController::setOnBrdLED(obBrdLEDCL color)
+void LedController::setLED(obBrdLEDCL color)
 {
   digitalWrite(ledPin[0], color & 1);
   digitalWrite(ledPin[1], color & 2);
   digitalWrite(ledPin[2], color & 4);
 }
 
-void LedController::setOnBrdLED(uint8_t LED, uint8_t status)
+void LedController::setLED(uint8_t LED, uint8_t status)
 {
   if (LED > 2) {
     return; // Invalid LED index

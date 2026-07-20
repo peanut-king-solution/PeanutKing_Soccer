@@ -50,13 +50,6 @@
 // Debug Mode
 #define DEBUGMODE 1
 
-// TFT Display Pins
-#define TFT_CS  0   // TFT LCD的CS PIN腳
-#define TFT_DC  53  // TFT DC(A0、RS) 
-#define TFT_RST 50  // TFT Reset
-#define TFT_SCL 52  // TFT SCL
-#define TFT_SDA 51  // TFT SDA
-
 // =============================================================================
 //                              Type Definitions
 // =============================================================================

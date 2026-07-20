@@ -202,11 +202,11 @@ buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
  * ============================================================================= */
 
 void PeanutKingSoccerV4::setOnBrdLED(obBrdLEDCL color) {
-  ledCtrl.setOnBrdLED(color);
+  ledCtrl.setLED(color);
 }
 
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
-  ledCtrl.setOnBrdLED(LED, status);
+  ledCtrl.setLED(LED, status);
 }
 
 /* =============================================================================

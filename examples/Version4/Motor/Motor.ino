@@ -44,6 +44,8 @@ void setup()
 
 void loop()
 {
+
+  int speed = 100;
   /*
   If configured correctly, the motors should activate in the order of
 

@@ -35,14 +35,14 @@ public:
    * Set all on-board LEDs to a specific color
    * `color` - Color to set (`LED_OFF` - `LED_WHITE`)
    */
-  void setOnBrdLED(obBrdLEDCL color);
+  void setLED(obBrdLEDCL color);
 
   /**
    * Set a single on-board LED `on`/`off`
    * `LED`    - RGB Pin index (`0`=Red, `1`=Green, `2`=Blue)
    * `status` - `0` = off, `1` = on
    */
-  void setOnBrdLED(uint8_t LED, uint8_t status);
+  void setLED(uint8_t LED, uint8_t status);
 };
 
 #endif // LED_CONTROLLER_H
