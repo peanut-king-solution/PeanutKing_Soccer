@@ -154,20 +154,12 @@ public:
    */
   hsl_t    getColorSensorHSL(CLR_SENSOR_ID sensorNum);
   /**
-   * Calibrate white line threshold from a sensor
-   * `pin_no` - Sensor ID (`CL1` - `CL8`)
-   *
-   * `Returns` - Hue threshold value
-   */
-  uint16_t whiteLineCal(CLR_SENSOR_ID pin_no = CL1);
-  /**
    * Check if a sensor detects white line
    * `i`      - Sensor ID (`CL1` - `CL8`)
-   * `thresh` - Hue threshold from `whiteLineCal()`
    *
    * `Returns` - `true` if white line detected
    */
-  bool     whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh);
+  bool     whiteLineCheck(CLR_SENSOR_ID i);
 
 // =============================================================================
 //                    IR Compound Eye Functions

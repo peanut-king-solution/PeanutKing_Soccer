@@ -64,7 +64,7 @@ public:
    * `Back`  - Sensor ID plugged at the back position
    * `Left`  - Sensor ID plugged at the left position
    *
-   * Example: `mapXsound(U2, U1, U4, U3)` means
+   * Example: `configuration(U2, U1, U3, U4)` means
    *   `Front pin` is actually sensor `U2`,
    *   `Right pin` is actually sensor `U1`, etc.
    */

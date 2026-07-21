@@ -54,11 +54,18 @@ void Movement::byAnglePID(float mAngle, float mSpeed, float compassReading)
   float rotationScale, rotation;
   rotationScale = -(compassReading / 180.0f); // scale the rotation to [-1, 1]
 
+  // Apply a dead zone for small rotation errors to prevent oscillation
+  if (fabsf(rotationScale) < 0.05f) {
+    rotation = 0.0f;  // no rotation needed
+  }
   // if the compass reading is within the range of -90 to 90 degrees,
   // apply a rotation correction based on the PID controller output
-  if (fabsf(compassReading) < 90.0f) {
+  else if (fabsf(compassReading) < 90.0f) {
     rotation = this->motorPID.update(-rotationScale);
     rotation = constrain(rotation, -255.0f, 255.0f);
+    if (fabsf(rotation) < 60.0f) {
+      rotation = 60.0f * ((rotation > 0.0f) ? 1.0f : -1.0f);
+    }
   }
   // if the compass reading is outside the range of -90 to 90 degrees,
   // apply a maximum rotation speed in the appropriate direction

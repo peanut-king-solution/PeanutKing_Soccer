@@ -9,78 +9,26 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
 
 ## Table of Contents
 
-- [PeanutKing Soccer](#peanutking-soccer)
-  - [Table of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-    - [Supported Versions](#supported-versions)
-  - [Installation](#installation)
-    - [Via Arduino IDE](#via-arduino-ide)
-    - [Manual Installation](#manual-installation)
-    - [Dependencies](#dependencies)
-  - [Quick Start](#quick-start)
-  - [Module Overview](#module-overview)
-  - [Module Documentation](#module-documentation)
-    - [Motor — Motor Control](#motor--motor-control)
-      - [Methods](#methods)
-      - [Example](#example)
-      - [Compatibility Wrappers](#compatibility-wrappers)
-      - [Related Examples](#related-examples)
-    - [Movement — Omnidirectional Movement](#movement--omnidirectional-movement)
-      - [Methods](#methods-1)
-      - [Subclasses](#subclasses)
-      - [Example](#example-1)
-      - [Compatibility Wrappers](#compatibility-wrappers-1)
-      - [Related Examples](#related-examples-1)
-    - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
-      - [Data Structures](#data-structures)
-      - [Methods](#methods-2)
-      - [Example](#example-2)
-      - [Compatibility Wrappers](#compatibility-wrappers-2)
-      - [Related Examples](#related-examples-2)
-    - [CompoundEye — IR Compound Eye](#compoundeye--ir-compound-eye)
-      - [Register Map](#register-map)
-      - [Methods](#methods-3)
-      - [Example](#example-3)
-      - [Compatibility Wrappers](#compatibility-wrappers-3)
-      - [Related Examples](#related-examples-3)
-    - [ButtonManager — Button Management](#buttonmanager--button-management)
-      - [Methods](#methods-4)
-      - [Example](#example-4)
-      - [Compatibility Wrappers](#compatibility-wrappers-4)
-      - [Related Examples](#related-examples-4)
-    - [LedController — LED Control](#ledcontroller--led-control)
-      - [Methods](#methods-5)
-      - [Example](#example-5)
-      - [Compatibility Wrappers](#compatibility-wrappers-5)
-      - [Related Examples](#related-examples-5)
-    - [Ultrasonic — Ultrasonic Sensor](#ultrasonic--ultrasonic-sensor)
-      - [Methods](#methods-6)
-      - [Example](#example-6)
-      - [Compatibility Wrappers](#compatibility-wrappers-6)
-      - [Related Examples](#related-examples-6)
-    - [Compass — Compass & IMU](#compass--compass--imu)
-      - [Methods](#methods-7)
-      - [Subclasses](#subclasses-1)
-      - [Example](#example-7)
-      - [Compatibility Wrappers](#compatibility-wrappers-7)
-      - [Related Examples](#related-examples-7)
-    - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
-      - [Methods](#methods-8)
-      - [Example](#example-8)
-      - [Related Tests](#related-tests)
-    - [TFT Display](#tft-display)
-      - [Methods](#methods-9)
-      - [Color Constants](#color-constants)
-      - [Direct Drawing](#direct-drawing)
-      - [Example](#example-9)
-      - [Related Examples](#related-examples-8)
-    - [Utility Classes](#utility-classes)
-      - [Converter](#converter)
-      - [PIDController](#pidcontroller)
-  - [Examples](#examples)
-  - [Hardware Configuration](#hardware-configuration)
-    - [Default Pin Mapping](#default-pin-mapping)
-    - [I2C Device Addresses](#i2c-device-addresses)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Module Overview](#module-overview)
+- [Module Documentation](#module-documentation)
+  - [Motor — Motor Control](#motor--motor-control)
+  - [Movement — Omnidirectional Movement](#movement--omnidirectional-movement)
+  - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
+  - [CompoundEye — IR Compound Eye](#compoundeye--ir-compound-eye)
+  - [ButtonManager — Button Management](#buttonmanager--button-management)
+  - [LedController — LED Control](#ledcontroller--led-control)
+  - [Ultrasonic — Ultrasonic Sensor](#ultrasonic--ultrasonic-sensor)
+  - [Compass — Compass & IMU](#compass--compass--imu)
+  - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
+  - [TFT Display](#tft-display)
+  - [Utility Classes](#utility-classes)
+- [Examples](#examples)
+- [Hardware Configuration](#hardware-configuration)
+- [Known Issues](#known-issues)
+- [Version History](#version-history)
 
 ---
 
@@ -118,9 +66,9 @@ Copy the entire `PeanutKing_Soccer` folder to the Arduino `libraries` directory:
 
 This library includes the following dependencies (built-in, no additional installation required):
 
-- `PDQ_GFX` / `PDQ_ST7735` — TFT display driver
-- `SlowSoftI2CMaster` — Software I2C implementation
-- `pcint` — Pin Change Interrupt handler
+- `PDQ_GFX` / `PDQ_ST7735` — TFT display driver (128×160, SPI)
+- `SoftI2cMaster` / `FastI2cMaster` — Software I2C implementation (8 independent SW I2C buses)
+- `pcint` — Pin Change Interrupt handler (for non-blocking ultrasonic echo detection)
 
 ---
 
@@ -159,16 +107,16 @@ void loop() {
 
 | Module | Instance | Description |
 |--------|----------|-------------|
-| Motor | `robot.motor` | 4 DC motor control |
+| Motor | `robot.motor` | 4 DC motor control with mapping and direction flipping |
 | Movement | `robot.move` | 45° omni wheel omnidirectional movement |
-| ColorSensor | `robot.colorSensor` | Up to 8 color sensors (I2C) |
-| CompoundEye | `robot.compoundEye` | 12-channel IR sensor array |
-| ButtonManager | `robot.buttonMgr` | 4-button state management |
-| LedController | `robot.ledCtrl` | On-board RGB LED control |
-| Ultrasonic | `robot.xsound` | 4 ultrasonic distance sensors |
-| Compass | `robot.compass` | Compass heading & IMU data |
-| TFT Display | `robot.tft` | ST7735 TFT display |
-| I2C | `I2CManager::getInstance()` | I2C bus management (singleton) |
+| ColorSensor | `robot.colorSensor` | Up to 8 color sensors (software I2C, address `0x11`) |
+| CompoundEye | `robot.compoundEye` | 12-channel IR sensor array for ball detection (hardware I2C, address `0x13`) |
+| ButtonManager | `robot.buttonMgr` | 4-button state management (TAP, HOLD, etc.) |
+| LedController | `robot.ledCtrl` | On-board RGB LED control (8 colors) |
+| Ultrasonic | `robot.xsound` | 4 ultrasonic distance sensors (PCINT-based, round-robin) |
+| Compass | `robot.compass` | Compass heading (0–360°) & 9-axis IMU raw data (hardware I2C, address `0x08`) |
+| TFT Display | `robot.tft` | ST7735 TFT display (128×160, SPI) |
+| I2C | `I2CManager::getInstance()` | I2C bus management singleton (HW + 8×SW) |
 
 ---
 
@@ -197,7 +145,7 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 |--------|-------------|
 | `setSpeed(MOTOR_ID mi, int16_t speed)` | Set motor speed, range `-255` (CCW) ~ `+255` (CW), `0` = brake |
 | `stopAll()` | Stop all motors (brake mode) |
-| `flipMotor(MOTOR_ID mi, bool flip = true)` | Flip single motor rotation direction |
+| `flipMotor(MOTOR_ID mi, bool flip = true)` | Flip single motor rotation direction (`false` to cancel) |
 | `flipMotors(bool m1, bool m2, bool m3, bool m4)` | Set rotation direction for each motor individually |
 | `configuration(MOTOR_ID LF, MOTOR_ID RF, MOTOR_ID RB, MOTOR_ID LB)` | Remap motor ports to physical positions |
 | `testAll(int16_t speed)` | Test motors sequentially (M1→M2→M3→M4) |
@@ -304,22 +252,19 @@ robot.moveByAnglePID(0, 100);   // Same as move.byAnglePID() — reads compass i
 
 ### ColorSensor — Color Sensor
 
-Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C (address `0x11`, each sensor uses a different software I2C Master). Reads color index, RGB, HSL, and raw RGBC values.
+Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C (address `0x11`, each sensor uses a dedicated software I2C Master). Reads color index, RGB, HSL, and raw RGBC values.
 
 **Default sensor ID mapping:**
 
 | Name | Actual ID | Position |
 |------|-----------|----------|
-| `CL1` | `0` | Sensor 1 |
-| `CL2` | `1` | Sensor 2 |
-| `CL3` | `2` | Sensor 3 |
-| `CL4` | `3` | Sensor 4 |
-| `CL5` | `4` | Sensor 5 |
-| `CL6` | `5` | Sensor 6 |
-| `CL7` | `6` | Sensor 7 |
-| `CL8` | `7` | Sensor 8 |
+| `CL1` | `0` | Front (default) |
+| `CL2` | `1` | Right (default) |
+| `CL3` | `2` | Back (default) |
+| `CL4` | `3` | Left (default) |
+| `CL5`–`CL8` | `4–7` | Extra sensors (disabled by default) |
 
-**Color index mapping:**
+**Color index mapping (readColor register `0x01`):**
 
 | Name | Actual ID | Color |
 |------|-----------|-------|
@@ -338,23 +283,27 @@ Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C
 |-----------|--------|-------------|
 | `rgbc_t` | `r, g, b, c` | RGBC raw values (each `0-65535`, `uint16_t`) |
 | `rgb_t` | `r, g, b` | RGB values (each `0-255`, `uint16_t`) |
-| `hsl_t` | `h, s, l` | HSL values, `h -> uint16_t`, `s, l -> uint8_t` |
+| `hsl_t` | `h, s, l` | HSL values (`h` → `uint16_t`, `s`&`l` → `uint8_t`) |
 
 #### Methods
 
 | Method | Description |
 |--------|-------------|
-| `readColor(CLR_SENSOR_ID)` | Read `color` index (`0-7`) |
-| `readRGB(CLR_SENSOR_ID)` | Read `RGB` values (each `0-255`) |
-| `readHSL(CLR_SENSOR_ID)` | Read `HSL` values |
-| `readRGBRaw(CLR_SENSOR_ID)` | Read `raw RGBC` values (each `0-65535`) |
-| `setEnabled(uint8_t mask)` | Set enable mask (default `0x0F` = `CL1-CL4`) |
-| `enableSensor(CLR_SENSOR_ID, bool)` | `Enable` / `disable` a single sensor |
+| `readColor(CLR_SENSOR_ID)` | Read color index (`0-7`) |
+| `readRGB(CLR_SENSOR_ID)` | Read RGB values |
+| `readHSL(CLR_SENSOR_ID)` | Read HSL values |
+| `readRGBRaw(CLR_SENSOR_ID)` | Read raw RGBC values |
+| `setEnabled(uint8_t mask)` | Set enable mask (default `0x0F` = `CL1`–`CL4` enabled) |
+| `enableSensor(CLR_SENSOR_ID, bool)` | Enable/disable a single sensor |
 | `isEnabled(CLR_SENSOR_ID)` | Check if sensor is enabled |
-| `whiteLedOn(CLR_SENSOR_ID)` | `Turn on` bottom white LED |
-| `whiteLedOff(CLR_SENSOR_ID)` | `Turn off` bottom white LED |
-| `rgbwLedOn(CLR_SENSOR_ID)` | `Turn on` top RGBW LED (shows detected color) |
-| `rgbwLedOff(CLR_SENSOR_ID)` | `Turn off` top RGBW LED |
+| `whiteLedOn(CLR_SENSOR_ID)` | Turn on bottom white LED |
+| `whiteLedOff(CLR_SENSOR_ID)` | Turn off bottom white LED |
+| `rgbwLedOn(CLR_SENSOR_ID)` | Turn on top RGBW LED (which shows detected color) |
+| `rgbwLedOff(CLR_SENSOR_ID)` | Turn off top RGBW LED (which shows detected color) |
+| `configuration(CLR_SENSOR_ID F, R, B, L)` | Map sensors to front/right/back/left positions |
+| `calBaseline(CLR_SENSOR_ID, samples=10)` | Calibrate baseline of green field (HSL averaging) |
+| `isCalibrated(CLR_SENSOR_ID)` | Check if calibration is complete |
+| `isWhiteLine(CLR_SENSOR_ID)` | Check if sensor detects white line (3D HSL check) |
 
 #### Example
 
@@ -378,6 +327,9 @@ void loop() {
   hsl_t   hsl      = robot.colorSensor.readHSL(CL1);
   rgbc_t  raw      = robot.colorSensor.readRGBRaw(CL1);
 
+  // White line detection
+  bool isFrontWhite = robot.colorSensor.isWhiteLine(CL1);
+
   // Control CL1 sensor LEDs
   robot.colorSensor.whiteLedOn(CL1);
   robot.colorSensor.rgbwLedOff(CL1);
@@ -390,6 +342,7 @@ void loop() {
 uint8_t colorIdx = robot.getColorSensor(CL1);     // Same as readColor()
 rgb_t   rgb      = robot.getColorSensorRGB(CL1);  // Same as readRGB()
 hsl_t   hsl      = robot.getColorSensorHSL(CL1);  // Same as readHSL()
+bool isFrontWhite = robot.whiteLineCheck(CL1);    // Same as isWhiteLine()
 ```
 
 #### Related Examples
@@ -397,6 +350,8 @@ hsl_t   hsl      = robot.getColorSensorHSL(CL1);  // Same as readHSL()
 [examples/Version4/Colour_Sensor/Colour_Sensor.ino](examples/Version4/Colour_Sensor/Colour_Sensor.ino)
 
 [examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
+
+[examples/Version4/OutOfBound/OutOfBound.ino](examples/Version4/OutOfBound/OutOfBound.ino)
 
 ---
 
@@ -446,8 +401,6 @@ void loop() {
 
   // Read a single IR sensor value (index 0-11)
   uint8_t val = robot.compoundEye.getEyeVal(5);
-  Serial.print("IR5: ");
-  Serial.println(val);
 
   // Get ball position
   uint8_t maxEye = robot.compoundEye.getMaxEye();
@@ -476,7 +429,7 @@ uint16_t angle = robot.compoundEyeAngle();    // Same as getAngle()
 
 ### ButtonManager — Button Management
 
-Manages 4 buttons (`BTN_1`–`BTN_4`) with press, release, hold, and double-tap gesture detection.
+Manages 4 buttons (`BTN_1`–`BTN_4`) with basic read support. Advanced gesture detection (TAP, HOLD, double-tap) is declared but **not yet implemented** — `update()` is a placeholder.
 
 **Button ID mapping:**
 
@@ -504,9 +457,9 @@ Manages 4 buttons (`BTN_1`–`BTN_4`) with press, release, hold, and double-tap 
 
 | Method | Description |
 |--------|-------------|
-| `read(BUTTON_ID btn)` | Read whether button is pressed (`true` / `false`) |
-| `update()` | Update button state machine (must be called regularly in `loop()`) |
-| `getStatus(BUTTON_ID btn)` | Get button status |
+| `read(BUTTON_ID btn)` | Read whether button is physically pressed (`true`/`false`) |
+| `update()` | Update button state machine (**not yet implemented** — see [Known Issues](#known-issues)) |
+| `getStatus(BUTTON_ID btn)` | Get current button gesture status |
 
 #### Example
 
@@ -520,19 +473,14 @@ void setup() {
 }
 
 void loop() {
-  // Basic read
+  // Basic read (works)
   if (robot.buttonMgr.read(BTN_1)) {
     Serial.println("Button 1 pressed");
   }
 
-  // Gesture detection
-  robot.buttonMgr.update();
-  buttonStatus_t status = robot.buttonMgr.getStatus(BTN_1);
-  switch (status) {
-    case TAP:  Serial.println("TAP");  break;
-    case TAP2: Serial.println("DOUBLE TAP"); break;
-    case HOLD: Serial.println("HOLD"); break;
-  }
+  // Gesture detection (update() is a placeholder — see Known Issues)
+  // robot.buttonMgr.update();
+  // buttonStatus_t status = robot.buttonMgr.getStatus(BTN_1);
 }
 ```
 
@@ -540,7 +488,7 @@ void loop() {
 
 ```cpp
 bool pressed = robot.buttonRead(BTN_1);          // Same as read()
-robot.buttonUpdate();                            // Same as update()
+robot.buttonUpdate();                            // Same as update() — placeholder
 buttonStatus_t s = robot.buttonGetStatus(BTN_1); // Same as getStatus()
 ```
 
@@ -573,8 +521,8 @@ Controls the on-board RGB LED with 8 color modes.
 
 | Method | Description |
 |--------|-------------|
-| `setLED(obBrdLEDCL color)` | Set LED color directly |
-| `setLED(uint8_t LED, uint8_t status)` | Set individual LED (`0=Red`, `1=Green`, `2=Blue`) |
+| `setLED(obBrdLEDCL color)` | Set LED to a predefined color (uses bitmask: `R=bit0`, `G=bit1`, `B=bit2`) |
+| `setLED(uint8_t LED, uint8_t status)` | Set individual LED channel (`0`=Red, `1`=Green, `2`=Blue), `0`=off, `1`=on |
 
 #### Example
 
@@ -617,12 +565,12 @@ Manages 4 ultrasonic distance sensors (U1–U4), using Pin Change Interrupt for 
 
 **Default sensor ID mapping:**
 
-| Name | Actual ID | Position |
-|------|-----------|----------|
-| `U1` | `0` | Front |
-| `U2` | `1` | Right |
-| `U3` | `2` | Back |
-| `U4` | `3` | Left |
+| Name | Actual ID | Position | Trig Pin | Echo Pin |
+|------|-----------|----------|----------|----------|
+| `U1` | `0` | Front | 49 | A15 |
+| `U2` | `1` | Right | 48 | A14 |
+| `U3` | `2` | Back | 47 | A13 |
+| `U4` | `3` | Left | 46 | A12 |
 
 #### Methods
 
@@ -644,7 +592,7 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 void setup() {
   robot.init();
 
-  // If needed, remap sensor positions (swap U1 and U2, i.e., front and right)
+  // If needed, remap sensor positions (swap U1 and U2)
   robot.xsound.configuration(U2, U1, U3, U4);
   
   // Enable/disable
@@ -656,6 +604,8 @@ void loop() {
   // Read distances from each direction
   uint16_t front = robot.xsound.read(U1);
   uint16_t right = robot.xsound.read(U2);
+  uint16_t back  = robot.xsound.read(U3);
+  uint16_t left  = robot.xsound.read(U4);
 }
 ```
 
@@ -675,13 +625,13 @@ uint16_t dist = robot.ultrasonicRead(U1);
 
 ### Compass — Compass & IMU
 
-Reads compass heading (0–360°) and 9-axis IMU raw data (accelerometer, gyroscope, magnetometer) via hardware I2C.
+Reads compass heading (0–360°) and 9-axis IMU raw data (accelerometer, gyroscope, magnetometer) via hardware I2C (address `0x08`).
 
 #### Methods
 
 | Method | Description |
 |--------|-------------|
-| `read()` | Read compass heading (`0–360°`), clockwise |
+| `read()` | Read compass heading (`0–360°`, clockwise) |
 | `getAccelerometerRaw()` | Get raw accelerometer data `int16_t[3]` (X, Y, Z) |
 | `getGyroscopeRaw()` | Get raw gyroscope data `int16_t[3]` (X, Y, Z) |
 | `getMagnetometerRaw()` | Get raw magnetometer data `int16_t[3]` (X, Y, Z) |
@@ -742,14 +692,29 @@ int16_t* mag   = robot.getMagnetometerRaw();
 
 ### I2C — I2C Bus Management
 
-Manages 8 software I2C buses (SW0–SW7) and 1 hardware I2C bus (HW) using the singleton pattern.
+Manages 8 software I2C buses (`SW0`–`SW7`) and 1 hardware I2C bus (`HW`) using a singleton pattern.
 
 **Bus index mapping:**
 
-| Name | Actual ID | Type |
-|------|-----------|------|
-| `SW0`–`SW7` | `0`–`7` | Software I2C |
-| `HW` | `8` | Hardware I2C |
+| Name | Actual ID | Type | Typical Use |
+|------|-------|------|-------------|
+| `SW0`–`SW7` | `0`–`7` | Software I2C (bit-bang) | Color sensors CL1–CL8 |
+| `HW` | `8` | Hardware I2C (TWI) | Compass, CompoundEye |
+
+**Software I2C pin mapping:**
+
+| Bus | SCL | SDA |
+|-----|-----|-----|
+| SW0 | 30 | 29 |
+| SW1 | 32 | 31 |
+| SW2 | 34 | 33 |
+| SW3 | 36 | 35 |
+| SW4 | 38 | 37 |
+| SW5 | 40 | 39 |
+| SW6 | 42 | 41 |
+| SW7 | 44 | 43 |
+
+**Hardware I2C:** Uses Arduino Mega default pins (SCL=21, SDA=20) or Wire.h auto-detect.
 
 **I2C_Handle structure:**
 
@@ -757,18 +722,31 @@ Manages 8 software I2C buses (SW0–SW7) and 1 hardware I2C bus (HW) using the s
 |-------|-------------|
 | `busIndex` | Bus index (`BusIndex`) |
 | `deviceAddress` | I2C device address (`0x00`–`0x7F`) |
-| `speed` | I2C speed (`Hz`) |
-| `isValid()` | Check if the Handle is valid |
+| `speed` | I2C speed in `Hz` |
+| `isValid()` | Check if the handle is valid |
 
 #### Methods
 
 | Method | Description |
 |--------|-------------|
 | `I2CManager::getInstance()` | Get singleton instance |
-| `init()` | Initialize all I2C buses |
+| `init()` | Initialize all I2C buses (HW + SW) |
 | `RegisterDevice(BusIndex, address, speed)` | Register I2C device, returns `I2C_Handle` |
 | `SensorRead(handle, reg, buffer, length)` | Read I2C register data |
 | `SensorSend(handle, buffer, length)` | Send data to I2C device |
+
+#### Wire.h Compatibility
+
+The hardware I2C backend supports two modes, auto-detected at compile time:
+
+1. **Arduino Wire.h** (preferred) — auto-detected if `<Wire.h>` is available
+2. **IICIT** (fallback) — custom hardware I2C implementation for AVR
+
+To force Wire.h usage, define `USE_WIRE_H` before including the library:
+```cpp
+#define USE_WIRE_H
+#include <PeanutKingSoccerV4.h>
+```
 
 #### Example
 
@@ -781,7 +759,7 @@ I2CManager& i2c = I2CManager::getInstance();
 void setup() {
   robot.init();
 
-  // Register device
+  // Register custom device on hardware I2C
   I2C_Handle device = i2c.RegisterDevice(BusIndex::HW, 0x08, 400000);
 }
 
@@ -810,33 +788,33 @@ ST7735 TFT display (128×160 pixels), communicates via SPI, inherits from the PD
 | `setTextColor(uint16_t color)` | Set text foreground color |
 | `setTextColor(uint16_t fg, uint16_t bg)` | Set foreground and background color |
 | `setTextSize(uint8_t size)` | Set text size (1-3) |
-| `setScreen(uint8_t col, uint8_t row, char string[])` | Display text at specified position |
-| `setScreen(uint8_t col, uint8_t row, int16_t number)` | Display number at specified position |
-| `drawAnglePointer(x, y, radius, angle, color)` | Draw angle pointer (with N/S/E/W markers) |
+| `setScreen(uint8_t col, uint8_t row, char string[])` | Display text at grid position (col×6, row×10) |
+| `setScreen(uint8_t col, uint8_t row, int16_t number)` | Display number at grid position |
+| `drawAnglePointer(x, y, radius, angle, color)` | Draw angle pointer with N/S/E/W markers |
 
 #### Color Constants
 
-```cpp
-ST7735_BLACK   // 0x0000
-ST7735_WHITE   // 0xFFFF
-ST7735_RED     // 0x001F
-ST7735_GREEN   // 0x07E0
-ST7735_BLUE    // 0xF800
-ST7735_YELLOW  // 0x07FF
-ST7735_MAGENTA // 0xF81F
-ST7735_CYAN    // 0xFFE0
-```
+| Constant | Value | Color |
+|----------|-------|-------|
+| `ST7735_BLACK` | `0x0000` | Black |
+| `ST7735_WHITE` | `0xFFFF` | White |
+| `ST7735_RED` | `0x001F` | Red |
+| `ST7735_GREEN` | `0x07E0` | Green |
+| `ST7735_BLUE` | `0xF800` | Blue |
+| `ST7735_YELLOW` | `0x07FF` | Yellow |
+| `ST7735_MAGENTA` | `0xF81F` | Magenta |
+| `ST7735_CYAN` | `0xFFE0` | Cyan |
 
 #### Direct Drawing
 
-Use `robot.tft` to access PDQ_ST7735 drawing methods directly:
+Access the underlying `PDQ_ST7735` instance directly via `robot.tft`:
 
 ```cpp
 robot.tft.fillCircle(x, y, r, color);
 robot.tft.drawRect(x, y, w, h, color);
 robot.tft.fillTriangle(x1, y1, x2, y2, x3, y3, color);
 robot.tft.drawLine(x0, y0, x1, y1, color);
-// More methods available — refer to PDQ_GFX documentation
+// More methods — refer to PDQ_GFX documentation
 ```
 
 #### Example
@@ -855,7 +833,7 @@ void setup() {
 }
 
 void loop() {
-  // Clear old value
+  // Clear old value, display new value
   robot.setTextColor(ST7735_BLACK);
   robot.setScreen(0, 1, (int16_t)oldValue);
   robot.setTextColor(ST7735_WHITE);
@@ -884,7 +862,7 @@ void loop() {
 
 #### Converter
 
-Angle conversion tool supporting flip, shift, and normalization. Can be used for compass calibration or movement coordinate adjustment.
+Angle conversion tool supporting flip, shift, and normalization. Used for compass calibration and movement coordinate adjustment.
 
 ```cpp
 class Converter {
@@ -893,7 +871,7 @@ public:
   Converter& shift(float deg);  // Shift angle offset
   float normalize(float angle); // Normalize to [0, 360)
   float convert(float angle);   // Apply transformation
-  void reset();                 // Reset to defaults
+  void reset();                 // Reset to defaults (multiplier=1, offset=0)
 };
 ```
 
@@ -902,11 +880,6 @@ Usage example:
 ```cpp
 // Chained method calls (reset then offset)
 robot.compass.converter.reset().shift(90).flip();
-
-// Or set individually
-robot.compass.converter.reset();
-robot.compass.converter.shift(90);
-robot.compass.converter.flip();
 
 // Movement coordinate adjustment
 robot.move.converter.reset().shift(180);
@@ -920,12 +893,12 @@ PID control algorithm used for compass heading correction in the Movement module
 class PIDController {
 public:
   PIDController(double kp, double ki, double kd);
-  double update(double currentValue);  // Calculate PID output
+  double update(double currentValue);  // Calculate PID output (error = setPoint - currentValue)
 
   double kp, ki, kd;        // PID coefficients
-  double setPoint;          // Target value
-  double integral;          // Integral term
-  double previousError;     // Previous error
+  double setPoint;          // Target value (default: 0.0)
+  double integral;          // Integral term accumulator
+  double previousError;     // Previous error value
 };
 ```
 
@@ -942,45 +915,55 @@ robot.move.motorPID.kd = 1.0;
 
 ## Examples
 
+### Version 4 (20 examples)
+
 | Example | Description |
 |---------|-------------|
-| [Bluetooth_Remote](examples/Version4/Bluetooth_Remote/Bluetooth_Remote.ino) | Bluetooth remote control |
+| [Bluetooth_Remote](examples/Version4/Bluetooth_Remote/Bluetooth_Remote.ino) | Bluetooth remote control (skeleton — functions are empty) |
 | [Button](examples/Version4/Button/Button.ino) | Basic button reading |
-| [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD) |
-| [Colour_Sensor](examples/Version4/Colour_Sensor/Colour_Sensor.ino) | Color sensor reading |
-| [Compass](examples/Version4/Compass/Compass.ino) | Compass & IMU data |
-| [CompassCar](examples/Version4/CompassCar/CompassCar.ino) | Compass navigation |
-| [CompoundEye](examples/Version4/CompoundEye/CompoundEye.ino) | IR compound eye |
-| [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O |
-| [Goalkeeper](examples/Version4/Goalkeeper/Goalkeeper.ino) | Goalkeeper behavior strategy |
-| [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display |
-| [LED](examples/Version4/LED/LED.ino) | RGB LED control |
-| [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration |
-| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement |
-| [ScreenColor](examples/Version4/ScreenColor/ScreenColor.ino) | Screen + color sensor integration |
-| [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration |
-| [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration |
-| [ScreenXsound](examples/Version4/ScreenXsound/ScreenXsound.ino) | Screen + ultrasonic integration |
-| [Striker](examples/Version4/Striker/Striker.ino) | Striker behavior strategy |
-| [Ultrasonic](examples/Version4/Ultrasonic/Ultrasonic.ino) | Ultrasonic sensor |
+| [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD — requires ButtonManager::update() implementation) |
+| [Colour_Sensor](examples/Version4/Colour_Sensor/Colour_Sensor.ino) | Color sensor reading (color index, RGB, HSL, RGBC raw, white line check) |
+| [Compass](examples/Version4/Compass/Compass.ino) | Compass & IMU data (heading, accelerometer, gyroscope, magnetometer) |
+| [CompassCar](examples/Version4/CompassCar/CompassCar.ino) | Compass navigation (heading-based motor control) |
+| [CompoundEye](examples/Version4/CompoundEye/CompoundEye.ino) | IR compound eye (12 sensors, max eye, ball angle) |
+| [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O (uses S_PIN, D_PIN, A_PIN enums) |
+| [Goalkeeper](examples/Version4/Goalkeeper/Goalkeeper.ino) | Goalkeeper behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
+| [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display basics (text, shapes, tick counter) |
+| [LED](examples/Version4/LED/LED.ino) | RGB LED control (cycles through all 8 colors) |
+| [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
+| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, byAnglePID, rotation) |
+| [OutOfBound](examples/Version4/OutOfBound/OutOfBound.ino) | Square movement with white line detection |
+| [ScreenColor](examples/Version4/ScreenColor/ScreenColor.ino) | Screen + color sensor integration (color name, RGB display) |
+| [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration (heading display + pointer) |
+| [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
+| [ScreenXsound](examples/Version4/ScreenXsound/ScreenXsound.ino) | Screen + ultrasonic integration (4 distances with labels) |
+| [Striker](examples/Version4/Striker/Striker.ino) | Striker behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
+| [Ultrasonic](examples/Version4/Ultrasonic/Ultrasonic.ino) | Ultrasonic sensor (configuration, enable/disable, distance reading) |
 
 ---
 
 ## Hardware Configuration
 
-### Default Pin Mapping
+### Default Pin Mapping (Arduino Mega)
 
-| Function | Pin | Description |
-|----------|-----|-------------|
+| Function | Pin(s) | Description |
+|----------|--------|-------------|
 | TFT CS | 0 | TFT chip select |
 | TFT DC | 53 | TFT data/command |
 | TFT RST | 50 | TFT reset |
 | TFT SCL | 52 | TFT SPI clock |
 | TFT SDA | 51 | TFT SPI data |
-| S1–S4 | 10–13 | Servo/PWM output |
-| D1–D3 | 53–55 | Digital input |
-| D4–D6 | 56–58 | Digital output |
-| A1–A4 | 59–62 | Analog input |
+| Motor IN1 | 9, 7, 5, 3 | Motor channel 1 (PWM) |
+| Motor IN2 | 8, 6, 4, 2 | Motor channel 2 (PWM) |
+| Ultrasonic Trig | 49, 48, 47, 46 | U1–U4 trigger pins |
+| Ultrasonic Echo | A15, A14, A13, A12 | U1–U4 echo pins (PCINT) |
+| Button | 22, 23, 24, 25 | BTN_1–BTN_4 (INPUT_PULLUP) |
+| LED RGB | 26, 28, 27 | Red, Green, Blue |
+| SW I2C (×8) | 29–44 | SCL=30/32/34/36/38/40/42/44, SDA=29/31/33/35/37/39/41/43 |
+| Servo/PWM | 10–13 | S1–S4 |
+| Digital Input | 53–55 | D1–D3 |
+| Digital Output | 56–58 | D4–D6 |
+| Analog Input | 59–62 | A1–A4 |
 
 ### I2C Device Addresses
 
@@ -989,3 +972,43 @@ robot.move.motorPID.kd = 1.0;
 | Compass module | `0x08` | Hardware I2C (HW) |
 | Compound eye module | `0x13` | Hardware I2C (HW) |
 | Color sensor CL1–CL8 | `0x11` | Software I2C (SW0–SW7) |
+
+### Timer Usage
+
+| Timer | Width | PWM Pins | Used By | Notes |
+|-------|-------|----------|---------|-------|
+| Timer0 | 8-bit | 13, 4 | Arduino core (`millis`/`delay`) | ⚠️ Do not modify prescaler |
+| Timer1 | 16-bit | 12, 11 | Motor PWM | Default 3921 Hz |
+| Timer2 | 8-bit | 9, 10 | Motor PWM | Default 980 Hz |
+| Timer3 | 16-bit | 5, 3, 2 | — | Available |
+| Timer4 | 16-bit | 8, 7, 6 | — | Available |
+| Timer5 | 16-bit | 46, 45, 44 | — | Available |
+
+---
+
+## Known Issues
+
+### 🔴 Compile Errors (Examples)
+
+- **Goalkeeper.ino** and **Striker.ino** use deprecated `motorSet()` and `motorStop()` functions that do not exist in V4. These examples will **fail to compile**. Use `setMotorSpeed()` / `stopAllMotors()` instead.
+
+### 🟡 Not Yet Implemented
+
+| Feature | Location | Status |
+|---------|----------|--------|
+| `ButtonManager::update()` | `ButtonManager.cpp` | Placeholder — gesture detection (TAP, HOLD, TAP2) not implemented |
+| `bluetoothRemote()` | `PeanutKingSoccerV4.cpp:309` | Empty function — Bluetooth not implemented |
+| `bluetoothAttributes()` | `PeanutKingSoccerV4.cpp:308` | Empty function — Bluetooth not implemented |
+| `Chase()` / `Back()` | `PeanutKingSoccerV4.cpp:315-321` | Empty functions — strategy not implemented |
+| `CompoundEye` calibration | CompoundEye module | No calibration method (unlike V3's `compoundEyeCal()`) |
+
+### 🟢 Minor Issues
+
+- `pwmPin[4]` declared in `PeanutKingSoccerV4.h` but never used
+- `BUTTON_ID` enum starts at 1, requiring `-1` conversion for array indexing
+- Private member naming is inconsistent across modules (`_` prefix vs no prefix)
+- `Compass::converter` and `Movement::converter`/`motorPID` are public members (encapsulation)
+
+---
+
+## Version History

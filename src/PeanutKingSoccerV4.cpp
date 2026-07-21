@@ -142,15 +142,9 @@ hsl_t PeanutKingSoccerV4::getColorSensorHSL(CLR_SENSOR_ID color_sensor_num) {
   return colorSensor.readHSL(color_sensor_num);
 }
 
-uint16_t PeanutKingSoccerV4::whiteLineCal(CLR_SENSOR_ID pin_no) {
-  whiteLineThreshold[pin_no] = getColorSensorHSL(pin_no).h;
-  return whiteLineThreshold[pin_no];
-}
 
-bool PeanutKingSoccerV4::whiteLineCheck(CLR_SENSOR_ID i, uint16_t thresh) {
-  colorHSL[i] = getColorSensorHSL(i);
-  isWhite[i] = (abs((int)colorHSL[i].h - (int)thresh) < 10 && colorHSL[i].l >= 50);
-  return isWhite[i];
+bool PeanutKingSoccerV4::whiteLineCheck(CLR_SENSOR_ID i) {
+  return colorSensor.isWhiteLine(i);
 }
 
 /* =============================================================================

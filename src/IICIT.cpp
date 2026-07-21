@@ -25,7 +25,7 @@
  * @data        30 July 2021
  */
 
-#include "modules/I2C/hwI2CMaster.h"  // For HW_I2C_USE_WIRE_H check
+#include "modules/I2C/hardware/hwI2CMaster.h"  // For HW_I2C_USE_WIRE_H check
 #include "IICIT.h"
 
 #ifndef HW_I2C_USE_WIRE_H // Only implement IICIT if Wire.h is not used

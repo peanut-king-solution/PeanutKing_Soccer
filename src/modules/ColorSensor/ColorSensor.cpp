@@ -16,8 +16,14 @@ ColorSensor::ColorSensor() :
     I2C_Handle(BusIndex::SW6, 0, 0),
     I2C_Handle(BusIndex::SW7, 0, 0)
   },
-  _enabledMask(0x0F) // Default: first four sensors enabled (CL1-CL4)
+  _enabledMask(0x0F), // Default: first four sensors enabled (CL1-CL4)
+  _sensorMap{CL1, CL2, CL3, CL4}  // Default: CL1=Front, CL2=Right, CL3=Back, CL4=Left
 {
+  // Initialize baseline data for all sensors
+  for (uint8_t i = 0; i < 8; i++) {
+    _baseline[i] = {0, 0, 0, false};
+    _isWhite[i] = false;
+  }
 }
 
 bool ColorSensor::init(void)
@@ -38,9 +44,27 @@ bool ColorSensor::init(void)
     // Check if the handle is valid after registration
     if (!_handles[i].isValid()) { return false; }
   }
+
+  // calibrate all enabled sensors for white line detection
+  for (uint8_t i = 0; i < 8; i++) {
+    if (isEnabled((CLR_SENSOR_ID)i)) {
+      calBaseline((CLR_SENSOR_ID)i);
+    }
+  }
   return true;
 }
 
+/* =============================================================================
+ *                        Sensor Configuration
+ * ============================================================================= */
+
+void ColorSensor::configuration(CLR_SENSOR_ID Front, CLR_SENSOR_ID Right, CLR_SENSOR_ID Back, CLR_SENSOR_ID Left)
+{
+  _sensorMap[0] = Front;
+  _sensorMap[1] = Right;
+  _sensorMap[2] = Back;
+  _sensorMap[3] = Left;
+}
 
 /* =============================================================================
  *                        Sensor Enable/Disable
@@ -187,4 +211,54 @@ bool ColorSensor::rgbwLedOff(CLR_SENSOR_ID sensorNum)
   uint8_t reg = 0x07;
   I2CManager &i2cManager = I2CManager::getInstance();
   return i2cManager.SensorSend(_handles[sensorNum], &reg, 1);
+}
+
+/* =============================================================================
+ *                        White Line Detection (Plan A: Baseline)
+ * ============================================================================= */
+
+void ColorSensor::calBaseline(CLR_SENSOR_ID n, uint8_t samples)
+{
+  // Return early if the sensor is disabled
+  if (!isEnabled(n)) return;
+
+  uint32_t sumH = 0, sumS = 0, sumL = 0;
+  uint8_t  count = 0;
+
+  // Collect multiple samples to average the baseline values
+  for (uint8_t i = 0; i < samples; i++) {
+    hsl_t hsl = readHSL(n);
+    sumH += hsl.h; sumS += hsl.s; sumL += hsl.l;
+    count++;
+    delay(10);
+  }
+
+  _baseline[n].greenHue   = (uint16_t)(sumH / count);
+  _baseline[n].greenSat   = (uint8_t) (sumS / count);
+  _baseline[n].greenLight = (uint8_t) (sumL / count);
+  _baseline[n].done       = true;
+}
+
+bool ColorSensor::isCalibrated(CLR_SENSOR_ID n) const
+{
+  return _baseline[n].done;
+}
+
+bool ColorSensor::isWhiteLine(CLR_SENSOR_ID n)
+{
+  if (!isEnabled(n) || !_baseline[n].done) return false;
+
+  hsl_t hsl = readHSL(n);
+
+  // 3D detection: Light + Sat + Hue, 2/3 vote
+  uint8_t lightMargin = _baseline[n].greenLight / 5;
+  uint8_t satThresh   = (_baseline[n].greenSat * 80) / 100;
+  int     hueDiff     = abs((int)hsl.h - (int)_baseline[n].greenHue);
+
+  bool lightCheck = hsl.l > _baseline[n].greenLight + lightMargin;
+  bool satCheck   = hsl.s < satThresh;
+  bool hueCheck   = hueDiff > 30;
+
+  _isWhite[n] = (lightCheck + satCheck + hueCheck) >= 2;
+  return _isWhite[n];
 }

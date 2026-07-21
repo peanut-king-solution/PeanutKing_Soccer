@@ -38,6 +38,21 @@ private:
   uint8_t   _rxBuffer[16]; // Buffer for I2C read operations
   uint8_t   _enabledMask;  // Enabled sensors bitmask (bit0=CL1, ..., bit7=CL8)
 
+  bool _isWhite[8]; // Track if each sensor detected white color
+
+  // Calibrated baseline of green values for white line detection
+  struct WhiteLineBaseline {
+    uint16_t greenHue;   // Average green field hue
+    uint8_t  greenLight; // Average green field lightness
+    uint8_t  greenSat;   // Average green field saturation
+    bool     done;       // Calibration completed flag
+  } _baseline[8];        // Baseline data for each sensor
+
+  /* Sensor position mapping
+   * Maps logical position (Front, Right, Back, Left) to physical sensor ID
+   * Default: CL1=Front, CL2=Right, CL3=Back, CL4=Left */
+  CLR_SENSOR_ID _sensorMap[4];
+
   I2C_Handle &getHandle(CLR_SENSOR_ID sensorNum);
 
 public:
@@ -46,6 +61,22 @@ public:
 
   // init function to initialize the color sensor module
   bool init(void);
+
+  // ============ Sensor Configuration ============
+
+  /**
+   * Assign which color sensor (CL1~CL8) is connected to which position
+   *
+   * `Front` - Sensor ID at front position
+   * `Right` - Sensor ID at right position
+   * `Back`  - Sensor ID at back position
+   * `Left`  - Sensor ID at left position
+   *
+   * Example: `configuration(CL2, CL1, CL3, CL4)` means
+   *   Front position uses sensor CL2,
+   *   Right position uses sensor CL1, etc.
+   */
+  void configuration(CLR_SENSOR_ID Front, CLR_SENSOR_ID Right, CLR_SENSOR_ID Back, CLR_SENSOR_ID Left);
 
   // ============ Sensor Enable/Disable ============
 
@@ -145,6 +176,28 @@ public:
    * `Returns` - `true` if successful, `false` if disabled
    */
   bool rgbwLedOff(CLR_SENSOR_ID sensorNum);
+
+  // ============ White Line Detection Functions ============
+
+  /**
+   * Calibrate white line baseline (call when sensor is on green field)
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   * `samples`   - Number of samples to average (default: 10)
+   */
+  void calBaseline(CLR_SENSOR_ID sensorNum, uint8_t samples = 10);
+
+  /**
+   * Check if calibration is done for a sensor
+   */
+  bool isCalibrated(CLR_SENSOR_ID sensorNum) const;
+
+  /**
+   * Check if sensor detects white line (baseline comparison)
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - `true` if white line detected
+   */
+  bool isWhiteLine(CLR_SENSOR_ID sensorNum);
 };
 
 #endif // COLORSENSOR_H

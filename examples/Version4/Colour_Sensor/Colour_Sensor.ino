@@ -36,30 +36,33 @@ void setup() {
 
 void loop() {
   // Read color index from CL1 sensor
-  uint8_t colorIdx = robot.colorSensor.readColor(CL1);
+  CLR_SENSOR_ID colorSensor = CL1;
+
+  // Read color index from CL1 sensor
+  uint8_t colorIdx = robot.colorSensor.readColor(colorSensor);
 
   // Alternatively, use the wrapper function for compatibility:
-  // uint8_t colorIdx = robot.getColorSensor(CL1);
+  // uint8_t colorIdx = robot.getColorSensor(colorSensor);
 
   // Read RGB values from CL1 sensor
-  rgb_t rgb = robot.colorSensor.readRGB(CL1);
+  rgb_t rgb = robot.colorSensor.readRGB(colorSensor);
 
   // Alternatively, use the wrapper function:
-  // rgb_t rgb = robot.getColorSensorRGB(CL1);
+  // rgb_t rgb = robot.getColorSensorRGB(colorSensor);
 
   // Read HSL values from CL1 sensor
-  hsl_t hsl = robot.colorSensor.readHSL(CL1);
+  hsl_t hsl = robot.colorSensor.readHSL(colorSensor);
 
   // Alternatively, use the wrapper function:
-  // hsl_t hsl = robot.getColorSensorHSL(CL1);
+  // hsl_t hsl = robot.getColorSensorHSL(colorSensor);
 
   // Read RGBC raw values from CL1 sensor
-  rgbc_t rgbc = robot.colorSensor.readRGBRaw(CL1);
+  rgbc_t rgbc = robot.colorSensor.readRGBRaw(colorSensor);
 
   // Or you can read all sensors at once using dataFetch()
   // robot.dataFetch();
-  // uint8_t colorIdx = robot.colorRGB[CL1];
-  // hsl_t hsl = robot.colorHSL[CL1];
+  // uint8_t colorIdx = robot.colorRGB[colorSensor];
+  // hsl_t hsl = robot.colorHSL[colorSensor];
 
   // Print the readings to the Serial Monitor
   Serial.print("CL1 - Color: ");
@@ -91,7 +94,11 @@ void loop() {
   Serial.print(", ");
   Serial.print(rgbc.b);
   Serial.print(", ");
-  Serial.println(rgbc.c);
+  Serial.print(rgbc.c);
+  // Print white line detection
+  Serial.print(", White: ");
+  Serial.print(robot.colorSensor.isWhiteLine(colorSensor) ? "YES" : "NO");
+  Serial.println();
 
   delay(100);
 }
