@@ -284,6 +284,7 @@ Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C
 | `rgbc_t` | `r, g, b, c` | RGBC raw values (each `0-65535`, `uint16_t`) |
 | `rgb_t` | `r, g, b` | RGB values (each `0-255`, `uint16_t`) |
 | `hsl_t` | `h, s, l` | HSL values (`h` → `uint16_t`, `s`&`l` → `uint8_t`) |
+| `GreenBaseLine` | `greenHue, greenLight, greenSat, done` | Calibrated green field baseline |
 
 #### Methods
 
@@ -303,7 +304,25 @@ Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C
 | `configuration(CLR_SENSOR_ID F, R, B, L)` | Map sensors to front/right/back/left positions |
 | `calBaseline(CLR_SENSOR_ID, samples=10)` | Calibrate baseline of green field (HSL averaging) |
 | `isCalibrated(CLR_SENSOR_ID)` | Check if calibration is complete |
-| `isWhiteLine(CLR_SENSOR_ID)` | Check if sensor detects white line (3D HSL check) |
+| `getBaseline(CLR_SENSOR_ID)` | Get calibrated `GreenBaseLine` struct |
+| `isWhiteLine(CLR_SENSOR_ID)` | Check if sensor detects white line (3D HSL check: Light + Sat + Hue, 2/3 vote) |
+
+#### White Line Detection (Plan A: Baseline)
+
+The white line detection uses a **calibrated baseline** approach:
+
+1. **Calibration** (`calBaseline()`): Call once on green field. Averages 10 HSL samples to establish the green baseline (Hue, Saturation, Lightness).
+
+2. **Detection** (`isWhiteLine()`): Compares current reading against the baseline using three dimensions:
+   - `lightCheck`: 20%+ brighter than green baseline
+   - `satCheck`: saturation below 80% of green baseline
+   - `hueCheck`: hue differs by more than 30°
+
+   White is detected when **2 out of 3** conditions are met, improving reliability in varying lighting conditions.
+
+3. **Thresholds**: Dynamic — computed from the calibrated baseline values:
+   - `lightThreshold = greenLight / 5` (adapts to ambient brightness)
+   - `satThreshold = greenSat * 80%` (adapts to sensor saturation range)
 
 #### Example
 
@@ -314,6 +333,11 @@ static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
 
 void setup() {
   robot.init();
+
+  // Calibrate all 4 sensors (ensure robot is on green field)
+  for (uint8_t i = 0; i < 4; i++) {
+    robot.colorSensor.calBaseline((CLR_SENSOR_ID)i);
+  }
 
   // Enable/disable sensors
   robot.colorSensor.setEnabled(0b00001111);   // Enable CL1-CL4
@@ -327,8 +351,14 @@ void loop() {
   hsl_t   hsl      = robot.colorSensor.readHSL(CL1);
   rgbc_t  raw      = robot.colorSensor.readRGBRaw(CL1);
 
-  // White line detection
+  // White line detection (3D HSL check, 2/3 vote)
   bool isFrontWhite = robot.colorSensor.isWhiteLine(CL1);
+
+  // Get calibrated baseline values
+  if (robot.colorSensor.isCalibrated(CL1)) {
+    GreenBaseLine bl = robot.colorSensor.getBaseline(CL1);
+    // bl.greenHue, bl.greenSat, bl.greenLight
+  }
 
   // Control CL1 sensor LEDs
   robot.colorSensor.whiteLedOn(CL1);
@@ -350,6 +380,8 @@ bool isFrontWhite = robot.whiteLineCheck(CL1);    // Same as isWhiteLine()
 [examples/Version4/Colour_Sensor/Colour_Sensor.ino](examples/Version4/Colour_Sensor/Colour_Sensor.ino)
 
 [examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
+
+[examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino)
 
 [examples/Version4/OutOfBound/OutOfBound.ino](examples/Version4/OutOfBound/OutOfBound.ino)
 
@@ -936,6 +968,7 @@ robot.move.motorPID.kd = 1.0;
 | [ScreenColor](examples/Version4/ScreenColor/ScreenColor.ino) | Screen + color sensor integration (color name, RGB display) |
 | [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration (heading display + pointer) |
 | [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
+| [ScreenWhiteLine](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino) | Screen + color sensor white line detection (HSL + baseline display) |
 | [ScreenXsound](examples/Version4/ScreenXsound/ScreenXsound.ino) | Screen + ultrasonic integration (4 distances with labels) |
 | [Striker](examples/Version4/Striker/Striker.ino) | Striker behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
 | [Ultrasonic](examples/Version4/Ultrasonic/Ultrasonic.ino) | Ultrasonic sensor (configuration, enable/disable, distance reading) |

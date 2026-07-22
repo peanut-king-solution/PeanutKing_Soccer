@@ -29,6 +29,14 @@ typedef struct {
   uint16_t c;    // Clear raw
 } rgbc_t;
 
+// Calibrated baseline of green values for white line detection
+typedef struct {
+  uint16_t greenHue;   // Average green field hue
+  uint8_t  greenLight; // Average green field lightness
+  uint8_t  greenSat;   // Average green field saturation
+  bool     done;       // Calibration completed flag
+} GreenBaseLine;
+
 /**
  * ColorSensor class for reading color sensor data via software I2C
  */
@@ -39,14 +47,8 @@ private:
   uint8_t   _enabledMask;  // Enabled sensors bitmask (bit0=CL1, ..., bit7=CL8)
 
   bool _isWhite[8]; // Track if each sensor detected white color
-
-  // Calibrated baseline of green values for white line detection
-  struct WhiteLineBaseline {
-    uint16_t greenHue;   // Average green field hue
-    uint8_t  greenLight; // Average green field lightness
-    uint8_t  greenSat;   // Average green field saturation
-    bool     done;       // Calibration completed flag
-  } _baseline[8];        // Baseline data for each sensor
+  
+  GreenBaseLine _baseline[8]; // Baseline data of green values for each sensor
 
   /* Sensor position mapping
    * Maps logical position (Front, Right, Back, Left) to physical sensor ID
@@ -198,6 +200,14 @@ public:
    * `Returns` - `true` if white line detected
    */
   bool isWhiteLine(CLR_SENSOR_ID sensorNum);
+
+  /**
+   * Get the calibrated baseline for a sensor
+   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   *
+   * `Returns` - GreenBaseLine struct (check `.done` before use)
+   */
+  GreenBaseLine getBaseline(CLR_SENSOR_ID sensorNum) const;
 };
 
 #endif // COLORSENSOR_H

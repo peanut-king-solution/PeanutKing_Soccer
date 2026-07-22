@@ -244,6 +244,11 @@ bool ColorSensor::isCalibrated(CLR_SENSOR_ID n) const
   return _baseline[n].done;
 }
 
+GreenBaseLine ColorSensor::getBaseline(CLR_SENSOR_ID n) const
+{
+  return _baseline[n];
+}
+
 bool ColorSensor::isWhiteLine(CLR_SENSOR_ID n)
 {
   if (!isEnabled(n) || !_baseline[n].done) return false;
