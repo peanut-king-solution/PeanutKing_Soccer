@@ -26,6 +26,7 @@
 #include "modules/LedController/LedController.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/Compass/Compass.h"
+#include "modules/Bluetooth/BLEManager.h"
 
 // Include external libraries
 #include <SPI.h>            // must include this here (or else IDE can't find it)
@@ -93,6 +94,7 @@ public:
   LedController ledCtrl;      // LedController instance for controlling on-board LEDs
   Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
   Compass       compass;      // Compass instance for reading compass heading
+  BLEManager    ble;          // BLEManager instance for managing Bluetooth Low Energy
   PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
 
 // =============================================================================
@@ -162,7 +164,7 @@ public:
   bool     whiteLineCheck(CLR_SENSOR_ID i);
 
 // =============================================================================
-//                    IR Compound Eye Functions
+//                    IR Compound Eye Functions (wrapper)
 // =============================================================================
 
   /**
@@ -238,7 +240,7 @@ public:
   void setOnBrdLED(uint8_t LED, uint8_t status);
 
 // =============================================================================
-//                      Ultrasonic Functions
+//                      Ultrasonic Functions (wrapper for compatibility)
 // =============================================================================
 
   /**
@@ -331,8 +333,16 @@ public:
 //                      Bluetooth Functions
 // =============================================================================
 
+private:
+  bool _sendPILAData(void);
+  void _PILAUpdate(void);
+  void _DASHBOARDUpdate(void);
+public:
+  /**
+   * Handle Bluetooth remote control commands (PILA mode / Dashboard mode)
+   * 
+   */
   void bluetoothRemote(void);
-  void bluetoothAttributes(void);
 
 // =============================================================================
 //                      Strategy Functions
@@ -352,9 +362,10 @@ public:
   uint16_t whiteLineThreshold[8] = {30, 30, 30, 30, 30, 30, 30, 30};
 
   // Compound eye
-  uint8_t  eye[12];   // 12 IR readings
-  uint16_t eyeAngle;  // Ball angle (0~360 degrees)
-  uint8_t  maxEye;    // Index of the maximum IR reading
+  uint8_t  eye[12];    // 12 IR readings
+  uint16_t eyeAngle;   // Ball angle (0~360 degrees)
+  uint8_t  maxEye;     // Index of the maximum IR reading
+  uint8_t  maxEyeVal;  // Maximum IR reading value
   
   // Ultrasonic
   uint16_t ultrasonic[4]; // Ultrasonic readings (U1~U4)
@@ -363,16 +374,8 @@ public:
   uint16_t heading;   // Compass heading (0~360 degrees)
 
   // Bluetooth data
-  uint8_t  btButton[10];
-  uint8_t  btButtonIndex;
-  uint8_t  btGestureCode;
-  uint8_t  btButtonFunction[4];
-  uint8_t  btAttributes[5] = {5, 5, 5, 5, 5};
-  uint8_t  btTxBuffer[50];
-  uint8_t  btRxBuffer[50];
-  int16_t  btDegree = 0;
-  int16_t  btDistance = 0;
-  int16_t  btRotate = 0;
+private:
+  uint32_t _lastSendTime = 0;  // Timestamp of the last data sent via Bluetooth
 
 private:
 // =============================================================================

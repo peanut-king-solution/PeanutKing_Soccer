@@ -58,9 +58,9 @@ private:
   I2CManager(const I2CManager &) = delete;
   I2CManager &operator=(const I2CManager &) = delete;
 
-  SoftI2cMaster swiic[8];       // Software I2C instances for color sensors
-  hwI2CMaster hwiic;           // Hardware I2C master instance
-  uint8_t regBuf[1];           // Buffer for register address during read operations
+  SoftI2cMaster swiic[8];   // Software I2C instances for color sensors
+  hwI2CMaster hwiic;        // Hardware I2C master instance
+  uint8_t regBuf[1];        // Buffer for register address during read operations
 
 public:
   /**
