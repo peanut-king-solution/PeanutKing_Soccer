@@ -24,6 +24,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
   - [Compass — Compass & IMU](#compass--compass--imu)
   - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
   - [TFT Display](#tft-display)
+  - [PS2 Controller — PS2 Remote](#ps2-controller--ps2-remote)
   - [Utility Classes](#utility-classes)
 - [Examples](#examples)
 - [Hardware Configuration](#hardware-configuration)
@@ -117,6 +118,7 @@ void loop() {
 | Compass | `robot.compass` | Compass heading (0–360°) & 9-axis IMU raw data (hardware I2C, address `0x08`) |
 | TFT Display | `robot.tft` | ST7735 TFT display (128×160, SPI) |
 | I2C | `I2CManager::getInstance()` | I2C bus management singleton (HW + 8×SW) |
+| PS2 Controller | `robot.ps2x` | PS2 wireless controller (via PS2X_lib) |
 
 ---
 
@@ -890,6 +892,145 @@ void loop() {
 
 ---
 
+### PS2 Controller — PS2 Remote
+
+Wireless PS2 controller interface using the PS2X_lib library. Supports button states (pressed/holding/released), joystick angle + strength readings, and vibration feedback.
+
+**Pin assignment:**
+Only `CLK` and `DAT` pins need to be specified; `CMD` and `ATT` are automatically assigned based on the gap between them.
+
+| Pin | Role | Description |
+|-----|------|-------------|
+| `CLK` | Clock | Digital pin (`D0_P`–`D5_P`) |
+| `DAT` | Data | Digital pin (`D0_P`–`D5_P`) |
+| `CMD` | Command | Auto-assigned (between CLK and DAT) |
+| `ATT` | Attention | Auto-assigned (between CLK and DAT) |
+
+**Button ID mapping:**
+
+| Name | Description |
+|------|-------------|
+| `PS2Button::SELECT` | Select button |
+| `PS2Button::L3` | Left joystick button |
+| `PS2Button::R3` | Right joystick button |
+| `PS2Button::START` | Start button |
+| `PS2Button::UP` / `DOWN` / `LEFT` / `RIGHT` | D-pad directions |
+| `PS2Button::L1` / `L2` | Left shoulder buttons |
+| `PS2Button::R1` / `R2` | Right shoulder buttons |
+| `PS2Button::TRIANGLE` / `CIRCLE` / `CROSS` / `SQUARE` | Right side action buttons |
+
+**Joystick data structure (`PS2JoystickData`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `angle` | `float` | Direction angle (0–360°) |
+| `strength` | `float` | Push strength (0–255) |
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `ps2Init(CLK, DAT, pressure, vibration)` | Initialize PS2 controller — auto-assigns CMD/ATT pins, returns `0` on success, error code otherwise |
+| `ps2Update()` | Read latest controller state (call once per loop) |
+| `ps2SetVibration(byte strength)` | Set vibration motor strength (0–255) |
+| `ps2ButtonPressed(PS2Button btn)` | Check if button was just pressed (edge-triggered) |
+| `ps2ButtonHolding(PS2Button btn)` | Check if button is being held down (level-triggered) |
+| `ps2ButtonReleased(PS2Button btn)` | Check if button was just released (edge-triggered) |
+| `ps2ButtonRead(PS2Button btn)` | Read button state struct (⚠️ **not yet implemented** — returns empty struct) |
+| `ps2JoystickRead(PS2Joystick js)` | Read joystick angle + strength (square boundary scaling) |
+
+#### Example — Basic Reading
+
+```cpp
+#include <PeanutKingSoccerV4.h>
+
+PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+
+void setup() {
+  robot.init();
+  delay(300);
+
+  // CLK=D6_P(56), DAT=D3_P(59), middle pins CMD=57, ATT=58 auto assigned
+  byte error = robot.ps2Init(D6_P, D3_P, false, true);
+  if (error) {
+    Serial.print("PS2 init error: ");
+    Serial.println(error);
+    while (1) {};
+  }
+  Serial.println("PS2 OK");
+}
+
+void loop() {
+  robot.ps2Update();
+
+  // Edge-triggered button detection
+  if (robot.ps2ButtonPressed(PS2Button::CROSS)) {
+    Serial.println("CROSS pressed");
+  }
+  if (robot.ps2ButtonReleased(PS2Button::L1)) {
+    Serial.println("L1 released");
+  }
+
+  // Level-triggered button detection
+  if (robot.ps2ButtonHolding(PS2Button::UP)) {
+    Serial.println("UP holding");
+  }
+
+  // Joystick reading (angle + strength)
+  if (robot.ps2ButtonHolding(PS2Button::L1)) {
+    PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
+    Serial.print("L angle:"); Serial.print(lj.angle);
+    Serial.print(" str:"); Serial.println(lj.strength);
+    robot.ps2SetVibration(lj.strength);
+  }
+
+  delay(50);
+}
+```
+
+#### Example — PS2 Remote Control
+
+```cpp
+#include <PeanutKingSoccerV4.h>
+
+PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+
+void setup() {
+  robot.init();
+  delay(300);
+  byte error = robot.ps2Init(D6_P, D3_P, false, true);
+  if (error) { while (1) {}; }
+}
+
+void loop() {
+  robot.ps2Update();
+
+  // Hold L1 + move left joystick to drive
+  if (robot.ps2ButtonHolding(PS2Button::L1)) {
+    PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
+    int moveSpeed = lj.strength * 130 / 255;
+    robot.moveByAnglePID(lj.angle, moveSpeed);
+    robot.ps2SetVibration(lj.strength);
+  }
+  if (robot.ps2ButtonReleased(PS2Button::L1)) {
+    robot.ps2SetVibration(0);
+    robot.stopAllMotors();
+  }
+}
+```
+
+#### Compatibility Wrappers
+
+None
+
+#### Related Examples
+
+[examples/Version4/PS2/PS2.ino](examples/Version4/PS2/PS2.ino)
+
+[examples/Version4/PS2Remote/PS2Remote.ino](examples/Version4/PS2Remote/PS2Remote.ino)
+
+---
+
 ### Utility Classes
 
 #### Converter
@@ -947,7 +1088,7 @@ robot.move.motorPID.kd = 1.0;
 
 ## Examples
 
-### Version 4 (20 examples)
+### Version 4 (22 examples)
 
 | Example | Description |
 |---------|-------------|
@@ -965,6 +1106,8 @@ robot.move.motorPID.kd = 1.0;
 | [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
 | [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, byAnglePID, rotation) |
 | [OutOfBound](examples/Version4/OutOfBound/OutOfBound.ino) | Square movement with white line detection |
+| [PS2](examples/Version4/PS2/PS2.ino) | PS2 controller basic reading (button states, joystick angle + strength) |
+| [PS2Remote](examples/Version4/PS2Remote/PS2Remote.ino) | PS2 controller remote control (joystick-driven movement) |
 | [ScreenColor](examples/Version4/ScreenColor/ScreenColor.ino) | Screen + color sensor integration (color name, RGB display) |
 | [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration (heading display + pointer) |
 | [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
@@ -1030,10 +1173,10 @@ robot.move.motorPID.kd = 1.0;
 | Feature | Location | Status |
 |---------|----------|--------|
 | `ButtonManager::update()` | `ButtonManager.cpp` | Placeholder — gesture detection (TAP, HOLD, TAP2) not implemented |
-| `bluetoothRemote()` | `PeanutKingSoccerV4.cpp:309` | Empty function — Bluetooth not implemented |
-| `bluetoothAttributes()` | `PeanutKingSoccerV4.cpp:308` | Empty function — Bluetooth not implemented |
-| `Chase()` / `Back()` | `PeanutKingSoccerV4.cpp:315-321` | Empty functions — strategy not implemented |
-| `CompoundEye` calibration | CompoundEye module | No calibration method (unlike V3's `compoundEyeCal()`) |
+| `bluetoothRemote()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
+| `bluetoothAttributes()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
+| `Chase()` / `Back()` | `PeanutKingSoccerV4.cpp` | Empty functions — strategy not implemented |
+| `ps2ButtonRead()` | `PeanutKingSoccerV4.cpp` | Returns empty struct — full button state reading not implemented |
 
 ### 🟢 Minor Issues
 
