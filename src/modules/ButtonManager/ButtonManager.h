@@ -21,7 +21,7 @@ typedef enum : uint8_t
 class ButtonManager
 {
 private:
-  const uint8_t buttonPin[4];    // Button pins
+  const uint8_t  buttonPin[4];   // Button pins
   buttonStatus_t btnStatus[4];   // Buttons' status (index `0-3` = button `1-4`)
 
 public:

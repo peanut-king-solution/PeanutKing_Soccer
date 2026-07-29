@@ -66,12 +66,6 @@ public:
   void flipMotor(MOTOR_ID mi, bool flip = true);
 
   /**
-   * Flip all motors rotation direction
-   * `m1, m2, m3, m4` - `true`=flip, `false`=normal
-   */
-  void flipMotors(bool m1, bool m2, bool m3, bool m4);
-
-  /**
    * Set single motor speed
    * `mi`     - Motor ID ( `M1` - `M4` )
    * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`

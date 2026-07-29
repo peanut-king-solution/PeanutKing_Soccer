@@ -27,13 +27,11 @@
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/Compass/Compass.h"
 #include "modules/Bluetooth/BLEManager.h"
+#include "modules/PS2/PS2.h"
 
 // Include external libraries
-#include <SPI.h>            // must include this here (or else IDE can't find it)
-#include <pcint.h>          // Pin Change Interrupt Library
 #include <PDQ_GFX.h>        // PDQ: Core graphics library
 #include <PDQ_ST7735.h>     // PDQ: Hardware-specific driver library
-#include <pins_arduino.h>   // Arduino pin definitions
 
 // =============================================================================
 //                              Macro Definitions
@@ -96,6 +94,7 @@ public:
   Compass       compass;      // Compass instance for reading compass heading
   BLEManager    ble;          // BLEManager instance for managing Bluetooth Low Energy
   PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
+  PS2X          ps2x;         // PS2X instance for reading PS2 controller inputs
 
 // =============================================================================
 //                Motor Functions (wrapper for compatibility)
@@ -345,6 +344,67 @@ public:
   void bluetoothRemote(void);
 
 // =============================================================================
+//                     PS2 Controller Functions
+// =============================================================================
+
+  /**
+   * Initialize the PS2 controller, there are 4 pins need to be connected to the PS2 controller
+   * but you only need to specify the `CLK` and `DAT` pins which are the start pin and end pin
+   * Because the other 2 pins will be automatically assigned.
+   * `CLK`      - Clock pin (digital pin: D0_P ~ D5_P)
+   * `DAT`      - Data pin  (digital pin: D0_P ~ D5_P)
+   * `pressure` - Enable pressure-sensitive buttons (default: `false`)
+   * `vibration`- Enable vibration feedback (default: `false`)
+   * 
+   * `Returns` - `0` if successful, error code otherwise
+   */
+  byte ps2Init(D_PIN CLK = D1_P, D_PIN DAT = D4_P,bool pressure = false, bool vibration = false);
+  /**
+   * Set the vibration strength of the PS2 controller
+   * `strength` - Vibration strength (0-255)
+   */
+  void ps2SetVibration(byte strength);
+  /**
+   * Update the PS2 controller state
+   */
+  void ps2Update(void);
+  /**
+   * Read the state of a PS2 controller button
+   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
+   *
+   * `Returns` - `true` if pressed, `false` otherwise
+   */
+  PS2ButtonState ps2ButtonRead(PS2Button button);
+  /**
+   * Check if a PS2 controller button was just pressed
+   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
+   *
+   * `Returns` - `true` if just pressed, `false` otherwise
+   */
+  bool ps2ButtonPressed(PS2Button button);
+  /**
+   * Check if a PS2 controller button is being held down
+   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
+   *
+   * `Returns` - `true` if being held, `false` otherwise
+   */
+  bool ps2ButtonHolding(PS2Button button);
+  /**
+   * Check if a PS2 controller button was just released
+   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
+   *
+   * `Returns` - `true` if just released, `false` otherwise
+   */
+  bool ps2ButtonReleased(PS2Button button);
+  /**
+   * Read the data of a PS2 controller joystick
+   * `joystick` - Joystick ID (e.g., `PS2Joystick::LX`, `PS2Joystick::LY`, etc.)
+   *
+   * `Returns` - Structure containing angle and strength of the joystick
+   */
+  PS2JoystickData ps2JoystickRead(PS2Joystick joystick);
+
+// =============================================================================
 //                      Strategy Functions
 // =============================================================================
 
@@ -376,6 +436,9 @@ public:
   // Bluetooth data
 private:
   uint32_t _lastSendTime = 0;  // Timestamp of the last data sent via Bluetooth
+
+  // PS2 controller data
+  byte vibrationStr = 0;  // Vibration strength (0-255)
 
 private:
 // =============================================================================

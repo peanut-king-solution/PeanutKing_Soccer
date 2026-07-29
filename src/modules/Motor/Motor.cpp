@@ -31,15 +31,6 @@ void Motor::flipMotor(MOTOR_ID mi, bool flip)
   motorflip[mi] = flip;
 }
 
-void Motor::flipMotors(bool m1, bool m2, bool m3, bool m4)
-{
-  // Set flip state for all motors
-  motorflip[0] = m1;
-  motorflip[1] = m2;
-  motorflip[2] = m3;
-  motorflip[3] = m4;
-}
-
 void Motor::setSpeed(MOTOR_ID mi, int16_t speed)
 {
   // use motorMap to get the actual motor index

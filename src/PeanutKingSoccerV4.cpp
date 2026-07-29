@@ -349,6 +349,103 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
 }
 
 /* =============================================================================
+ *                              PS2 Controller
+ * ============================================================================= */
+
+byte PeanutKingSoccerV4::ps2Init(D_PIN CLK, D_PIN DAT, bool pressure, bool vibration) {
+  uint8_t PS2_CLK_PIN = static_cast<uint8_t>(CLK);
+  uint8_t PS2_DAT_PIN = static_cast<uint8_t>(DAT);
+
+  // there must be 2 pins between CLK and DAT
+  if (abs(PS2_CLK_PIN - PS2_DAT_PIN) != 3) {
+    // Invalid PS2_CLK_PIN or PS2_DAT_PIN configuration, return error code
+    return 0xFF; // Error code for invalid pin configuration
+  }
+
+  uint8_t PS2_CMD_PIN = 0, PS2_ATT_PIN = 0;
+  // Determine CMD and ATT pins based on CLK and DAT pins
+  if (PS2_CLK_PIN > PS2_DAT_PIN) {  // like clk is D1_P and dat is D4_P
+    PS2_ATT_PIN = PS2_CLK_PIN - 1; // ATT pin is in CLK right
+    PS2_CMD_PIN = PS2_DAT_PIN + 1; // CMD pin is in DAT left
+  } else if (PS2_CLK_PIN < PS2_DAT_PIN) {  // like clk is D6_P and dat is D3_P
+    PS2_ATT_PIN = PS2_CLK_PIN + 1; // ATT pin is in CLK left
+    PS2_CMD_PIN = PS2_DAT_PIN - 1; // CMD pin is in DAT right
+  }
+  byte error = ps2x.config_gamepad(PS2_CLK_PIN, PS2_CMD_PIN, PS2_ATT_PIN, PS2_DAT_PIN, pressure, vibration);
+  return error;
+}
+void PeanutKingSoccerV4::ps2SetVibration(byte strength) {
+  vibrationStr = strength;
+}
+void PeanutKingSoccerV4::ps2Update(void) {
+  ps2x.read_gamepad(false, vibrationStr);
+}
+PS2ButtonState PeanutKingSoccerV4::ps2ButtonRead(PS2Button button) {
+  PS2ButtonState state;
+  return state; // Not implemented yet
+}
+bool PeanutKingSoccerV4::ps2ButtonPressed(PS2Button button) {
+  // if (ps2x.NewButtonState()) {
+  //   uint16_t btn = static_cast<uint16_t>(button);
+  //   return ps2x.Button(btn);
+  // }
+  // return false;
+  // or 
+  uint16_t btn = static_cast<uint16_t>(button);
+  return ps2x.ButtonPressed(btn);
+}
+bool PeanutKingSoccerV4::ps2ButtonHolding(PS2Button button) {
+  uint16_t btn = static_cast<uint16_t>(button);
+  return ps2x.Button(btn);
+}
+bool PeanutKingSoccerV4::ps2ButtonReleased(PS2Button button) {
+  uint16_t btn = static_cast<uint16_t>(button);
+  return ps2x.ButtonReleased(btn);
+}
+PS2JoystickData PeanutKingSoccerV4::ps2JoystickRead(PS2Joystick joystick) {
+  // Prepare the data structure to hold the results
+  PS2JoystickData data;
+  byte x = (joystick == PS2Joystick::LEFT) ? ps2x.Analog(PSS_LX) : ps2x.Analog(PSS_RX);
+  byte y = (joystick == PS2Joystick::LEFT) ? ps2x.Analog(PSS_LY) : ps2x.Analog(PSS_RY);
+
+  const float CX = 128.0;   // X-axis center point (for LX and RX)
+  const float CY = 127.0;   // Y-axis center point (for LY and RY)
+  float dx = x - CX;
+  float dy = y - CY;
+
+  // Calculate angle in degrees (0-360)
+  data.angle = atan2(dx, -dy) * (180.0 / PI);
+  if (data.angle < 0) {
+    data.angle += 360;   // Normalize to [0, 360)
+  }
+
+  // Calculate strength (0-255) based on distance from center
+  float raw_strength = sqrt(dx * dx + dy * dy);
+  // The following commented-out code was an initial attempt to scale the strength based on a circular boundary, 
+  // but it has been replaced with a square boundary scaling method for better control and consistency.
+  // const float MAX_R = sqrt(CX * CX + CY * CY); // = sqrt(128^2 + 127^2) ≈ 180.31
+  // data.strength = (raw_strength / MAX_R) * 255.0;
+  // if (data.strength > 255.0) {
+  //   data.strength = 255.0; // Cap at 255
+  // }
+  // Deadzone for very small movements
+  if (raw_strength < 0.5) { data.strength = 0; }
+  // Scale strength to fit within a square boundary instead of a circular one
+  else {
+    float norm_x = dx / 128.0; // Normalize to [-1, 1]
+    float norm_y = dy / 127.0; // Normalize to [-1, 1]
+    // Find the maximum absolute value to determine the scaling factor
+    float max_abs = max(fabs(norm_x), fabs(norm_y));
+    if (max_abs > 1.0) { max_abs = 1.0; } // Cap at 1.0
+    // Scale to the boundary of the square
+    float boundary_r = raw_strength / max_abs;
+    data.strength = raw_strength / boundary_r * 255.0;    // Scale to [0, 255]
+    if (data.strength > 255.0) { data.strength = 255.0; } // Cap at 255
+  }
+  return data;
+}
+
+/* =============================================================================
  *                              Strategy Functions
  * ============================================================================= */
 
