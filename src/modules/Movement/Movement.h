@@ -28,12 +28,12 @@ public:
   void byAngle(float mAngle, float mSpeed, float rotate);
 
   /**
-   * Move robot with compass correction and speed scaling
+   * Move robot with compass correction
    * `mAngle`          - Movement angle `(0-360°)`
    * `mSpeed`          - Movement speed `(0-255)`
    * `compassReading`  - Current compass heading `(0-360°)`
    */
-  void byAnglePID(float mAngle, float mSpeed, float compassReading);
+  void withCorr(float mAngle, float mSpeed, float compassReading);
 
   /**
    * Test movement patterns ( `forward` -> `right front` -> `rightward` )

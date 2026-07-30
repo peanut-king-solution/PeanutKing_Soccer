@@ -30,8 +30,9 @@
 #include "modules/PS2/PS2.h"
 
 // Include external libraries
-#include <PDQ_GFX.h>        // PDQ: Core graphics library
-#include <PDQ_ST7735.h>     // PDQ: Hardware-specific driver library
+#include <SPI.h>          // SPI library for TFT and PS2
+#include <PDQ_GFX.h>      // PDQ: Core graphics library
+#include <PDQ_ST7735.h>   // PDQ: Hardware-specific driver library
 
 // =============================================================================
 //                              Macro Definitions
@@ -58,11 +59,13 @@ typedef enum {
 } S_PIN;
 
 typedef enum {
-  D6_P = 56, D5_P, D4_P, D3_P, D2_P, D1_P
+  // D6_P = 56, D5_P, D4_P, D3_P, D2_P, D1_P
+  D6_P = A2, D5_P, D4_P, D3_P, D2_P, D1_P = A7
 } D_PIN;
 
 typedef enum {
-  A4_P = 62, A3_P, A2_P, A1_P
+  // A4_P = 62, A3_P, A2_P, A1_P
+  A4_P = A8, A3_P, A2_P, A1_P = A11
 } A_PIN;
 
 // =============================================================================
@@ -123,11 +126,11 @@ public:
    */
   void moveByAngle(float mAngle, float mSpeed, float rotate);
   /**
-   * Move robot with compass correction and speed scaling
+   * Move robot with compass correction
    * `mAngle`          - Movement angle `(0-360°)`
    * `mSpeed`          - Movement speed `(0-255)`
    */
-  void moveByAnglePID(float mAngle, float mSpeed);
+  void moveWithCorr(float mAngle, float mSpeed);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)
@@ -445,8 +448,6 @@ private:
 //                        Pin Allocation
 // =============================================================================
 
-  const uint8_t APin[4];
-  const uint8_t DPin[6];
   const uint8_t pwmPin[4];
 };
 

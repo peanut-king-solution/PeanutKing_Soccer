@@ -34,7 +34,7 @@ void loop() {
     else if (whiteL) oppositeDir = 90;  // Left detected  -> move right
 
     // Move in opposite direction
-    robot.moveByAnglePID(oppositeDir, BOUND_SPD);
+    robot.moveWithCorr(oppositeDir, BOUND_SPD);
   }
   // Update direction when times up
   else if (millis() - timer >= TIME) {
@@ -43,6 +43,6 @@ void loop() {
   }
   // Move in square direction
   else {
-    robot.moveByAnglePID(angle, SPEED);
+    robot.moveWithCorr(angle, SPEED);
   }
 }

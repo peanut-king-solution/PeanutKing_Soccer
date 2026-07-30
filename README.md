@@ -203,7 +203,7 @@ Enables omnidirectional movement using 45° omni wheels, with angle control and 
 | Method | Description |
 |--------|-------------|
 | `byAngle(float mAngle, float mSpeed, float rotate)` | Move at specified angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
-| `byAnglePID(float mAngle, float mSpeed, float compassReading)` | Move with compass PID correction, auto-maintains heading |
+| `moveWithCorr(float mAngle, float mSpeed, float compassReading)` | Move with compass PID correction, auto-maintains heading |
 | `test(float speed)` | Test movement patterns (forward → right-front → rightward) |
 
 #### Subclasses
@@ -235,15 +235,15 @@ void loop() {
   robot.move.byAngle(0, 0, 100);  // Rotate clockwise
 
   // Movement with compass correction
-  robot.move.byAnglePID(0, 100, robot.compass.read());
+  robot.move.WithCorr(0, 100, robot.compass.read());
 }
 ```
 
 #### Compatibility Wrappers
 
 ```cpp
-robot.moveByAngle(0, 100, 0);   // Same as move.byAngle()
-robot.moveByAnglePID(0, 100);   // Same as move.byAnglePID() — reads compass internally
+robot.moveByAngle(0, 100, 0);  // Same as move.byAngle()
+robot.moveWithCorr(0, 100);    // Same as move.withCorr() — reads compass internally
 ```
 
 #### Related Examples
@@ -1009,7 +1009,7 @@ void loop() {
   if (robot.ps2ButtonHolding(PS2Button::L1)) {
     PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
     int moveSpeed = lj.strength * 130 / 255;
-    robot.moveByAnglePID(lj.angle, moveSpeed);
+    robot.moveWithCorr(lj.angle, moveSpeed);
     robot.ps2SetVibration(lj.strength);
   }
   if (robot.ps2ButtonReleased(PS2Button::L1)) {
@@ -1104,7 +1104,7 @@ robot.move.motorPID.kd = 1.0;
 | [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display basics (text, shapes, tick counter) |
 | [LED](examples/Version4/LED/LED.ino) | RGB LED control (cycles through all 8 colors) |
 | [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
-| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, byAnglePID, rotation) |
+| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, withCorr, rotation) |
 | [OutOfBound](examples/Version4/OutOfBound/OutOfBound.ino) | Square movement with white line detection |
 | [PS2](examples/Version4/PS2/PS2.ino) | PS2 controller basic reading (button states, joystick angle + strength) |
 | [PS2Remote](examples/Version4/PS2Remote/PS2Remote.ino) | PS2 controller remote control (joystick-driven movement) |

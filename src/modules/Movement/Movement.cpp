@@ -29,7 +29,7 @@ void Movement::byAngle(float mAngle, float mSpeed, float rotate)
   }
 }
 
-void Movement::byAnglePID(float mAngle, float mSpeed, float compassReading)
+void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
 {
   // constrain speed to valid range (0-255)
   mSpeed = constrain(mSpeed, 0.0f, 255.0f);

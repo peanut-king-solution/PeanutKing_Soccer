@@ -87,10 +87,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   }
 
   // Compound eye
-  uint8_t* eyePtr = compoundEye.readAll();
-  for (uint8_t i = 0; i < 12; i++) {
-    eye[i] = eyePtr[i];
-  }
+  compoundEyeRead();    // Read all 12 IR sensor values
   maxEye    = compoundEye.getMaxEye();
   maxEyeVal = compoundEye.getMaxEyeVal();
   eyeAngle  = compoundEye.getAngle();
@@ -122,8 +119,8 @@ void PeanutKingSoccerV4::dataFetch(void) {
   void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
     move.byAngle(mAngle, mSpeed, rotate);
   }
-  void PeanutKingSoccerV4::moveByAnglePID(float mAngle, float mSpeed) {
-    move.byAnglePID(mAngle, mSpeed, compass.read());
+  void PeanutKingSoccerV4::moveWithCorr(float mAngle, float mSpeed) {
+    move.withCorr(mAngle, mSpeed, compass.read());
   }
 
 /* =============================================================================

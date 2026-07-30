@@ -33,19 +33,19 @@ void loop()
   // Move the robot in a square pattern with compass correction
 
   // Move forward at speed 100 with compass correction
-  robot.move.byAnglePID(0, 100, robot.compass.read());
+  robot.move.withCorr(0, 100, robot.compass.read());
   delay(2000);  // Wait for 2 seconds
 
   // Move right at speed 100 with compass correction
-  robot.move.byAnglePID(90, 100, robot.compass.read());
+  robot.move.withCorr(90, 100, robot.compass.read());
   delay(2000);  // Wait for 2 seconds
 
   // Move backward at speed 100 with compass correction
-  robot.move.byAnglePID(180, 100, robot.compass.read());
+  robot.move.withCorr(180, 100, robot.compass.read());
   delay(2000);  // Wait for 2 seconds
 
   // Move left at speed 100 with compass correction
-  robot.move.byAnglePID(270, 100, robot.compass.read());
+  robot.move.withCorr(270, 100, robot.compass.read());
   delay(2000);  // Wait for 2 seconds
 
   // Rotate the robot clockwise and counterclockwise
