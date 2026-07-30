@@ -120,6 +120,7 @@ void loop() {
 | TFT Display | `robot.tft` | ST7735 TFT display (128×160, SPI) |
 | I2C | `I2CManager::getInstance()` | I2C bus management singleton (HW + 8×SW) |
 | PS2 Controller | `robot.ps2x` | PS2 wireless controller (via PS2X_lib) |
+| Bluetooth | `robot.bluetooth` | BLE module (HM-10) with AT commands, connection management, and data send |
 
 ---
 

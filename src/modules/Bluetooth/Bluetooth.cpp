@@ -1,6 +1,6 @@
-#include "BLEManager.h"
+#include "Bluetooth.h"
 
-BLEManager::BLEManager() :
+Bluetooth::Bluetooth() :
   _mode(RemoteMode::PILA),        // Default mode: PILA
   _status(BLEStatus::DISCONNECTED), // Default status: DISCONNECTED
   _serial(&Serial1)              // Default: use Serial1
@@ -11,7 +11,7 @@ BLEManager::BLEManager() :
 //                              Configuration
 // ============================================================================
 
-bool BLEManager::setSerial(HardwareSerial* port)
+bool Bluetooth::setSerial(HardwareSerial* port)
 {
   if (_serial == port) { return true; }      // No change
   else if (port == nullptr) { return false; } // Invalid port
@@ -22,7 +22,7 @@ bool BLEManager::setSerial(HardwareSerial* port)
   return true;
 }
 
-bool BLEManager::init(uint32_t baudRate, RemoteMode mode)
+bool Bluetooth::init(uint32_t baudRate, RemoteMode mode)
 {
   // Set the remote mode (PILA or DASHBOARD)
   _mode = mode;
@@ -51,7 +51,7 @@ bool BLEManager::init(uint32_t baudRate, RemoteMode mode)
 //                              AT Commands
 // =============================================================================
 
-String BLEManager::sendATCommand(const char* cmd, uint32_t timeout)
+String Bluetooth::sendATCommand(const char* cmd, uint32_t timeout)
 {
   // Send command to BLE module
   _serial->println(cmd);
@@ -81,7 +81,7 @@ String BLEManager::sendATCommand(const char* cmd, uint32_t timeout)
   return response;
 }
 
-bool BLEManager::getBasicInfo(void)
+bool Bluetooth::getBasicInfo(void)
 {
   Serial.println("--- Module Info ---");
 
@@ -100,7 +100,7 @@ bool BLEManager::getBasicInfo(void)
   return (nameResp.length() > 0);
 }
 
-bool BLEManager::setNotifications(bool enable)
+bool Bluetooth::setNotifications(bool enable)
 {
   // Enable or disable notifications for connection status changes
   String cmd = enable ? "AT+NOTI1" : "AT+NOTI0";
@@ -108,7 +108,7 @@ bool BLEManager::setNotifications(bool enable)
   return (resp.indexOf(enable ? "OK+Set:1" : "OK+Set:0") >= 0);
 }
 
-bool BLEManager::rename(const char* name)
+bool Bluetooth::rename(const char* name)
 {
   // Validate input name
   if (name == nullptr || strlen(name) == 0) return false;
@@ -135,7 +135,7 @@ bool BLEManager::rename(const char* name)
   return (resp.indexOf("OK+Get:") >= 0);
 }
 
-bool BLEManager::reset(void)
+bool Bluetooth::reset(void)
 {
   Serial.println("-------------------");
   Serial.println("Resetting BLE module...");
@@ -147,7 +147,7 @@ bool BLEManager::reset(void)
   return (resp.indexOf("OK+RESET") >= 0);
 }
 
-bool BLEManager::ping(void)
+bool Bluetooth::ping(void)
 {
   Serial.println("-------------------");
   Serial.println("Pinging BLE module...");
@@ -163,13 +163,13 @@ bool BLEManager::ping(void)
 //                             Connection
 // ============================================================================
 
-void BLEManager::setMode(RemoteMode mode) { _mode = mode; }
+void Bluetooth::setMode(RemoteMode mode) { _mode = mode; }
 
-RemoteMode BLEManager::getMode(void) { return _mode; }
+RemoteMode Bluetooth::getMode(void) { return _mode; }
 
-bool BLEManager::isConnected(void) { return (_status == BLEStatus::CONNECTED); }
+bool Bluetooth::isConnected(void) { return (_status == BLEStatus::CONNECTED); }
 
-bool BLEManager::checkConnection(void)
+bool Bluetooth::checkConnection(void)
 {
   // Check for connection status notifications from the BLE module
   if (_serial->available()) {
@@ -191,7 +191,7 @@ bool BLEManager::checkConnection(void)
   return false; // No notification received
 }
 
-void BLEManager::handleConnection(void)
+void Bluetooth::handleConnection(void)
 {
   // no action needed; just log the connection
   if (_status == BLEStatus::CONNECTED) {
@@ -204,12 +204,12 @@ void BLEManager::handleConnection(void)
   }
 }
 
-void BLEManager::reconnect(void)
+void Bluetooth::reconnect(void)
 {
   // TODO: Implement reconnection logic
 }
 
-bool BLEManager::sendData(const String& data)
+bool Bluetooth::sendData(const String& data)
 {
   if (!isConnected()) {
     Serial.println("[BLE] Not connected, cannot send data");

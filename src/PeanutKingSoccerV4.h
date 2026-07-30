@@ -26,7 +26,7 @@
 #include "modules/LedController/LedController.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/Compass/Compass.h"
-#include "modules/Bluetooth/BLEManager.h"
+#include "modules/Bluetooth/Bluetooth.h"
 #include "modules/PS2/PS2.h"
 
 // Include external libraries
@@ -95,7 +95,7 @@ public:
   LedController ledCtrl;      // LedController instance for controlling on-board LEDs
   Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
   Compass       compass;      // Compass instance for reading compass heading
-  BLEManager    ble;          // BLEManager instance for managing Bluetooth Low Energy
+  Bluetooth    bluetooth;    // Bluetooth instance for managing Bluetooth Low Energy
   PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
   PS2X          ps2x;         // PS2X instance for reading PS2 controller inputs
 

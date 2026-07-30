@@ -1,5 +1,5 @@
-#ifndef BLE_MANAGER_H
-#define BLE_MANAGER_H
+#ifndef BLUETOOTH_H
+#define BLUETOOTH_H
 
 #include <Arduino.h>
 
@@ -18,7 +18,7 @@ enum class RemoteMode : uint8_t
   DASHBOARD = 1,
 };
 
-class BLEManager
+class Bluetooth
 {
 private:
   // Remote mode (PILA or DASHBOARD)
@@ -34,7 +34,7 @@ private:
 
 public:
   // Constructor
-  BLEManager();
+  Bluetooth();
 
 // ============================================================================
 //                              Configuration 
@@ -166,4 +166,4 @@ public:
   bool sendData(const String& data);
 };
 
-#endif // BLE_MANAGER_H
+#endif // BLUETOOTH_H

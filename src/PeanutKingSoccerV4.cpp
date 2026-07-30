@@ -304,7 +304,7 @@ bool PeanutKingSoccerV4::_sendPILAData(void) {
     ultrasonic[0], ultrasonic[2], ultrasonic[3], ultrasonic[1], 
     maxEye, maxEyeVal
   );
-  return ble.sendData(String(buf));
+  return bluetooth.sendData(String(buf));
 }
 void PeanutKingSoccerV4::_PILAUpdate(void)
 {
@@ -329,18 +329,18 @@ void PeanutKingSoccerV4::_DASHBOARDUpdate(void)
 
 void PeanutKingSoccerV4::bluetoothRemote(void) {
   // Check for connection status changes
-  if (ble.checkConnection()) {
+  if (bluetooth.checkConnection()) {
     // Handle the connection status change
-    ble.handleConnection();
+    bluetooth.handleConnection();
   }
 
   // If disconnected, skip parsing data
-  if (!ble.isConnected()) { return; }
+  if (!bluetooth.isConnected()) { return; }
 
   // If connected, parse incoming data based on the current remote mode
-  if (ble.getMode() == RemoteMode::PILA) {
+  if (bluetooth.getMode() == RemoteMode::PILA) {
     _PILAUpdate();
-  } else if (ble.getMode() == RemoteMode::DASHBOARD) {
+  } else if (bluetooth.getMode() == RemoteMode::DASHBOARD) {
     _DASHBOARDUpdate();
   }
 }
