@@ -2,7 +2,7 @@
 #define ULTRASONIC_H
 
 #include <Arduino.h>
-#include <pcint.h>
+#include "pcint/pcint.h"
 
 // Ultrasonic Sensor ID enumeration
 typedef enum : uint8_t

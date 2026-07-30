@@ -51,7 +51,7 @@ as well as Adafruit raw 1.8" TFT display
 // #include "Arduino.h"
 #include "Print.h"
 
-#include <PDQ_GFX.h>
+#include "PDQ_GFX.h"
 
 #include <avr/pgmspace.h>
 #include <SPI.h>
@@ -65,7 +65,7 @@ as well as Adafruit raw 1.8" TFT display
 #endif
 
 
-#include <PDQ_FastPin.h>
+#include "PDQ_FastPin.h"
 
 #if !defined(AVR_HARDWARE_SPI)
 #error Oops!  Currently hardware SPI is required.  Bother Xark if you would like USI or bit-bang SPI supported.

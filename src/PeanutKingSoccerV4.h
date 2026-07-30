@@ -30,9 +30,9 @@
 #include "modules/PS2/PS2.h"
 
 // Include external libraries
-#include <SPI.h>          // SPI library for TFT and PS2
-#include <PDQ_GFX.h>      // PDQ: Core graphics library
-#include <PDQ_ST7735.h>   // PDQ: Hardware-specific driver library
+#include <SPI.h>                      // SPI library for TFT and PS2
+#include "modules/TFT/PDQ_GFX.h"      // PDQ: Core graphics library
+#include "modules/TFT/PDQ_ST7735.h"   // PDQ: Hardware-specific driver library
 
 // =============================================================================
 //                              Macro Definitions
