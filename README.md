@@ -38,10 +38,11 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
 **PeanutKing Soccer** is a complete Arduino library supporting sensor reading, motor control, omnidirectional movement, and wireless remote control for PeanutKing series soccer robots.
 
 ### Supported Versions
-
 - V2 (legacy compatibility)
 - V3 (legacy compatibility)
 - **V4** (main development version)
+
+Remind: V2, V3, V4 are not compatible to each other, each version has it corresponding hardward kit set. For example, version V4 is expected to use with Peanut King Mega shield V4.
 
 ---
 
