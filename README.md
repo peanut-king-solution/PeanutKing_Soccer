@@ -19,7 +19,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
   - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
   - [CompoundEye — IR Compound Eye](#compoundeye--ir-compound-eye)
   - [ButtonManager — Button Management](#buttonmanager--button-management)
-  - [LedController — LED Control](#ledcontroller--led-control)
+  - [LED — on-board RGB LED Control](#led--on-board-rgb-led-control)
   - [Ultrasonic — Ultrasonic Sensor](#ultrasonic--ultrasonic-sensor)
   - [Compass — Compass & IMU](#compass--compass--imu)
   - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
@@ -97,7 +97,7 @@ void loop() {
   Serial.println(dist);
 
   // Set LED color
-  robot.setOnBrdLED(LED_CYAN);
+  robot.setOnBrdLED(LEDColor::CYAN);
 
   delay(100);
 }
@@ -114,7 +114,7 @@ void loop() {
 | ColorSensor | `robot.colorSensor` | Up to 8 color sensors (software I2C, address `0x11`) |
 | CompoundEye | `robot.compoundEye` | 12-channel IR sensor array for ball detection (hardware I2C, address `0x13`) |
 | ButtonManager | `robot.buttonMgr` | 4-button state management (TAP, HOLD, etc.) |
-| LedController | `robot.ledCtrl` | On-board RGB LED control (8 colors) |
+| LED | `robot.led` | On-board RGB LED control (8 colors) |
 | Ultrasonic | `robot.xsound` | 4 ultrasonic distance sensors (PCINT-based, round-robin) |
 | Compass | `robot.compass` | Compass heading (0–360°) & 9-axis IMU raw data (hardware I2C, address `0x08`) |
 | TFT Display | `robot.tft` | ST7735 TFT display (128×160, SPI) |
@@ -205,7 +205,7 @@ Enables omnidirectional movement using 45° omni wheels, with angle control and 
 | Method | Description |
 |--------|-------------|
 | `byAngle(float mAngle, float mSpeed, float rotate)` | Move at specified angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
-| `moveWithCorr(float mAngle, float mSpeed, float compassReading)` | Move with compass PID correction, auto-maintains heading |
+| `withCorr(float mAngle, float mSpeed, float compassReading)` | Move with compass PID correction, auto-maintains heading |
 | `test(float speed)` | Test movement patterns (forward → right-front → rightward) |
 
 #### Subclasses
@@ -237,7 +237,7 @@ void loop() {
   robot.move.byAngle(0, 0, 100);  // Rotate clockwise
 
   // Movement with compass correction
-  robot.move.WithCorr(0, 100, robot.compass.read());
+  robot.move.withCorr(0, 100, robot.compass.read());
 }
 ```
 
@@ -536,28 +536,28 @@ buttonStatus_t s = robot.buttonGetStatus(BTN_1); // Same as getStatus()
 
 ---
 
-### LedController — LED Control
+### LED — on-board RGB LED Control
 
 Controls the on-board RGB LED with 8 color modes.
 
 **LED color mapping:**
 
-| Name | Actual ID | Color |
-|------|-----------|-------|
-| `LED_OFF` | `0` | Off |
-| `LED_BLUE` | `1` | Blue |
-| `LED_GREEN` | `2` | Green |
-| `LED_CYAN` | `3` | Cyan |
-| `LED_RED` | `4` | Red |
-| `LED_PURPLE` | `5` | Purple |
-| `LED_YELLOW` | `6` | Yellow |
-| `LED_WHITE` | `7` | White |
+| Name | Color |
+|------|-------|
+| `LEDColor::OFF` | Off |
+| `LEDColor::BLUE` | Blue |
+| `LEDColor::GREEN` | Green |
+| `LEDColor::CYAN` | Cyan |
+| `LEDColor::RED` | Red |
+| `LEDColor::PURPLE` | Purple |
+| `LEDColor::YELLOW` | Yellow |
+| `LEDColor::WHITE` | White |
 
 #### Methods
 
 | Method | Description |
 |--------|-------------|
-| `setLED(obBrdLEDCL color)` | Set LED to a predefined color (uses bitmask: `R=bit0`, `G=bit1`, `B=bit2`) |
+| `setLED(LEDColor color)` | Set LED to a predefined color (`LEDColor`) |
 | `setLED(uint8_t LED, uint8_t status)` | Set individual LED channel (`0`=Red, `1`=Green, `2`=Blue), `0`=off, `1`=on |
 
 #### Example
@@ -573,19 +573,19 @@ void setup() {
 
 void loop() {
   // Set color
-  robot.ledCtrl.setLED(LED_RED);
-  robot.ledCtrl.setLED(LED_CYAN);
+  robot.led.setLED(LEDColor::RED);
+  robot.led.setLED(LEDColor::CYAN);
 
   // Individual control
-  robot.ledCtrl.setLED(0, HIGH);  // Red LED on
-  robot.ledCtrl.setLED(1, LOW);   // Green LED off
+  robot.led.setLED(0, HIGH);  // Red LED on
+  robot.led.setLED(1, LOW);   // Green LED off
 }
 ```
 
 #### Compatibility Wrappers
 
 ```cpp
-robot.setOnBrdLED(LED_CYAN);
+robot.setOnBrdLED(LEDColor::CYAN);
 robot.setOnBrdLED(0, HIGH);
 ```
 
@@ -1104,7 +1104,7 @@ robot.move.motorPID.kd = 1.0;
 | [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O (uses S_PIN, D_PIN, A_PIN enums) |
 | [Goalkeeper](examples/Version4/Goalkeeper/Goalkeeper.ino) | Goalkeeper behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
 | [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display basics (text, shapes, tick counter) |
-| [LED](examples/Version4/LED/LED.ino) | RGB LED control (cycles through all 8 colors) |
+| [LED](examples/Version4/LED/LED.ino) | on-board RGB LED control (cycles through all 8 colors) |
 | [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
 | [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, withCorr, rotation) |
 | [OutOfBound](examples/Version4/OutOfBound/OutOfBound.ino) | Square movement with white line detection |

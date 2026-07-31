@@ -8,12 +8,12 @@ void setup() {
 
 void loop() {
   // Cycle through all 8 colors every 1 sec
-  robot.setOnBrdLED(LED_OFF);    delay(1000);
-  robot.setOnBrdLED(LED_BLUE);   delay(1000);
-  robot.setOnBrdLED(LED_GREEN);  delay(1000);
-  robot.setOnBrdLED(LED_CYAN);   delay(1000);
-  robot.setOnBrdLED(LED_RED);    delay(1000);
-  robot.setOnBrdLED(LED_PURPLE); delay(1000);
-  robot.setOnBrdLED(LED_YELLOW); delay(1000);
-  robot.setOnBrdLED(LED_WHITE);  delay(1000);
+  robot.setOnBrdLED(LEDColor::OFF);    delay(1000);
+  robot.setOnBrdLED(LEDColor::BLUE);   delay(1000);
+  robot.setOnBrdLED(LEDColor::GREEN);  delay(1000);
+  robot.setOnBrdLED(LEDColor::CYAN);   delay(1000);
+  robot.setOnBrdLED(LEDColor::RED);    delay(1000);
+  robot.setOnBrdLED(LEDColor::PURPLE); delay(1000);
+  robot.setOnBrdLED(LEDColor::YELLOW); delay(1000);
+  robot.setOnBrdLED(LEDColor::WHITE);  delay(1000);
 }

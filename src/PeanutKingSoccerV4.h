@@ -23,7 +23,7 @@
 #include "modules/ColorSensor/ColorSensor.h"
 #include "modules/CompoundEye/CompoundEye.h"
 #include "modules/ButtonManager/ButtonManager.h"
-#include "modules/LedController/LedController.h"
+#include "modules/Led/LED.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/Compass/Compass.h"
 #include "modules/Bluetooth/Bluetooth.h"
@@ -92,10 +92,10 @@ public:
   ColorSensor   colorSensor;  // ColorSensor instance for reading color sensors
   CompoundEye   compoundEye;  // CompoundEye instance for reading IR sensors
   ButtonManager buttonMgr;    // ButtonManager instance for reading button states
-  LedController ledCtrl;      // LedController instance for controlling on-board LEDs
+  LED           led;          // LED instance for controlling on-board LEDs
   Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
   Compass       compass;      // Compass instance for reading compass heading
-  Bluetooth    bluetooth;    // Bluetooth instance for managing Bluetooth Low Energy
+  Bluetooth     bluetooth;    // Bluetooth instance for managing Bluetooth Low Energy
   PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
   PS2X          ps2x;         // PS2X instance for reading PS2 controller inputs
 
@@ -231,9 +231,9 @@ public:
 
   /**
    * Set all on-board LEDs to a specific color
-   * `color` - Color to set (`LED_OFF` - `LED_WHITE`)
+   * `color` - Color to set (`LEDColor::OFF` - `LEDColor::WHITE`)
    */
-  void setOnBrdLED(obBrdLEDCL color);
+  void setOnBrdLED(LEDColor color);
   /**
    * Set a single on-board LED `on`/`off`
    * `LED`    - LED index (`0-2`)

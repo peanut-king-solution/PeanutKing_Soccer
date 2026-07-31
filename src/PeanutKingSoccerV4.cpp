@@ -47,7 +47,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   buttonMgr.init();
 
   // Initialize LED module
-  ledCtrl.init();
+  led.init();
 
   // Initialize ultrasonic module
   xsound.init();
@@ -192,12 +192,12 @@ buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
  *                       LED (wrapper for compatibility)
  * ============================================================================= */
 
-void PeanutKingSoccerV4::setOnBrdLED(obBrdLEDCL color) {
-  ledCtrl.setLED(color);
+void PeanutKingSoccerV4::setOnBrdLED(LEDColor color) {
+  led.setLED(color);
 }
 
 void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
-  ledCtrl.setLED(LED, status);
+  led.setLED(LED, status);
 }
 
 /* =============================================================================

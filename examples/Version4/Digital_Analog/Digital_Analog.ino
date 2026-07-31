@@ -50,7 +50,7 @@ void loop() {
   Serial.print(analogRead(A4_P));
   Serial.print("\n");
 
-  robot.setOnBrdLED(LED_CYAN);
+  robot.setOnBrdLED(LEDColor::CYAN);
   delay(200);
   digitalWrite(D4_P, LOW);
   digitalWrite(D5_P, LOW);
