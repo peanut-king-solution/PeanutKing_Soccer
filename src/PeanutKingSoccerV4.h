@@ -22,7 +22,7 @@
 #include "modules/Movement/Movement.h"
 #include "modules/ColorSensor/ColorSensor.h"
 #include "modules/CompoundEye/CompoundEye.h"
-#include "modules/ButtonManager/ButtonManager.h"
+#include "modules/Button/Button.h"
 #include "modules/Led/LED.h"
 #include "modules/Ultrasonic/Ultrasonic.h"
 #include "modules/Compass/Compass.h"
@@ -91,7 +91,7 @@ public:
   Movement      move;         // Movement instance for controlling the robot's movement
   ColorSensor   colorSensor;  // ColorSensor instance for reading color sensors
   CompoundEye   compoundEye;  // CompoundEye instance for reading IR sensors
-  ButtonManager buttonMgr;    // ButtonManager instance for reading button states
+  Button        button;       // Button instance for reading button states
   LED           led;          // LED instance for controlling on-board LEDs
   Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
   Compass       compass;      // Compass instance for reading compass heading
@@ -211,7 +211,7 @@ public:
    *
    * `Returns` - `true` if pressed, `false` otherwise
    */
-  bool buttonRead(BUTTON_ID btn);
+  bool buttonRead(ButtonId btn);
   /**
    * Update button state machine
    * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
@@ -223,7 +223,7 @@ public:
    * 
    * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
    */
-  buttonStatus_t buttonGetStatus(BUTTON_ID btn);
+  ButtonStatus buttonGetStatus(ButtonId btn);
 
 // =============================================================================
 //                LED Functions (wrapper for compatibility)

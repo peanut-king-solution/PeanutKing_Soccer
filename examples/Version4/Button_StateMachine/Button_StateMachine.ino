@@ -11,7 +11,7 @@ void loop() {
 
   // Check each button's status
   for (int i = 1; i <= 4; i++) {
-    buttonStatus_t status = robot.buttonMgr.getStatus((BUTTON_ID) i);
+    ButtonStatus status = robot.button.getStatus((ButtonId) i);
     switch (status) {
       case TAP:   Serial.print("Button "); Serial.print(i); Serial.println(" - TAP"); break;
       case TAP2:  Serial.print("Button "); Serial.print(i); Serial.println(" - DOUBLE TAP"); break;

@@ -44,7 +44,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   compoundEye.init();
 
   // Initialize button module
-  buttonMgr.init();
+  button.init();
 
   // Initialize LED module
   led.init();
@@ -176,16 +176,16 @@ uint16_t PeanutKingSoccerV4::compoundEyeAngle(void) {
  *                       Button (wrapper for compatibility)
  * ============================================================================= */
 
-bool PeanutKingSoccerV4::buttonRead(BUTTON_ID btn) {
-  return buttonMgr.read(btn);
+bool PeanutKingSoccerV4::buttonRead(ButtonId btn) {
+  return button.read(btn);
 }
 
 void PeanutKingSoccerV4::buttonUpdate(void) {
-  buttonMgr.update();
+  button.update();
 }
 
-buttonStatus_t PeanutKingSoccerV4::buttonGetStatus(BUTTON_ID btn) {
-  return buttonMgr.getStatus(btn);
+ButtonStatus PeanutKingSoccerV4::buttonGetStatus(ButtonId btn) {
+  return button.getStatus(btn);
 }
 
 /* =============================================================================

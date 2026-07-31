@@ -131,7 +131,7 @@ void setup() {
 
 void loop() {
   // If button 1 is pressed, recalibrate baseline;
-  if (robot.buttonMgr.read(BTN_1)) {
+  if (robot.button.read(BTN_1)) {
     ReCalibrateBaseline();
   } 
   // Otherwise, display sensor readings and white line detection

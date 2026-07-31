@@ -18,7 +18,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
   - [Movement — Omnidirectional Movement](#movement--omnidirectional-movement)
   - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
   - [CompoundEye — IR Compound Eye](#compoundeye--ir-compound-eye)
-  - [ButtonManager — Button Management](#buttonmanager--button-management)
+  - [Button — Button Control](#button--button-control)
   - [LED — on-board RGB LED Control](#led--on-board-rgb-led-control)
   - [Ultrasonic — Ultrasonic Sensor](#ultrasonic--ultrasonic-sensor)
   - [Compass — Compass & IMU](#compass--compass--imu)
@@ -113,7 +113,7 @@ void loop() {
 | Movement | `robot.move` | 45° omni wheel omnidirectional movement |
 | ColorSensor | `robot.colorSensor` | Up to 8 color sensors (software I2C, address `0x11`) |
 | CompoundEye | `robot.compoundEye` | 12-channel IR sensor array for ball detection (hardware I2C, address `0x13`) |
-| ButtonManager | `robot.buttonMgr` | 4-button state management (TAP, HOLD, etc.) |
+| Button | `robot.button` | button control |
 | LED | `robot.led` | On-board RGB LED control (8 colors) |
 | Ultrasonic | `robot.xsound` | 4 ultrasonic distance sensors (PCINT-based, round-robin) |
 | Compass | `robot.compass` | Compass heading (0–360°) & 9-axis IMU raw data (hardware I2C, address `0x08`) |
@@ -463,9 +463,9 @@ uint16_t angle = robot.compoundEyeAngle();    // Same as getAngle()
 
 ---
 
-### ButtonManager — Button Management
+### Button — Button Control
 
-Manages 4 buttons (`BTN_1`–`BTN_4`) with basic read support. Advanced gesture detection (TAP, HOLD, double-tap) is declared but **not yet implemented** — `update()` is a placeholder.
+Controls 4 buttons (`BTN_1`–`BTN_4`) with basic read support. Advanced gesture detection (TAP, HOLD, double-tap) is declared but **not yet implemented** — `update()` is a placeholder.
 
 **Button ID mapping:**
 
@@ -493,9 +493,9 @@ Manages 4 buttons (`BTN_1`–`BTN_4`) with basic read support. Advanced gesture 
 
 | Method | Description |
 |--------|-------------|
-| `read(BUTTON_ID btn)` | Read whether button is physically pressed (`true`/`false`) |
+| `read(ButtonId btn)` | Read whether button is physically pressed (`true`/`false`) |
 | `update()` | Update button state machine (**not yet implemented** — see [Known Issues](#known-issues)) |
-| `getStatus(BUTTON_ID btn)` | Get current button gesture status |
+| `getStatus(ButtonId btn)` | Get current button gesture status |
 
 #### Example
 
@@ -510,13 +510,13 @@ void setup() {
 
 void loop() {
   // Basic read (works)
-  if (robot.buttonMgr.read(BTN_1)) {
+  if (robot.button.read(BTN_1)) {
     Serial.println("Button 1 pressed");
   }
 
   // Gesture detection (update() is a placeholder — see Known Issues)
-  // robot.buttonMgr.update();
-  // buttonStatus_t status = robot.buttonMgr.getStatus(BTN_1);
+  // robot.button.update();
+  // ButtonStatus status = robot.button.getStatus(BTN_1);
 }
 ```
 
@@ -525,7 +525,7 @@ void loop() {
 ```cpp
 bool pressed = robot.buttonRead(BTN_1);          // Same as read()
 robot.buttonUpdate();                            // Same as update() — placeholder
-buttonStatus_t s = robot.buttonGetStatus(BTN_1); // Same as getStatus()
+ButtonStatus s = robot.buttonGetStatus(BTN_1); // Same as getStatus()
 ```
 
 #### Related Examples
@@ -1096,7 +1096,7 @@ robot.move.motorPID.kd = 1.0;
 |---------|-------------|
 | [Bluetooth_Remote](examples/Version4/Bluetooth_Remote/Bluetooth_Remote.ino) | Bluetooth remote control (skeleton — functions are empty) |
 | [Button](examples/Version4/Button/Button.ino) | Basic button reading |
-| [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD — requires ButtonManager::update() implementation) |
+| [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD — requires Button::update() implementation) |
 | [Colour_Sensor](examples/Version4/Colour_Sensor/Colour_Sensor.ino) | Color sensor reading (color index, RGB, HSL, RGBC raw, white line check) |
 | [Compass](examples/Version4/Compass/Compass.ino) | Compass & IMU data (heading, accelerometer, gyroscope, magnetometer) |
 | [CompassCar](examples/Version4/CompassCar/CompassCar.ino) | Compass navigation (heading-based motor control) |
@@ -1174,7 +1174,7 @@ robot.move.motorPID.kd = 1.0;
 
 | Feature | Location | Status |
 |---------|----------|--------|
-| `ButtonManager::update()` | `ButtonManager.cpp` | Placeholder — gesture detection (TAP, HOLD, TAP2) not implemented |
+| `Button::update()` | `Button.cpp` | Placeholder — gesture detection (TAP, HOLD, TAP2) not implemented |
 | `bluetoothRemote()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
 | `bluetoothAttributes()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
 | `Chase()` / `Back()` | `PeanutKingSoccerV4.cpp` | Empty functions — strategy not implemented |
@@ -1183,7 +1183,7 @@ robot.move.motorPID.kd = 1.0;
 ### 🟢 Minor Issues
 
 - `pwmPin[4]` declared in `PeanutKingSoccerV4.h` but never used
-- `BUTTON_ID` enum starts at 1, requiring `-1` conversion for array indexing
+- `ButtonId` enum starts at 1, requiring `-1` conversion for array indexing
 - Private member naming is inconsistent across modules (`_` prefix vs no prefix)
 - `Compass::converter` and `Movement::converter`/`motorPID` are public members (encapsulation)
 

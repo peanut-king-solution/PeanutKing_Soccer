@@ -56,7 +56,7 @@ typedef enum {
   
   TAP2_R = 16,
   TAP3_R = 17,
-} buttonStatus_t;
+} ButtonStatus;
 
 // typedef struct {
 //   uint32_t holdTimer;

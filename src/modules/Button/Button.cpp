@@ -1,12 +1,12 @@
-#include "ButtonManager.h"
+#include "Button.h"
 
-ButtonManager::ButtonManager() :
+Button::Button() :
   buttonPin{22, 23, 24, 25},
   btnStatus{NONE, NONE, NONE, NONE}
 {
 }
 
-void ButtonManager::init(void)
+void Button::init(void)
 {
   // Initialize button pins as INPUT_PULLUP
   for (uint8_t i = 0; i < 4; i++) {
@@ -14,7 +14,7 @@ void ButtonManager::init(void)
   }
 }
 
-bool ButtonManager::read(BUTTON_ID btn)
+bool Button::read(ButtonId btn)
 {
   uint8_t index = static_cast<uint8_t>(btn) - 1;
   if (index < 4) {
@@ -23,7 +23,7 @@ bool ButtonManager::read(BUTTON_ID btn)
   return false;
 }
 
-void ButtonManager::update(void)
+void Button::update(void)
 {
   // TODO: Implement the button state machine logic here to detect TAP, PRESS, HOLD, etc.
 
@@ -74,7 +74,7 @@ void ButtonManager::update(void)
   // }
 }
 
-buttonStatus_t ButtonManager::getStatus(BUTTON_ID btn)
+ButtonStatus Button::getStatus(ButtonId btn)
 {
   uint8_t index = static_cast<uint8_t>(btn) - 1;
   if (index < 4) {
