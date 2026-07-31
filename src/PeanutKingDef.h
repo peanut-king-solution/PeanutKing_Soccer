@@ -103,7 +103,8 @@ typedef struct {
 
 const float pi = 3.1415926535897;
 
-typedef enum { front = 0, left, right, back } sensorNum;
+// Logical positions index
+enum class Position : uint8_t { FRONT = 0, RIGHT = 1, BACK = 2, LEFT = 3 };
 
 // typedef enum {
 //   black=0,  white,   grey,

@@ -24,7 +24,7 @@
 #include "modules/CompoundEye/CompoundEye.h"
 #include "modules/Button/Button.h"
 #include "modules/Led/LED.h"
-#include "modules/Ultrasonic/Ultrasonic.h"
+#include "modules/Ultrasound/Ultrasound.h"
 #include "modules/Compass/Compass.h"
 #include "modules/Bluetooth/Bluetooth.h"
 #include "modules/PS2/PS2.h"
@@ -93,7 +93,7 @@ public:
   CompoundEye   compoundEye;  // CompoundEye instance for reading IR sensors
   Button        button;       // Button instance for reading button states
   LED           led;          // LED instance for controlling on-board LEDs
-  Ultrasonic    xsound;       // Ultrasonic instance for managing 4 ultrasonic sensors
+  Ultrasound    ultrasound;   // Ultrasound instance for managing 4 ultrasonic sensors
   Compass       compass;      // Compass instance for reading compass heading
   Bluetooth     bluetooth;    // Bluetooth instance for managing Bluetooth Low Energy
   PDQ_ST7735    tft;          // TFT display instance for displaying graphics and text
@@ -242,16 +242,43 @@ public:
   void setOnBrdLED(uint8_t LED, uint8_t status);
 
 // =============================================================================
-//                      Ultrasonic Functions (wrapper for compatibility)
+//                      Ultrasound Functions (wrapper for compatibility)
 // =============================================================================
 
   /**
-   * Read the distance from an ultrasonic sensor
-   * `n` - Sensor ID (`U1` - `U4`)
+   * Get distance from a specified position
+   *
+   * `pos` - Position (Front, Right, Back, Left)
    *
    * `Returns` - Distance in mm (0~4500mm)
    */
-  uint16_t ultrasonicRead(ULTR_SENSOR n);
+  uint16_t ultrasoundGetDist(Position pos);
+
+  /**
+   * Configure which ultrasound port (U1~U4) is at each physical position
+   *
+   * `front` - ultrasound port plugged at the front position
+   * `right` - ultrasound port plugged at the right position
+   * `back`  - ultrasound port plugged at the back position
+   * `left`  - ultrasound port plugged at the left position
+   */
+  void ultrasoundConfig(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
+
+  /**
+   * Enable or disable sensors by position
+   *
+   * `front` - `true` to enable front sensor, `false` to disable
+   * `right` - `true` to enable right sensor, `false` to disable
+   * `back`  - `true` to enable back sensor, `false` to disable
+   * `left`  - `true` to enable left sensor, `false` to disable
+   */
+  void ultrasoundSetEnabled(bool front, bool right, bool back, bool left);
+  /**
+   * Enable or disable all ultrasound sensors
+   *
+   * `enabled` - `true` to enable all sensors, `false` to disable all
+   */
+  void ultrasoundEnableAll(bool enabled);
 
 // =============================================================================
 //              Compass Functions (wrapper for compatibility)
@@ -430,8 +457,8 @@ public:
   uint8_t  maxEye;     // Index of the maximum IR reading
   uint8_t  maxEyeVal;  // Maximum IR reading value
   
-  // Ultrasonic
-  uint16_t ultrasonic[4]; // Ultrasonic readings (U1~U4)
+  // Ultrasound
+  uint16_t distances[4]; // Ultrasound readings (Front, Right, Back, Left) in mm (0~4500mm)
 
   // Compass
   uint16_t heading;   // Compass heading (0~360 degrees)

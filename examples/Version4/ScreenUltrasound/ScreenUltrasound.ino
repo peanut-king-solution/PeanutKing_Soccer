@@ -19,24 +19,24 @@ void setup() {
   robot.clearScreen();
 
   // Display title
-  robot.setScreen(0, 0, "Xsound");
+  robot.setScreen(0, 0, "Ultrasound");
 }
 
 void loop() {
   // Read distances from all four ultrasonic sensors
   uint16_t dist[4];
-  dist[0] = robot.ultrasonicRead(U1);     // Front
-  dist[1] = robot.ultrasonicRead(U2);     // Right
-  dist[2] = robot.ultrasonicRead(U3);     // Back
-  dist[3] = robot.ultrasonicRead(U4);     // Left
+  dist[0] = robot.ultrasoundGetDist(Position::FRONT);  // Front
+  dist[1] = robot.ultrasoundGetDist(Position::RIGHT);  // Right
+  dist[2] = robot.ultrasoundGetDist(Position::BACK);   // Back
+  dist[3] = robot.ultrasoundGetDist(Position::LEFT);   // Left
 
   // Sensor labels (drawn once, no need to clear)
   robot.setTextSize(1);
   robot.setTextColor(ST7735_CYAN);
-  robot.setScreen(0, 2, "U1(F):");
-  robot.setScreen(0, 4, "U2(R):");
-  robot.setScreen(0, 6, "U3(B):");
-  robot.setScreen(0, 8, "U4(L):");
+  robot.setScreen(0, 2, "Front:");
+  robot.setScreen(0, 4, "Right:");
+  robot.setScreen(0, 6, "Back:");
+  robot.setScreen(0, 8, "Left:");
 
   // Display distance values (mm) with clear of previous values
   robot.setTextSize(2);

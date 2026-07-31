@@ -50,7 +50,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   led.init();
 
   // Initialize ultrasonic module
-  xsound.init();
+  ultrasound.init();
   
   // Initialize Compass module
   compass.init();
@@ -92,9 +92,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
   maxEyeVal = compoundEye.getMaxEyeVal();
   eyeAngle  = compoundEye.getAngle();
 
-  // Ultrasonic (not sure will it have any effect on the performance)
-  for (uint8_t i = U1; i <= U4; i++) {
-    ultrasonic[i] = xsound.read((ULTR_SENSOR)i);
+  // Ultrasound read by position (not sure will it have any effect on the performance)
+  for (uint8_t i = 0; i < 4; i++) {
+    UltrasoundId port = ultrasound.getPortFromPos((Position)i);
+    distances[i] = ultrasound.read(port);
   }
 
   // Compass
@@ -201,11 +202,24 @@ void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
 }
 
 /* =============================================================================
- *                       Ultrasonic (wrapper)
+ *                       Ultrasound (wrapper)
  * ============================================================================= */
 
-uint16_t PeanutKingSoccerV4::ultrasonicRead(ULTR_SENSOR n) {
-  return xsound.read(n);
+uint16_t PeanutKingSoccerV4::ultrasoundGetDist(Position pos) {
+  UltrasoundId port = ultrasound.getPortFromPos(pos);
+  return ultrasound.read(port);
+}
+
+void PeanutKingSoccerV4::ultrasoundConfig(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left) {
+  ultrasound.setMap(front, right, back, left);
+}
+
+void PeanutKingSoccerV4::ultrasoundSetEnabled(bool front, bool right, bool back, bool left) {
+  ultrasound.setEnabledByPos(front, right, back, left);
+}
+
+void PeanutKingSoccerV4::ultrasoundEnableAll(bool enabled) {
+  ultrasound.enableAll(enabled);
 }
 
 /* =============================================================================
@@ -301,7 +315,7 @@ bool PeanutKingSoccerV4::_sendPILAData(void) {
   // Format: "soccer,<compass>,<ultrasoundFront>,<ultrasoundBack>,<ultrasoundLeft>,<ultrasoundRight>,<maxEye>,<maxEyeValue>"
   snprintf(buf, sizeof(buf), "soccer,%d,%d,%d,%d,%d,%d,%d",
     heading, 
-    ultrasonic[0], ultrasonic[2], ultrasonic[3], ultrasonic[1], 
+    distances[0], distances[2], distances[3], distances[1], 
     maxEye, maxEyeVal
   );
   return bluetooth.sendData(String(buf));

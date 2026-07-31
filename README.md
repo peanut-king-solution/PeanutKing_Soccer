@@ -20,7 +20,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
   - [CompoundEye — IR Compound Eye](#compoundeye--ir-compound-eye)
   - [Button — Button Control](#button--button-control)
   - [LED — on-board RGB LED Control](#led--on-board-rgb-led-control)
-  - [Ultrasonic — Ultrasonic Sensor](#ultrasonic--ultrasonic-sensor)
+  - [Ultrasound — Ultrasonic Sensor](#ultrasound--ultrasonic-sensor)
   - [Compass — Compass & IMU](#compass--compass--imu)
   - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
   - [TFT Display](#tft-display)
@@ -92,7 +92,7 @@ void loop() {
   Serial.println(heading);
 
   // Read ultrasonic distance
-  uint16_t dist = robot.ultrasonicRead(U1);
+  uint16_t dist = robot.ultrasoundGetDist(Position::FRONT);
   Serial.print("Front distance: ");
   Serial.println(dist);
 
@@ -115,7 +115,7 @@ void loop() {
 | CompoundEye | `robot.compoundEye` | 12-channel IR sensor array for ball detection (hardware I2C, address `0x13`) |
 | Button | `robot.button` | button control |
 | LED | `robot.led` | On-board RGB LED control (8 colors) |
-| Ultrasonic | `robot.xsound` | 4 ultrasonic distance sensors (PCINT-based, round-robin) |
+| Ultrasound | `robot.ultrasound` | 4 ultrasonic distance sensors (PCINT-based, round-robin) |
 | Compass | `robot.compass` | Compass heading (0–360°) & 9-axis IMU raw data (hardware I2C, address `0x08`) |
 | TFT Display | `robot.tft` | ST7735 TFT display (128×160, SPI) |
 | I2C | `I2CManager::getInstance()` | I2C bus management singleton (HW + 8×SW) |
@@ -595,7 +595,7 @@ robot.setOnBrdLED(0, HIGH);
 
 ---
 
-### Ultrasonic — Ultrasonic Sensor
+### Ultrasound — Ultrasonic Sensor
 
 Manages 4 ultrasonic distance sensors (U1–U4), using Pin Change Interrupt for non-blocking distance measurement and round-robin triggering to avoid interference.
 
@@ -603,20 +603,21 @@ Manages 4 ultrasonic distance sensors (U1–U4), using Pin Change Interrupt for 
 
 | Name | Actual ID | Position | Trig Pin | Echo Pin |
 |------|-----------|----------|----------|----------|
-| `U1` | `0` | Front | 49 | A15 |
-| `U2` | `1` | Right | 48 | A14 |
-| `U3` | `2` | Back | 47 | A13 |
-| `U4` | `3` | Left | 46 | A12 |
+| `U1` | `0` | `Position::FRONT` | 49 | A15 |
+| `U2` | `1` | `Position::RIGHT` | 48 | A14 |
+| `U3` | `2` | `Position::BACK` | 47 | A13 |
+| `U4` | `3` | `Position::LEFT` | 46 | A12 |
 
 #### Methods
 
 | Method | Description |
 |--------|-------------|
-| `read(ULTR_SENSOR sensor)` | Read distance (`mm`, range `0–4500`mm) |
-| `configuration(ULTR_SENSOR Front, Right, Back, Left)` | Remap sensor physical positions |
-| `setEnabled(bool u1, bool u2, bool u3, bool u4)` | Set enable state |
-| `enableSensor(ULTR_SENSOR sensor, bool enabled)` | Enable/disable a `single` sensor |
-| `enableAll(bool enabled)` | Enable/disable `all` sensors |
+| `read(UltrasoundId port)` | Read distance from a sensor port (`mm`, range `0–4500`mm) |
+| `enable(UltrasoundId port, bool enabled)` | Enable/disable a single sensor port |
+| `enableAll(bool enabled)` | Enable/disable all sensors at once |
+| `setEnabledByPos(bool front, bool right, bool back, bool left)` | Enable/disable sensors by physical position |
+| `setMap(UltrasoundId front, right, back, left)` | Remap sensor ports to physical positions |
+| `getPortFromPos(Position pos)` | Convert position (`FRONT/RIGHT/BACK/LEFT`) to sensor port |
 
 #### Example
 
@@ -629,33 +630,35 @@ void setup() {
   robot.init();
 
   // If needed, remap sensor positions (swap U1 and U2)
-  robot.xsound.configuration(U2, U1, U3, U4);
-  
-  // Enable/disable
-  robot.xsound.enableSensor(U1, true);
-  robot.xsound.enableAll(true);
+  robot.ultrasound.setMap(U2, U1, U3, U4);
+
+  // Enable/disable individual ports
+  robot.ultrasound.enable(U1, true);
 }
 
 void loop() {
-  // Read distances from each direction
-  uint16_t front = robot.xsound.read(U1);
-  uint16_t right = robot.xsound.read(U2);
-  uint16_t back  = robot.xsound.read(U3);
-  uint16_t left  = robot.xsound.read(U4);
+  // Read distances by port (low-level API)
+  uint16_t front = robot.ultrasound.read(U1);
+  uint16_t right = robot.ultrasound.read(U2);
+  uint16_t back  = robot.ultrasound.read(U3);
+  uint16_t left  = robot.ultrasound.read(U4);
 }
 ```
 
-#### Compatibility Wrappers
+#### Compatibility Wrappers (high-level API)
 
 ```cpp
-uint16_t dist = robot.ultrasonicRead(U1);
+uint16_t dist = robot.ultrasoundGetDist(Position::FRONT); // Read by position
+robot.ultrasoundConfig(U2, U1, U3, U4);                   // Remap sensor ports
+robot.ultrasoundSetEnabled(true, false, true, false);     // Enable Front, Back only
+robot.ultrasoundEnableAll(true);                          // Enable all sensors
 ```
 
 #### Related Examples
 
-[examples/Version4/Ultrasonic/Ultrasonic.ino](examples/Version4/Ultrasonic/Ultrasonic.ino)
+[examples/Version4/Ultrasound/Ultrasound.ino](examples/Version4/Ultrasound/Ultrasound.ino)
 
-[examples/Version4/ScreenXsound/ScreenXsound.ino](examples/Version4/ScreenXsound/ScreenXsound.ino)
+[examples/Version4/ScreenUltrasound/ScreenUltrasound.ino](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino)
 
 ---
 
@@ -888,7 +891,7 @@ void loop() {
 
 [examples/Version4/ScreenIR/ScreenIR.ino](examples/Version4/ScreenIR/ScreenIR.ino)
 
-[examples/Version4/ScreenXsound/ScreenXsound.ino](examples/Version4/ScreenXsound/ScreenXsound.ino)
+[examples/Version4/ScreenUltrasound/ScreenUltrasound.ino](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino)
 
 [examples/Version4/ScreenCompass/ScreenCompass.ino](examples/Version4/ScreenCompass/ScreenCompass.ino)
 
@@ -1094,7 +1097,6 @@ robot.move.motorPID.kd = 1.0;
 
 | Example | Description |
 |---------|-------------|
-| [Bluetooth_Remote](examples/Version4/Bluetooth_Remote/Bluetooth_Remote.ino) | Bluetooth remote control (skeleton — functions are empty) |
 | [Button](examples/Version4/Button/Button.ino) | Basic button reading |
 | [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD — requires Button::update() implementation) |
 | [Colour_Sensor](examples/Version4/Colour_Sensor/Colour_Sensor.ino) | Color sensor reading (color index, RGB, HSL, RGBC raw, white line check) |
@@ -1114,9 +1116,9 @@ robot.move.motorPID.kd = 1.0;
 | [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration (heading display + pointer) |
 | [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
 | [ScreenWhiteLine](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino) | Screen + color sensor white line detection (HSL + baseline display) |
-| [ScreenXsound](examples/Version4/ScreenXsound/ScreenXsound.ino) | Screen + ultrasonic integration (4 distances with labels) |
+| [ScreenUltrasound](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino) | Screen + ultrasonic integration (4 distances with labels) |
 | [Striker](examples/Version4/Striker/Striker.ino) | Striker behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
-| [Ultrasonic](examples/Version4/Ultrasonic/Ultrasonic.ino) | Ultrasonic sensor (configuration, enable/disable, distance reading) |
+| [Ultrasound](examples/Version4/Ultrasound/Ultrasound.ino) | Ultrasound sensor (configuration, enable/disable, distance reading) |
 
 ---
 
@@ -1133,8 +1135,8 @@ robot.move.motorPID.kd = 1.0;
 | TFT SDA | 51 | TFT SPI data |
 | Motor IN1 | 9, 7, 5, 3 | Motor channel 1 (PWM) |
 | Motor IN2 | 8, 6, 4, 2 | Motor channel 2 (PWM) |
-| Ultrasonic Trig | 49, 48, 47, 46 | U1–U4 trigger pins |
-| Ultrasonic Echo | A15, A14, A13, A12 | U1–U4 echo pins (PCINT) |
+| Ultrasound Trig | 49, 48, 47, 46 | U1–U4 trigger pins |
+| Ultrasound Echo | A15, A14, A13, A12 | U1–U4 echo pins (PCINT) |
 | Button | 22, 23, 24, 25 | BTN_1–BTN_4 (INPUT_PULLUP) |
 | LED RGB | 26, 28, 27 | Red, Green, Blue |
 | SW I2C (×8) | 29–44 | SCL=30/32/34/36/38/40/42/44, SDA=29/31/33/35/37/39/41/43 |
