@@ -106,11 +106,38 @@ void PeanutKingSoccerV4::dataFetch(void) {
  *                              Motor (wrapper)
  * ============================================================================= */
 
-  void PeanutKingSoccerV4::setMotorSpeed(MOTOR_ID mi, int16_t speed) {
+  void PeanutKingSoccerV4::motorConfiguration(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack) {
+    motor.mapPort(LeftFront, RightFront, RightBack, LeftBack);
+  }
+
+  void PeanutKingSoccerV4::motorFlipDirection(MotorPos pos, bool flip) {
+    MotorId mi = motor.getPortFromPos(pos);
+    motor.flipDirection(mi, flip);
+  }
+
+  void PeanutKingSoccerV4::motorSetSpeed(MotorPos pos, int16_t speed) {
+    MotorId mi = motor.getPortFromPos(pos);
     motor.setSpeed(mi, speed);
   }
-  void PeanutKingSoccerV4::stopAllMotors(void) {
-    motor.stopAll();
+
+  void PeanutKingSoccerV4::motorStop(MotorPos pos) {
+    MotorId mi = motor.getPortFromPos(pos);
+    motor.stop(mi);
+  }
+
+  void PeanutKingSoccerV4::motorStopAll(void) {
+    for (uint8_t i = 0; i < 4; i++) {
+      motor.stop((MotorId)i);
+    }
+  }
+
+  void PeanutKingSoccerV4::motorTestAll(int16_t speed) {
+    for (uint8_t pos = 0; pos < 4; pos++) {
+      motorSetSpeed((MotorPos)pos, speed);
+      delay(500);
+      motorStopAll();
+      delay(200);
+    }
   }
 
 /* =============================================================================

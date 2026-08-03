@@ -23,9 +23,15 @@ void Movement::byAngle(float mAngle, float mSpeed, float rotate)
   mc[3] = -mc[1];                                       // LB
 
   // Apply the speed and rotation to each motor
+  // i = 0..3 correspond to LeftFront, RightFront, RightBack, LeftBack
   for (int8_t i = 3; i >= 0; i--)
   {
-    motor.setSpeed((MOTOR_ID)i, (int16_t)(mc[i] + rotate));
+    // resolve position (MotorPos) to the mapped motor port via getPortFromPos
+    MotorId mi = motor.getPortFromPos((MotorPos)i);
+    // calculate the final speed for each motor by adding rotation to the calculated speed
+    int16_t speed = (int16_t)(mc[i] + rotate);
+    // set the motor speed for the resolved motor port
+    motor.setSpeed(mi, speed);
   }
 }
 
@@ -85,8 +91,10 @@ void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
     m[i] = m[i] * factor + rotation;
     // constrain the motor speed to be within the valid range of -255 to 255
     m[i] = constrain(m[i], -255.0f, 255.0f);
-    // set the motor speed for each motor
-    motor.setSpeed((MOTOR_ID)i, (int16_t)m[i]);
+    // resolve the motor position to the corresponding motor port
+    MotorId mi = motor.getPortFromPos((MotorPos)i);
+    // set the motor speed for the resolved motor port
+    motor.setSpeed(mi, (int16_t)m[i]);
   }
 }
 

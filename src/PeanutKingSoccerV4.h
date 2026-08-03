@@ -100,19 +100,48 @@ public:
   PS2X          ps2x;         // PS2X instance for reading PS2 controller inputs
 
 // =============================================================================
-//                Motor Functions (wrapper for compatibility)
+//                Motor Functions (Driven by Motor position)
 // =============================================================================
+  
+  /**
+   * Configure which motor port ( `M1` - `M4` ) controls which wheel position
+   * `LeftFront`  - Motor port
+   * `RightFront` - Motor port
+   * `RightBack`  - Motor port
+   * `LeftBack`   - Motor port
+   */
+  void motorConfiguration(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack);
+
+  /**
+   * Flip the rotation direction of a single motor
+   * `pos`    - Motor position ( `LeftFront` - `LeftBack` )
+   * `flip`   - `true`=flip, `false`=normal (default: `true`)
+   */
+  void motorFlipDirection(MotorPos pos, bool flip = true);
 
   /**
    * Set the speed of a single motor
-   * `mi`     - Motor ID ( `M1` - `M4` )
+   * `pos`    - Motor position ( `LeftFront` - `LeftBack` )
    * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
    */
-  void setMotorSpeed(MOTOR_ID mi, int16_t speed);
+  void motorSetSpeed(MotorPos pos, int16_t speed);
+
+  /**
+   * Stop a single motor
+   * `pos`  - Motor position ( `LeftFront` - `LeftBack` )
+   */
+  void motorStop(MotorPos pos);
+
   /**
    * Stop all motors (brake mode)
    */
-  void stopAllMotors(void);
+  void motorStopAll(void);
+
+  /**
+   * Test all motors sequentially ( `LeftFront` -> `RightFront` -> `RightBack` -> `LeftBack` )
+   * `speed` - Test speed `(0~255)`
+   */
+  void motorTestAll(int16_t speed);
 
 // =============================================================================
 //               Movement Functions (wrapper for compatibility)

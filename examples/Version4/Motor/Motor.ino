@@ -21,7 +21,7 @@ void setup()
   then you should swap these two motors,
   configure by uncommenting the below line of code
   */
-  // robot.motor.configuration(M2, M1, M3, M4); // swap Left Front and Right Front
+  // robot.motorConfiguration(M2, M1, M3, M4); // swap Left Front and Right Front
 
   /*
   You should also check the movement direction of the robot,
@@ -52,9 +52,13 @@ void loop()
   Left Front -> Right Front -> Right Back -> Left Back (clockwise),
   */
   for (uint8_t i = 0; i < 4; i++) {
-    robot.motor.setSpeed((MOTOR_ID)i, speed);
+    // convert index to MotorPos enum
+    MotorPos pos = (MotorPos)i;
+    // activate the motor at the given position with the specified speed
+    robot.motorSetSpeed(pos, speed);
     delay(1000);
-    robot.motor.stopAll();
+    // stop the motor at the given position
+    robot.motorStop(pos);
     delay(500);
   }
 
@@ -63,12 +67,12 @@ void loop()
 
   forward (0°) -> right front (45°) -> rightward (90°)
   */
-  robot.move.byAngle(0, speed, 0);
+  robot.moveByAngle(0, speed, 0);
   delay(1000);
-  robot.move.byAngle(45, speed, 0);
+  robot.moveByAngle(45, speed, 0);
   delay(1000);
-  robot.move.byAngle(90, speed, 0);
+  robot.moveByAngle(90, speed, 0);
   delay(1000);
-  robot.motor.stopAll();
+  robot.motorStopAll();
   delay(500);
 }

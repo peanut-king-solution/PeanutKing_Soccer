@@ -139,20 +139,31 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 | `M3` | `2` | Right Back |
 | `M4` | `3` | Left Back |
 
-**Default direction rules:**
-- Positive motor speed (`+`) → Counter-clockwise rotation (CCW)
-- All motors positive (`+`) → Robot rotates clockwise (CW)
+> **Default direction rules:**
+> - Positive motor speed (`+`) → Counter-clockwise rotation (CCW)
+> - All motors positive (`+`) → Robot rotates clockwise (CW)
 
-#### Methods
+**MotorPos enum (physical position):**
+
+| Name         | Value |
+|--------------|-------|
+| `LeftFront`  | `0`   |
+| `RightFront` | `1`   |
+| `RightBack`  | `2`   |
+| `LeftBack`   | `3`   |
+
+> V4 high-level API takes a **physical position** (`MotorPos`) as input, resolves it to the actual port (`M1`-`M4`) via `getPortFromPos()`, then drives the corresponding motor.
+
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
-| `setSpeed(MOTOR_ID mi, int16_t speed)` | Set motor speed, range `-255` (CCW) ~ `+255` (CW), `0` = brake |
-| `stopAll()` | Stop all motors (brake mode) |
-| `flipMotor(MOTOR_ID mi, bool flip = true)` | Flip single motor rotation direction (`false` to cancel) |
-| `flipMotors(bool m1, bool m2, bool m3, bool m4)` | Set rotation direction for each motor individually |
-| `configuration(MOTOR_ID LF, MOTOR_ID RF, MOTOR_ID RB, MOTOR_ID LB)` | Remap motor ports to physical positions |
-| `testAll(int16_t speed)` | Test motors sequentially (M1→M2→M3→M4) |
+| `motorConfiguration(MotorId LF, MotorId RF, MotorId RB, MotorId LB)` | Remap motor ports to physical positions |
+| `motorFlipDirection(MotorPos pos, bool flip = true)` | Flip rotation direction of the motor at a position |
+| `motorSetSpeed(MotorPos pos, int16_t speed)` | Set motor speed, range `-255` (CCW) ~ `+255` (CW), `0` = brake |
+| `motorStop(MotorPos pos)` | Stop a single motor (brake mode) |
+| `motorStopAll()` | Stop all motors (brake mode) |
+| `motorTestAll(int16_t speed)` | Test all motors sequentially (LF→RF→RB→LB) |
 
 #### Example
 
@@ -165,29 +176,43 @@ void setup() {
   robot.init();
 
   // If needed, remap motor positions (swap Left Front and Right Front)
-  robot.motor.configuration(M2, M1, M3, M4);
+  robot.motorConfiguration(M2, M1, M3, M4);
 
-  // Flip motor rotation direction
-  robot.motor.flipMotor(M2, true);
+  // Flip motor rotation direction at a position
+  robot.motorFlipDirection(MotorPos::RightFront, true);
 }
 
 void loop() {
   // Set motor speed (positive = CCW, negative = CW)
-  robot.motor.setSpeed(M1, 150);   // Left Front CCW
-  robot.motor.setSpeed(M2, 150);   // Right Front CW — direction flipped
-  robot.motor.setSpeed(M3, -100);  // Right Back CW
-  robot.motor.setSpeed(M4, -100);  // Left Back CW
+  robot.motorSetSpeed(MotorPos::LeftFront, 150);   // Left Front CCW
+  robot.motorSetSpeed(MotorPos::RightFront, 150);  // Right Front CW — direction flipped
+  robot.motorSetSpeed(MotorPos::RightBack, -100);  // Right Back CW
+  robot.motorSetSpeed(MotorPos::LeftBack, -100);   // Left Back CW
   delay(2000);
-  robot.motor.stopAll();           // Stop all motors (brake mode)
+  robot.motorStopAll(); // Stop all motors (brake mode)
   delay(1000);
 }
 ```
 
-#### Compatibility Wrappers
+#### Low-level Module Methods (`robot.motor.`)
+
+For direct port-based control. Ports take `MotorId` (`M1`-`M4`), not positions.
+
+| Method | Description |
+|--------|-------------|
+| `init()` | Initialize all motor pins as OUTPUT |
+| `getPortFromPos(MotorPos pos)` | Convert a physical position to the mapped motor port (`M1`-`M4`) |
+| `mapPort(MotorId LF, MotorId RF, MotorId RB, MotorId LB)` | Remap motor ports to physical positions |
+| `flipDirection(MotorId mi, bool flip = true)` | Flip rotation direction of a single motor port |
+| `setSpeed(MotorId mi, int16_t speed)` | Set a single motor speed by port, range `-255` ~ `+255`, `0` = brake |
+| `stop(MotorId mi)` | Brake a single motor port |
 
 ```cpp
-robot.setMotorSpeed(M1, 150);   // Same as motor.setSpeed()
-robot.stopAllMotors();          // Same as motor.stopAll()
+// Low-level equivalent: drive port M1 directly
+MotorId mi = robot.motor.getPortFromPos(MotorPos::LeftFront);
+robot.motor.flipDirection(mi, true);
+robot.motor.setSpeed(mi, 150);
+robot.motor.stop(mi);
 ```
 
 #### Related Examples
