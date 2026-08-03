@@ -110,7 +110,7 @@ void loop() {
 | Module | Instance | Description |
 |--------|----------|-------------|
 | Motor | `robot.motor` | 4 DC motor control with mapping and direction flipping |
-| Movement | `robot.move` | 45° omni wheel omnidirectional movement |
+| Movement | `robot.movement` | 45° omni wheel omnidirectional movement |
 | ColorSensor | `robot.colorSensor` | Up to 8 color sensors (software I2C, address `0x11`) |
 | CompoundEye | `robot.compoundEye` | 12-channel IR sensor array for ball detection (hardware I2C, address `0x13`) |
 | Button | `robot.button` | button control |
@@ -225,20 +225,32 @@ robot.motor.stop(mi);
 
 Enables omnidirectional movement using 45° omni wheels, with angle control and compass PID correction.
 
+> **Architecture** — `Movement` is a **pure computation layer**: it computes the four wheel speeds and returns a `WheelSpeeds` struct, but does **not** drive motors directly. Mapping to physical positions and driving is handled by the V4 high-level `move()` wrapper.
+
+#### Data Structure
+
+| Type | Fields | Description |
+|------|--------|-------------|
+| `WheelSpeeds` | `lf, rf, rb, lb` (`int16_t`) | Speeds for LeftFront / RightFront / RightBack / LeftBack (position-based) |
+
 #### Methods
 
 | Method | Description |
 |--------|-------------|
-| `byAngle(float mAngle, float mSpeed, float rotate)` | Move at specified angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
-| `withCorr(float mAngle, float mSpeed, float compassReading)` | Move with compass PID correction, auto-maintains heading |
-| `test(float speed)` | Test movement patterns (forward → right-front → rightward) |
+| `byAngle(float mAngle, float mSpeed, float rotate)` | Compute wheel speeds at angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
+| `withCorr(float mAngle, float mSpeed, float compassReading)` | Compute wheel speeds with compass PID correction, maintains heading |
+| `outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4])` | Compute wheel speeds to prevent moving out of bounds — ⚠️ TODO (returns zeroed speeds) |
+| `correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4])` | Combined compass + out-of-bounds prevention — ⚠️ TODO (returns zeroed speeds) |
+| `coordinateShift(float amount)` | Shift the angle coordinate system by specified degrees |
+| `coordinateFlip()` | Flip the direction of the angle coordinate system |
 
-#### Subclasses
+#### Tuning Parameters
 
-| Member | Class | Description |
-|--------|-------|-------------|
-| `robot.move.converter` | `Converter` | Angle conversion tool (see [#Converter](#converter)) |
-| `robot.move.motorPID` | `PIDController` | PID controller (default `Kp=300.0`, `Ki=1.0`, `Kd=2.0`) |
+| Member | Type | Default | Description |
+|--------|------|---------|-------------|
+| `compassDeadZone` | `float` | `0.05` | Compass rotation dead zone — errors below this are ignored to prevent oscillation |
+| `minRotateSpeed` | `float` | `60.0` | Minimum rotation speed — PID correction smaller than this is clamped up so the robot still turns |
+| `motorPID` | `PIDController` | `Kp=300.0, Ki=1.0, Kd=2.0` | Compass correction PID controller — tune via `motorPID.setKp()` etc. |
 
 #### Example
 
@@ -251,27 +263,43 @@ void setup() {
   robot.init();
 
   // Adjust coordinate system
-  robot.move.converter.reset().shift(0);  // Reset, then offset 0 degrees
-  robot.move.converter.flip();            // Flip 180 degrees (CW<->CCW)
+  robot.movement.coordinateReset();   // Reset to default coordinate system
+  robot.movement.coordinateShift(0);  // Offset 0 degrees
+  robot.movement.coordinateFlip();    // Flip 180 degrees (CW<->CCW)
 }
 
 void loop() {
-  // Basic movement
-  robot.move.byAngle(0, 100, 0);  // Forward
-  robot.move.byAngle(90, 100, 0); // Left (flipped)
-  robot.move.byAngle(0, 0, 100);  // Rotate clockwise
-
-  // Movement with compass correction
-  robot.move.withCorr(0, 100, robot.compass.read());
+  // Basic movement (returns WheelSpeeds, caller drives)
+  WheelSpeeds ws = robot.movement.byAngle(0, 100, 0);  // Forward
+  // or use the high-level wrapper which reads sensors and drives motors:
+  robot.move(0, 100, 0);  // Forward
+  robot.move(90, 100, 0); // Right
+  robot.move(0, 0, 100);  // Rotate clockwise
 }
 ```
 
-#### Compatibility Wrappers
+#### High-level `move()` Wrapper
+
+The V4 wrapper `robot.move()` reads compass + 4 white-line sensors, selects the movement method based on two enable flags, computes `WheelSpeeds`, maps physical positions to motor ports, and drives the motors.
+
+| Enable Flag | Default | Description |
+|-------------|---------|-------------|
+| `compassCorrectEnabled` | `true` | Enable compass correction |
+| `outBoundPreventEnabled` | `false` | Enable out-of-bounds prevention (⚠️ requires `outBoundPrevent`/`correctedMove` to be implemented) |
 
 ```cpp
-robot.moveByAngle(0, 100, 0);  // Same as move.byAngle()
-robot.moveWithCorr(0, 100);    // Same as move.withCorr() — reads compass internally
+// Both features off -> plain omnidirectional movement
+robot.compassCorrectEnabled = false;
+robot.outBoundPreventEnabled = false;
+robot.move(45, 100);
+
+// Compass correction only (out-of-bounds prevention not yet implemented)
+robot.compassCorrectEnabled = true;
+robot.outBoundPreventEnabled = false;
+robot.move(45, 100);
 ```
+
+> **Note:** `outBoundPreventEnabled` defaults to `false` until `outBoundPrevent()`/`correctedMove()` logic is implemented. Enabling both flags currently calls the *zeroed* stub methods.
 
 #### Related Examples
 
@@ -1039,12 +1067,12 @@ void loop() {
   if (robot.ps2ButtonHolding(PS2Button::L1)) {
     PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
     int moveSpeed = lj.strength * 130 / 255;
-    robot.moveWithCorr(lj.angle, moveSpeed);
+    robot.move(lj.angle, moveSpeed);
     robot.ps2SetVibration(lj.strength);
   }
   if (robot.ps2ButtonReleased(PS2Button::L1)) {
     robot.ps2SetVibration(0);
-    robot.stopAllMotors();
+    robot.motorStopAll();
   }
 }
 ```
@@ -1085,7 +1113,7 @@ Usage example:
 robot.compass.converter.reset().shift(90).flip();
 
 // Movement coordinate adjustment
-robot.move.converter.reset().shift(180);
+robot.movement.coordinateShift(180);
 ```
 
 #### PIDController
@@ -1096,12 +1124,19 @@ PID control algorithm used for compass heading correction in the Movement module
 class PIDController {
 public:
   PIDController(double kp, double ki, double kd);
-  double update(double currentValue);  // Calculate PID output (error = setPoint - currentValue)
+  double update(double currentValue);  // Calculate PID output (error = targetPoint - currentValue)
 
-  double kp, ki, kd;        // PID coefficients
-  double setPoint;          // Target value (default: 0.0)
-  double integral;          // Integral term accumulator
-  double previousError;     // Previous error value
+  void setPID(double kp, double ki, double kd);  // Set all gains (non-negative, resets state if changed)
+  void setKp(double v);
+  void setKi(double v);
+  void setKd(double v);
+  void setTargetPoint(double v);       // Target value (default: 0.0)
+  void reset();                        // Clear integral + previousError
+
+  double getKp() const;
+  double getKi() const;
+  double getKd() const;
+  double getTargetPoint() const;
 };
 ```
 
@@ -1109,16 +1144,16 @@ Usage example:
 
 ```cpp
 // Custom PID parameters (defaults: Kp=300.0, Ki=1.0, Kd=2.0)
-robot.move.motorPID.kp = 200.0;
-robot.move.motorPID.ki = 0.5;
-robot.move.motorPID.kd = 1.0;
+robot.movement.motorPID.setKp(200.0);   // Tune proportional gain
+robot.movement.motorPID.setKi(0.5);     // Tune integral gain
+robot.movement.motorPID.setKd(1.0);     // Tune derivative gain
 ```
 
 ---
 
 ## Examples
 
-### Version 4 (22 examples)
+### Version 4 (20 examples)
 
 | Example | Description |
 |---------|-------------|
@@ -1129,7 +1164,6 @@ robot.move.motorPID.kd = 1.0;
 | [CompassCar](examples/Version4/CompassCar/CompassCar.ino) | Compass navigation (heading-based motor control) |
 | [CompoundEye](examples/Version4/CompoundEye/CompoundEye.ino) | IR compound eye (12 sensors, max eye, ball angle) |
 | [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O (uses S_PIN, D_PIN, A_PIN enums) |
-| [Goalkeeper](examples/Version4/Goalkeeper/Goalkeeper.ino) | Goalkeeper behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
 | [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display basics (text, shapes, tick counter) |
 | [LED](examples/Version4/LED/LED.ino) | on-board RGB LED control (cycles through all 8 colors) |
 | [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
@@ -1142,7 +1176,6 @@ robot.move.motorPID.kd = 1.0;
 | [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
 | [ScreenWhiteLine](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino) | Screen + color sensor white line detection (HSL + baseline display) |
 | [ScreenUltrasound](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino) | Screen + ultrasonic integration (4 distances with labels) |
-| [Striker](examples/Version4/Striker/Striker.ino) | Striker behavior strategy (⚠️ uses deprecated `motorSet()`/`motorStop()` — see [Known Issues](#known-issues)) |
 | [Ultrasound](examples/Version4/Ultrasound/Ultrasound.ino) | Ultrasound sensor (configuration, enable/disable, distance reading) |
 
 ---
@@ -1193,10 +1226,6 @@ robot.move.motorPID.kd = 1.0;
 
 ## Known Issues
 
-### 🔴 Compile Errors (Examples)
-
-- **Goalkeeper.ino** and **Striker.ino** use deprecated `motorSet()` and `motorStop()` functions that do not exist in V4. These examples will **fail to compile**. Use `setMotorSpeed()` / `stopAllMotors()` instead.
-
 ### 🟡 Not Yet Implemented
 
 | Feature | Location | Status |
@@ -1212,7 +1241,7 @@ robot.move.motorPID.kd = 1.0;
 - `pwmPin[4]` declared in `PeanutKingSoccerV4.h` but never used
 - `ButtonId` enum starts at 1, requiring `-1` conversion for array indexing
 - Private member naming is inconsistent across modules (`_` prefix vs no prefix)
-- `Compass::converter` and `Movement::converter`/`motorPID` are public members (encapsulation)
+- `Compass::converter` and `Movement::converter` are private members (encapsulation is fine); `Movement::motorPID` is intentionally public for tuning
 
 ---
 
