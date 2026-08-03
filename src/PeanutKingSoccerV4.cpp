@@ -19,8 +19,7 @@
  * ============================================================================= */
 
 PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
-  pwmPin{10, 11, 12, 13},
-  move(motor)   // Initialize Movement module with Motor instance
+  pwmPin{10, 11, 12, 13}
 {
 }
 
@@ -143,12 +142,53 @@ void PeanutKingSoccerV4::dataFetch(void) {
 /* =============================================================================
 *                              Movement (wrapper)
 * ============================================================================= */
+  
+  void PeanutKingSoccerV4::move(float mAngle, float mSpeed, float rotate) {
+    // Read compass heading
+    uint16_t compassReading = compass.read();
+    // Check out-of-bounds status using color sensors (only when prevention is enabled)
+    bool isOutBound[4] = {false, false, false, false};
+    if (outBoundPreventEnabled) {
+      isOutBound[0] = this->whiteLineCheck(CL1); // Front
+      isOutBound[1] = this->whiteLineCheck(CL2); // Right
+      isOutBound[2] = this->whiteLineCheck(CL3); // Back
+      isOutBound[3] = this->whiteLineCheck(CL4); // Left
+    }
 
-  void PeanutKingSoccerV4::moveByAngle(float mAngle, float mSpeed, float rotate) {
-    move.byAngle(mAngle, mSpeed, rotate);
+    // Determine movement method based on enabled features
+    WheelSpeeds ws;
+    // If both compass correction and out-of-bounds prevention are enabled, use correctedMove
+    if (compassCorrectEnabled && outBoundPreventEnabled) {
+      ws = movement.correctedMove(mAngle, mSpeed, compassReading, isOutBound);
+    }
+    // If only compass correction is enabled, use withCorr
+    else if (compassCorrectEnabled) {
+      ws = movement.withCorr(mAngle, mSpeed, compassReading);
+    }
+    // If only out-of-bounds prevention is enabled, use outBoundPrevent
+    else if (outBoundPreventEnabled) {
+      ws = movement.outBoundPrevent(mAngle, mSpeed, isOutBound);
+    }
+    // If neither feature is enabled, move without any corrections
+    else {
+      ws = movement.byAngle(mAngle, mSpeed, rotate);
+    }
+    // Apply the computed speeds by mapping physical position to motor port
+    this->motorSetSpeed(MotorPos::LeftFront,  ws.lf);
+    this->motorSetSpeed(MotorPos::RightFront, ws.rf);
+    this->motorSetSpeed(MotorPos::RightBack,  ws.rb);
+    this->motorSetSpeed(MotorPos::LeftBack,   ws.lb);
   }
-  void PeanutKingSoccerV4::moveWithCorr(float mAngle, float mSpeed) {
-    move.withCorr(mAngle, mSpeed, compass.read());
+
+  void PeanutKingSoccerV4::moveTest(float speed) {
+    move(0, speed, 0);
+    delay(1000);
+    move(45, speed, 0);
+    delay(1000);
+    move(90, speed, 0);
+    delay(1000);
+    this->motorStopAll();
+    delay(500);
   }
 
 /* =============================================================================

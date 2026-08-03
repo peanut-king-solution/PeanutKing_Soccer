@@ -1,13 +1,12 @@
 #include "Movement.h"
 
-Movement::Movement(Motor &m) :
-  motor(m),                 // initialize the motor reference
+Movement::Movement() :
   converter(),              // initialize the converter instance
   motorPID(300.0, 1.0, 2.0) // initialize the PID controller
 {
 }
 
-void Movement::byAngle(float mAngle, float mSpeed, float rotate)
+WheelSpeeds Movement::byAngle(float mAngle, float mSpeed, float rotate)
 {
   // constrain speed to valid range (0-255)
   mSpeed = constrain(mSpeed, 0.0f, 255.0f);
@@ -22,20 +21,15 @@ void Movement::byAngle(float mAngle, float mSpeed, float rotate)
   mc[2] = -mc[0];                                       // RB
   mc[3] = -mc[1];                                       // LB
 
-  // Apply the speed and rotation to each motor
-  // i = 0..3 correspond to LeftFront, RightFront, RightBack, LeftBack
-  for (int8_t i = 3; i >= 0; i--)
-  {
-    // resolve position (MotorPos) to the mapped motor port via getPortFromPos
-    MotorId mi = motor.getPortFromPos((MotorPos)i);
-    // calculate the final speed for each motor by adding rotation to the calculated speed
-    int16_t speed = (int16_t)(mc[i] + rotate);
-    // set the motor speed for the resolved motor port
-    motor.setSpeed(mi, speed);
-  }
+  WheelSpeeds ws;
+  ws.lf = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
+  ws.rf = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
+  ws.rb = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
+  ws.lb = (int16_t)constrain(mc[3] + rotate, -255.0f, 255.0f);
+  return ws;
 }
 
-void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
+WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
 {
   // constrain speed to valid range (0-255)
   mSpeed = constrain(mSpeed, 0.0f, 255.0f);
@@ -61,7 +55,7 @@ void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   rotationScale = -(compassReading / 180.0f); // scale the rotation to [-1, 1]
 
   // Apply a dead zone for small rotation errors to prevent oscillation
-  if (fabsf(rotationScale) < 0.05f) {
+  if (fabsf(rotationScale) < compassDeadZone) {
     rotation = 0.0f;  // no rotation needed
   }
   // if the compass reading is within the range of -90 to 90 degrees,
@@ -69,8 +63,8 @@ void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   else if (fabsf(compassReading) < 90.0f) {
     rotation = this->motorPID.update(-rotationScale);
     rotation = constrain(rotation, -255.0f, 255.0f);
-    if (fabsf(rotation) < 60.0f) {
-      rotation = 60.0f * ((rotation > 0.0f) ? 1.0f : -1.0f);
+    if (fabsf(rotation) < minRotateSpeed) {
+      rotation = minRotateSpeed * ((rotation > 0.0f) ? 1.0f : -1.0f);
     }
   }
   // if the compass reading is outside the range of -90 to 90 degrees,
@@ -84,29 +78,37 @@ void Movement::withCorr(float mAngle, float mSpeed, float compassReading)
 
   // scale the motor speeds based on the desired speed and rotation
   float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
-  
-  for (uint8_t i = 0; i < 4; i++)
-  {
-    // apply the scaling factor and rotation to each motor speed
-    m[i] = m[i] * factor + rotation;
-    // constrain the motor speed to be within the valid range of -255 to 255
-    m[i] = constrain(m[i], -255.0f, 255.0f);
-    // resolve the motor position to the corresponding motor port
-    MotorId mi = motor.getPortFromPos((MotorPos)i);
-    // set the motor speed for the resolved motor port
-    motor.setSpeed(mi, (int16_t)m[i]);
-  }
+
+  WheelSpeeds ws;
+  ws.lf = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
+  ws.rf = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
+  ws.rb = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
+  ws.lb = (int16_t)constrain(m[3] * factor + rotation, -255.0f, 255.0f);
+  return ws;
 }
 
-void Movement::test(float speed)
+WheelSpeeds Movement::outBoundPrevent(float /*mAngle*/, float /*mSpeed*/, bool /*isOutBound*/[4])
 {
-  this->byAngle(0, speed, 0);
-  delay(1000);
-  this->byAngle(45, speed, 0);
-  delay(1000);
-  this->byAngle(90, speed, 0);
-  delay(1000);
+  // TODO: implement out-of-bounds prevention logic
+  WheelSpeeds ws = {0, 0, 0, 0};
+  return ws;
+}
 
-  this->motor.stopAll();
-  delay(500);
+WheelSpeeds Movement::correctedMove(float /*mAngle*/, float /*mSpeed*/, float /*compassReading*/, bool /*isOutBound*/[4])
+{
+  // TODO: implement combined compass correction + out-of-bounds prevention
+  WheelSpeeds ws = {0, 0, 0, 0};
+  return ws;
+}
+
+void Movement::coordinateReset(void) {
+  converter.reset();
+}
+
+void Movement::coordinateShift(float amount) {
+  converter.shift(amount);
+}
+
+void Movement::coordinateFlip(void) {
+  converter.flip();
 }

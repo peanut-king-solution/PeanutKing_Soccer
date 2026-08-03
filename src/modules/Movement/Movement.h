@@ -4,47 +4,91 @@
 #include "PeanutKingDef.h"
 #include "utils/Converter.h"
 #include "utils/PIDController.h"
-#include "modules/Motor/Motor.h"
+
+/**
+ * Wheel speeds computed for each physical position (position-based).
+ * Mapping to actual motor ports is handled by the caller (V4 wrapper).
+ */
+struct WheelSpeeds {
+  int16_t lf;   // LeftFront
+  int16_t rf;   // RightFront
+  int16_t rb;   // RightBack
+  int16_t lb;   // LeftBack
+};
 
 class Movement
 {
-private:
-  // Motor instance for controlling the robot's movement
-  Motor &motor;
-
 public:
   /**
-   * Constructor with Motor reference injection
-   * `m` - Motor instance reference
+   * Constructor
    */
-  Movement(Motor &m);
+  Movement();
+
+  // --- Tuning parameters (public) ---
+
+  /** Compass dead zone for rotation correction. Small errors below this are ignored. */
+  float compassDeadZone = 0.05f;
+
+  /** Minimum rotation speed. When PID correction is smaller than this, clamp to it. */
+  float minRotateSpeed = 60.0f;
+
+  // --- Motion computation (returns WheelSpeeds, does NOT drive motors) ---
 
   /**
-   * Move robot at angle with speed and rotation
+   * Compute wheel speeds at angle with speed and rotation
    * `mAngle`  - Movement angle `(0-360°)`
    * `mSpeed`  - Movement speed `(0-255)`
    * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
    */
-  void byAngle(float mAngle, float mSpeed, float rotate);
+  WheelSpeeds byAngle(float mAngle, float mSpeed, float rotate);
 
   /**
-   * Move robot with compass correction
+   * Compute wheel speeds with compass correction
    * `mAngle`          - Movement angle `(0-360°)`
    * `mSpeed`          - Movement speed `(0-255)`
    * `compassReading`  - Current compass heading `(0-360°)`
    */
-  void withCorr(float mAngle, float mSpeed, float compassReading);
+  WheelSpeeds withCorr(float mAngle, float mSpeed, float compassReading);
 
   /**
-   * Test movement patterns ( `forward` -> `right front` -> `rightward` )
-   * `speed` - Test speed `(0-255)`
+   * Compute wheel speeds to prevent moving out of bounds
+   * `mAngle`     - Movement angle `(0-360°)`
+   * `mSpeed`     - Movement speed `(0-255)`
+   * `isOutBound` - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
+   *
+   * @note TODO: not yet implemented — returns zeroed speeds
    */
-  void test(float speed);
+  WheelSpeeds outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4]);
 
-  // Converters' instances
-  Converter converter;
-  // PID controllers' instances
+  /**
+   * Compute wheel speeds with compass correction and out-of-bounds prevention
+   * `mAngle`          - Movement angle `(0-360°)`
+   * `mSpeed`          - Movement speed `(0-255)`
+   * `compassReading`  - Current compass heading `(0-360°)`
+   * `isOutBound`      - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
+   *
+   * @note TODO: not yet implemented — returns zeroed speeds
+   */
+  WheelSpeeds correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4]);
+
+  // --- Converter calibration ---
+  
+  /** Reset the angle coordinate system to default */
+  void coordinateReset(void);
+
+  /** Shift the angle coordinate system by the specified degrees */
+  void coordinateShift(float amount);
+
+  /** Flip the direction of the angle coordinate system */
+  void coordinateFlip(void);
+
+  // --- PID controller (public) ---
+
+  /** Compass correction PID controller — tune directly via motorPID.setKp() etc. */
   PIDController motorPID;
+
+private:
+  Converter converter;
 };
 
 #endif // MOVEMENT_H

@@ -88,7 +88,7 @@ public:
 // =============================================================================
 
   Motor         motor;        // Motor instance for controlling the robot's motors
-  Movement      move;         // Movement instance for controlling the robot's movement
+  Movement      movement;     // Movement instance for controlling the robot's movement
   ColorSensor   colorSensor;  // ColorSensor instance for reading color sensors
   CompoundEye   compoundEye;  // CompoundEye instance for reading IR sensors
   Button        button;       // Button instance for reading button states
@@ -144,22 +144,18 @@ public:
   void motorTestAll(int16_t speed);
 
 // =============================================================================
-//               Movement Functions (wrapper for compatibility)
+//                           Movement Functions
 // =============================================================================
 
+  bool compassCorrectEnabled = true;   // Enable/disable compass correction for movement
+  bool outBoundPreventEnabled = false; // Enable/disable out-of-bounds prevention for movement
+  void move(float mAngle, float mSpeed, float rotate = 0);
+
   /**
-   * Move robot at angle with speed and rotation
-   * `mAngle`  - Movement angle `(0-360°)`
-   * `mSpeed`  - Movement speed `(0-255)`
-   * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
+   * Test the movement of the robot ( `forward` -> `right front` -> `rightward` )
+   * `speed` - Test speed `(0-255)`
    */
-  void moveByAngle(float mAngle, float mSpeed, float rotate);
-  /**
-   * Move robot with compass correction
-   * `mAngle`          - Movement angle `(0-360°)`
-   * `mSpeed`          - Movement speed `(0-255)`
-   */
-  void moveWithCorr(float mAngle, float mSpeed);
+  void moveTest(float speed);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)
@@ -475,26 +471,26 @@ public:
 // =============================================================================
 
   // Color sensor
-  rgb_t    colorRGB[8];   // RGB values
-  hsl_t    colorHSL[8];   // HSL values
-  bool     isWhite[8] = {0};  // Set all to false
+  rgb_t    colorRGB[8] = {};   // RGB values
+  hsl_t    colorHSL[8] = {};   // HSL values
+  bool     isWhite[8]  = {};   // Set all to false
   uint16_t whiteLineThreshold[8] = {30, 30, 30, 30, 30, 30, 30, 30};
 
   // Compound eye
-  uint8_t  eye[12];    // 12 IR readings
-  uint16_t eyeAngle;   // Ball angle (0~360 degrees)
-  uint8_t  maxEye;     // Index of the maximum IR reading
-  uint8_t  maxEyeVal;  // Maximum IR reading value
+  uint8_t  eye[12]   = {};   // 12 IR readings
+  uint16_t eyeAngle  = 0;    // Ball angle (0~360 degrees)
+  uint8_t  maxEye    = 0;    // Index of the maximum IR reading
+  uint8_t  maxEyeVal = 0;    // Maximum IR reading value
   
   // Ultrasound
-  uint16_t distances[4]; // Ultrasound readings (Front, Right, Back, Left) in mm (0~4500mm)
+  uint16_t distances[4] = {}; // Ultrasound readings (Front, Right, Back, Left) in mm (0~4500mm)
 
   // Compass
-  uint16_t heading;   // Compass heading (0~360 degrees)
+  uint16_t heading = 0; // Compass heading (0~360 degrees)
 
   // Bluetooth data
 private:
-  uint32_t _lastSendTime = 0;  // Timestamp of the last data sent via Bluetooth
+  uint32_t _lastSendTime = 0; // Timestamp of the last data sent via Bluetooth
 
   // PS2 controller data
   byte vibrationStr = 0;  // Vibration strength (0-255)
