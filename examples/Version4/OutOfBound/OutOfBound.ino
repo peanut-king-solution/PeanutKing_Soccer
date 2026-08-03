@@ -15,6 +15,10 @@ unsigned long timer = 0;  // Timer for movement
 
 void setup() {
   robot.init();
+  // Enable compass correction, disable out-of-bounds prevention
+  // as this example just demonstrates simple out of bounds prevention and square movement
+  robot.compassCorrectEnabled = true;
+  robot.outBoundPreventEnabled = false;
   timer = millis(); // start timer
 }
 
@@ -34,7 +38,7 @@ void loop() {
     else if (whiteL) oppositeDir = 90;  // Left detected  -> move right
 
     // Move in opposite direction
-    robot.moveWithCorr(oppositeDir, BOUND_SPD);
+    robot.move(oppositeDir, BOUND_SPD);
   }
   // Update direction when times up
   else if (millis() - timer >= TIME) {
@@ -43,6 +47,6 @@ void loop() {
   }
   // Move in square direction
   else {
-    robot.moveWithCorr(angle, SPEED);
+    robot.move(angle, SPEED);
   }
 }

@@ -1,26 +1,26 @@
 #include <PeanutKingSoccerV4.h>
-
 static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+
+// Set the speed of each motor
+void motors(int LF_spd, int RF_spd, int RB_spd, int LB_spd) {
+  robot.motorSetSpeed(MotorPos::LeftFront,  LF_spd);
+  robot.motorSetSpeed(MotorPos::RightFront, RF_spd);
+  robot.motorSetSpeed(MotorPos::RightBack,  RB_spd);
+  robot.motorSetSpeed(MotorPos::LeftBack,   LB_spd);
+}
 
 void setup() {
   robot.init();
 }
 
-// Set the speed of each motor
-void motors(int LF_spd, int RF_spd, int RB_spd, int LB_spd) {
-  robot.motor.setSpeed(M1, LF_spd);
-  robot.motor.setSpeed(M2, RF_spd);
-  robot.motor.setSpeed(M3, RB_spd);
-  robot.motor.setSpeed(M4, LB_spd);
-}
-
 void loop() {
   // Read compass heading
   uint16_t heading = robot.compass.read();
-  int rotationSpeed = 100; // Set rotation speed
+  int rotationSpeed = 100;  // Set rotation speed
+  int compassDeadZone = 10; // +- 10° deadzone
 
   // robot is facing forward (350° to 10°), stop motors
-  if (350 <= heading || heading <= 10) {
+  if ((360 - compassDeadZone) <= heading || heading <= compassDeadZone) {
     motors(0, 0, 0, 0); // Stop
   }
   // robot is facing right (10° to 180°), rotate counter-clockwise

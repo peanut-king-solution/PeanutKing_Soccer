@@ -39,7 +39,8 @@ void setup()
   then you should adjust the movement direction,
   configure by uncommenting the below line of code
   */
-  // robot.move.converter.reset().shift(90).flip();
+  // robot.movement.coordinateShift(90);
+  // robot.movement.coordinateFlip();
 }
 
 void loop()
@@ -67,11 +68,13 @@ void loop()
 
   forward (0°) -> right front (45°) -> rightward (90°)
   */
-  robot.moveByAngle(0, speed, 0);
+  robot.compassCorrectEnabled  = false;  // Disable compass correction for movement
+  robot.outBoundPreventEnabled = false;  // Disable out-of-bounds prevention for movement
+  robot.move(0, speed);
   delay(1000);
-  robot.moveByAngle(45, speed, 0);
+  robot.move(45, speed);
   delay(1000);
-  robot.moveByAngle(90, speed, 0);
+  robot.move(90, speed);
   delay(1000);
   robot.motorStopAll();
   delay(500);

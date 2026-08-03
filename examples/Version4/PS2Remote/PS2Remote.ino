@@ -13,6 +13,10 @@ void setup() {
     while (1) {};
   }
   Serial.println("PS2 OK");
+
+  // Enable compass correction and disable out-of-bounds prevention for joystick control
+  robot.compassCorrectEnabled = true;
+  robot.outBoundPreventEnabled = false;
 }
 
 bool handleJoystick(PS2Button triggerBtn, PS2Joystick stick) {
@@ -27,7 +31,7 @@ bool handleJoystick(PS2Button triggerBtn, PS2Joystick stick) {
   robot.ps2SetVibration(js.strength);
   // Move robot with compass correction based on joystick angle and scaled strength
   float moveSpeed = js.strength * 130 / 255; // Scale strength to speed (0-130)
-  robot.moveWithCorr(js.angle, moveSpeed);
+  robot.move(js.angle, moveSpeed);
   return true;
 }
 
@@ -47,7 +51,7 @@ void loop() {
   // If neither joystick is controlling, stop movement and vibration
   if (!leftControlling && !rightControlling) {
     // Stop movement and compass correction
-    robot.moveWithCorr(0, 0);
+    robot.move(0, 0);
     // Stop vibration
     robot.ps2SetVibration(0);
   }

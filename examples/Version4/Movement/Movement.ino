@@ -1,6 +1,19 @@
 #include <PeanutKingSoccerV4.h>
-
 static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+
+/**
+ * Test the robot's movement in a square pattern.
+ * `speed`    - Movement speed (0-255)
+ * `duration` - Duration (in milliseconds) for each side of the square
+ */
+void testMoveSqure(int speed, int duration) {
+  for (int i = 0; i < 4; i++) {
+    int timer = millis(); // Record the start time
+    while (millis() - timer < duration) {
+      robot.move(i * 90, speed);
+    }
+  }
+}
 
 void setup()
 {
@@ -9,52 +22,41 @@ void setup()
   // allocate the motor port to the correct motor position if necessary
   // robot.motorConfiguration(M2, M1, M3, M4); // swap Left Front and Right Front
 
-  // configure the coordinate system if necessary
-  // robot.move.converter.reset().shift(0);  // Reset and shift 0 degrees
-  // robot.move.converter.flip();            // Flip 180 degrees (CW <-> CCW)
+  // Adjust coordinate system
+  // robot.movement.coordinateReset();   // Reset to default coordinate system
+  // robot.movement.coordinateShift(0);  // Offset 0 degrees
+  // robot.movement.coordinateFlip();    // Flip 180 degrees (CW <-> CCW)
 }
 
+int speed = 80;       // Movement speed (0-255)
+int duration = 1500; // 1 second delay for each movement
+
 void loop()
-{
+{ 
   // Move the robot in a square pattern without compass car
-
-  robot.moveByAngle(0, 100, 0); // Move forward at speed 100
-  delay(2000);  // Wait for 2 seconds
-
-  robot.moveByAngle(90, 100, 0); // Move right at speed 100
-  delay(2000);  // Wait for 2 seconds
-
-  robot.moveByAngle(180, 100, 0); // Move backward at speed 100
-  delay(2000);  // Wait for 2 seconds
-
-  robot.moveByAngle(270, 100, 0); // Move left at speed 100
-  delay(2000);  // Wait for 2 seconds
+  // Disable both compass correction and out-of-bounds prevention
+  robot.compassCorrectEnabled  = false;
+  robot.outBoundPreventEnabled = false;
+  // Move the robot in a square pattern with increased speed
+  testMoveSqure(speed * 1.5, duration);
 
   // Move the robot in a square pattern with compass correction
-
-  // Move forward at speed 100 with compass correction
-  robot.moveWithCorr(0, 100);
-  delay(2000);  // Wait for 2 seconds
-
-  // Move right at speed 100 with compass correction
-  robot.moveWithCorr(90, 100);
-  delay(2000);  // Wait for 2 seconds
-
-  // Move backward at speed 100 with compass correction
-  robot.moveWithCorr(180, 100);
-  delay(2000);  // Wait for 2 seconds
-
-  // Move left at speed 100 with compass correction
-  robot.moveWithCorr(270, 100);
-  delay(2000);  // Wait for 2 seconds
+  // Enable compass correction only (disable out-of-bounds prevention)
+  robot.compassCorrectEnabled  = true;
+  robot.outBoundPreventEnabled = false;
+  testMoveSqure(speed, duration);
 
   // Rotate the robot clockwise and counterclockwise
-
+  robot.compassCorrectEnabled  = false;  // Disable compass correction for rotation
+  robot.outBoundPreventEnabled = false;  // Disable out-of-bounds prevention for rotation
   // Rotate the robot clockwise at speed 100
-  robot.moveByAngle(0, 0, 100);
-  delay(2000);  // Wait for 2 seconds
+  robot.move(0, 0, 100);
+  delay(duration);
 
   // Rotate the robot counterclockwise at speed 100
-  robot.moveByAngle(0, 0, -100);
-  delay(2000);  // Wait for 2 seconds
+  robot.move(0, 0, -100);
+  delay(duration);
+
+  robot.motorStopAll(); // Stop all motors
+  delay(2000);          // Wait for 2 seconds before repeating the loop 
 }
