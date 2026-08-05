@@ -122,10 +122,10 @@ rgbc_t ColorSensor::readRGBRaw(CLR_SENSOR_ID sensorNum)
   I2CManager &i2cManager = I2CManager::getInstance();
   if (i2cManager.SensorRead(_handles[sensorNum], 0x02, _rxBuffer, 16))
   {
-    temp.c = (uint16_t)(_rxBuffer[0] | (_rxBuffer[1] << 8));  // CLEAR_RAW  [31:0]
-    temp.r = (uint16_t)(_rxBuffer[4] | (_rxBuffer[5] << 8));  // RED_RAW    [63:32]
-    temp.g = (uint16_t)(_rxBuffer[8] | (_rxBuffer[9] << 8));  // GREEN_RAW  [95:64]
-    temp.b = (uint16_t)(_rxBuffer[12] | (_rxBuffer[13] << 8)); // BLUE_RAW   [127:96]
+    temp.c = (uint32_t)(_rxBuffer[0] | (_rxBuffer[1] << 8) | (_rxBuffer[2] << 16) | (_rxBuffer[3] << 24));  // CLEAR_RAW  [31:0]
+    temp.r = (uint32_t)(_rxBuffer[4] | (_rxBuffer[5] << 8) | (_rxBuffer[6] << 16) | (_rxBuffer[7] << 24));  // RED_RAW    [63:32]
+    temp.g = (uint32_t)(_rxBuffer[8] | (_rxBuffer[9] << 8) | (_rxBuffer[10] << 16) | (_rxBuffer[11] << 24));  // GREEN_RAW  [95:64]
+    temp.b = (uint32_t)(_rxBuffer[12] | (_rxBuffer[13] << 8) | (_rxBuffer[14] << 16) | (_rxBuffer[15] << 24)); // BLUE_RAW   [127:96]
   }
 
   return temp;

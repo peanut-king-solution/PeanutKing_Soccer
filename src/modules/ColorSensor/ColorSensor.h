@@ -23,10 +23,10 @@ typedef enum : uint8_t {
  * Raw photodiode spectral responsivity data (0-65535 each)
  */
 typedef struct {
-  uint16_t r;    // Red raw
-  uint16_t g;    // Green raw
-  uint16_t b;    // Blue raw
-  uint16_t c;    // Clear raw
+  uint32_t r;    // Red raw
+  uint32_t g;    // Green raw
+  uint32_t b;    // Blue raw
+  uint32_t c;    // Clear raw
 } rgbc_t;
 
 // Calibrated baseline of green values for white line detection
