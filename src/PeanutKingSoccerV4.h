@@ -29,6 +29,12 @@
 #include "modules/Bluetooth/Bluetooth.h"
 #include "modules/PS2/PS2.h"
 
+#include "modules/I2C/i2cManager.h"
+
+// Include utility libraries
+#include "utils/Converter.h"
+#include "utils/PIDController.h"
+
 // Include external libraries
 #include <SPI.h>                      // SPI library for TFT and PS2
 #include "modules/TFT/PDQ_GFX.h"      // PDQ: Core graphics library
