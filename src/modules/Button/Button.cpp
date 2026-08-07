@@ -1,8 +1,8 @@
 #include "Button.h"
 
 Button::Button() :
-  buttonPin{22, 23, 24, 25},
-  btnStatus{NONE, NONE, NONE, NONE}
+  _buttonPin{22, 23, 24, 25},
+  _btnStatus{ButtonIdle, ButtonIdle, ButtonIdle, ButtonIdle}
 {
 }
 
@@ -10,75 +10,83 @@ void Button::init(void)
 {
   // Initialize button pins as INPUT_PULLUP
   for (uint8_t i = 0; i < 4; i++) {
-    pinMode(buttonPin[i], INPUT_PULLUP);
+    pinMode(_buttonPin[i], INPUT_PULLUP);
   }
 }
 
-bool Button::read(ButtonId btn)
+void Button::setDebounceTime(uint16_t time)
 {
-  uint8_t index = static_cast<uint8_t>(btn) - 1;
-  if (index < 4) {
-    return !digitalRead(buttonPin[index]);
-  }
-  return false;
+  _debounceTime = time;
+}
+
+void Button::setHoldTime(uint16_t time)
+{
+  _holdTime = time;
 }
 
 void Button::update(void)
 {
-  // TODO: Implement the button state machine logic here to detect TAP, PRESS, HOLD, etc.
+  // time each button was last pressed (for hold detection)
+  static uint32_t pressTime[4] = {0};
+  // raw pin state (PULLUP idle = HIGH, pressed = LOW)
+  static bool     lastRead[4] = {true, true, true, true};
+  // time each button was last changed (for debouncing)
+  static uint32_t lastChange[4] = {0};
 
-  // static uint32_t holdTimer[4] = {0};
-  // uint32_t currentTime = millis();
+  // Iterate through each button and update its state
+  for (uint8_t i = 0; i < 4; i++) {
+    // Get the current time
+    uint32_t now = millis();
+    // Read the current button state (pressed = LOW, idle = HIGH)
+    bool pressed = !digitalRead(_buttonPin[i]);
 
-  // for (uint8_t i = 0; i < 4; i++) {
-  //   bool b = !digitalRead(buttonPin[i]);
+    // Debounce: record raw pin changes and only accept them after `_debounceTime` of stability
+    if (pressed != lastRead[i]) {
+      lastRead[i] = pressed;
+      lastChange[i] = now;
+    } 
+    // If the button state has changed but is still within the debounce time, skip processing
+    else if (now - lastChange[i] < _debounceTime) {
+      continue;  // still bouncing — keep previous state
+    }
 
-  //   // Update button state machine based on the current button state and the raw button reading
-  //   if (b) {
-  //     switch (btnStatus[i])
-  //     {
-  //       case NONE:  btnStatus[i] = TAP; holdTimer[i] = currentTime; break;
-  //       case TAP:   btnStatus[i] = PRESS; break;
-  //       case TAP2:  if (currentTime - holdTimer[i] > HOLD_DURATION) btnStatus[i] = HOLD2; break;
-  //       case TAP3:  if (currentTime - holdTimer[i] > HOLD_DURATION) btnStatus[i] = RELEASE; break;
-  //       case PRESS: if (currentTime - holdTimer[i] > HOLD_DURATION) btnStatus[i] = HOLD; break;
-  //       case TAP1_W:  holdTimer[i] = currentTime; btnStatus[i] = TAP2; break;
-  //       case TAP2_W:  holdTimer[i] = currentTime; btnStatus[i] = TAP3; break;
-  //       case TAP3_W:  if (currentTime - holdTimer[i] > HOLD_DURATION) btnStatus[i] = RELEASE; break;
-  //       case RELEASE:
-  //       case RELEASE_S:
-  //       case RELEASE_L: btnStatus[i] = TAP; break;
-  //       case HOLD: break;
-  //       default: break;
-  //     }
-  //   }
-  //   else {
-  //     switch (btnStatus[i])
-  //     {
-  //       case TAP:   btnStatus[i] = TAP1_W; holdTimer[i] = currentTime; break;
-  //       case TAP2:  btnStatus[i] = TAP2_W; holdTimer[i] = currentTime; break;
-  //       case TAP3:  btnStatus[i] = RELEASE; holdTimer[i] = currentTime; break;
-  //       case PRESS: btnStatus[i] = RELEASE_S; break;
-  //       case TAP1_W: if (currentTime - holdTimer[i] > WAIT_DURATION) btnStatus[i] = RELEASE_S; break;
-  //       case HOLD:  btnStatus[i] = RELEASE_L; break;
-  //       case TAP2_W: if (currentTime - holdTimer[i] > WAIT_DURATION) btnStatus[i] = TAP2_R; break;
-  //       case TAP3_W: if (currentTime - holdTimer[i] > WAIT_DURATION) btnStatus[i] = TAP3_R; break;
-  //       case RELEASE:
-  //       case RELEASE_S:
-  //       case RELEASE_L:
-  //       case TAP2_R:
-  //       case TAP3_R: btnStatus[i] = NONE; break;
-  //       default: btnStatus[i] = NONE; break;
-  //     }
-  //   }
-  // }
+    switch (_btnStatus[i]) {
+    case ButtonIdle:
+      // If the button is pressed, transition to ButtonPressed and record the press time
+      if (pressed) {
+        _btnStatus[i] = ButtonPressed;
+        pressTime[i] = now;
+      }
+      break;
+
+    case ButtonPressed:
+      // If the button is still pressed, check if it has been held long enough to transition to ButtonHolding
+      if (pressed) {
+        if (now - pressTime[i] > _holdTime) _btnStatus[i] = ButtonHolding;
+      }
+      // If the button is released, transition to ButtonReleased
+      else {
+        _btnStatus[i] = ButtonReleased;
+      }
+      break;
+
+    case ButtonHolding:
+      // If the button is released, transition to ButtonReleased
+      if (!pressed) _btnStatus[i] = ButtonReleased;
+      break;
+
+    case ButtonReleased:
+      // After the button is released, transition back to ButtonIdle
+      _btnStatus[i] = pressed ? ButtonPressed : ButtonIdle;
+      if (pressed) pressTime[i] = now;
+      break;
+    }
+  }
 }
 
-ButtonStatus Button::getStatus(ButtonId btn)
+ButtonState Button::readState(ButtonId btn) const
 {
-  uint8_t index = static_cast<uint8_t>(btn) - 1;
-  if (index < 4) {
-    return btnStatus[index];
-  }
-  return NONE;
+  uint8_t index = static_cast<uint8_t>(btn);
+  if (index < 4) { return _btnStatus[index]; }
+  return ButtonIdle;
 }

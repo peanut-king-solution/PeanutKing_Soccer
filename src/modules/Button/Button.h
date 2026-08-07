@@ -6,51 +6,71 @@
 #include "PeanutKingDef.h"
 
 // Button ID enumeration for identifying buttons
-typedef enum : uint8_t
+enum ButtonId : uint8_t
 {
-  BTN_1 = 1,
-  BTN_2 = 2,
-  BTN_3 = 3,
-  BTN_4 = 4,
-} ButtonId;
+  Button1 = 0,
+  Button2 = 1,
+  Button3 = 2,
+  Button4 = 3,
+};
+
+// Button state enumeration
+enum ButtonState : uint8_t
+{
+  ButtonIdle = 0,
+  ButtonPressed = 1,
+  ButtonHolding = 2,
+  ButtonReleased = 3,
+};
 
 /**
  * Button class for reading and managing button states
- * Supports up to 4 buttons with TAP, PRESS, HOLD, TAP2, TAP3 detection
+ * Supports up to 4 buttons with press, hold, release detection
  */
 class Button
 {
-private:
-  const uint8_t  buttonPin[4];   // Button pins
-  ButtonStatus   btnStatus[4];   // Buttons' status (index `0-3` = button `1-4`)
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
 
-public:
-  // Constructor
+private:
+  const uint8_t  _buttonPin[4];   // Button pins
+  ButtonState    _btnStatus[4];   // Buttons' state (index `0-3` = button `1-4`)
+
+  uint16_t _debounceTime = 50;    // Debounce time in milliseconds
+  uint16_t _holdTime     = 1000;  // Hold time before `ButtonHolding` triggers (ms)
+
+  // Constructor (accessible only to the friend PeanutKingSoccerV4)
   Button();
 
-  // Initialize button pins as `INPUT_PULLUP`
+public:
+  // Initialize button pins as `INPUT_PULLUP` (called by PeanutKingSoccerV4)
   void init(void);
 
   /**
-   * Read button state (pressed or not)
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
-   *
-   * `Returns` - `true` if pressed, `false` otherwise
+   * Set the debounce time in milliseconds (default: 50ms)
+   * `time` - Debounce time `(ms)`
    */
-  bool read(ButtonId btn);
+  void setDebounceTime(uint16_t time);
+
+  /**
+   * Set the hold time in milliseconds (default: 1000ms)
+   * A button held for this long enters `ButtonHolding`
+   * `time` - Hold time `(ms)`
+   */
+  void setHoldTime(uint16_t time);
 
   /**
    * Update button state machine
-   * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
+   * Should be called regularly to detect `ButtonPressed`, `ButtonHolding`, `ButtonReleased`
    */
   void update(void);
+
   /**
-   * Get the current status of a button
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
+   * Read the current state of a button
+   * `btn` - Button ID (`Button1` - `Button4`)
    *
-   * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
+   * `Returns` - Current button state, e.g., `ButtonIdle`, `ButtonPressed`, `ButtonHolding`, `ButtonReleased`
    */
-  ButtonStatus getStatus(ButtonId btn);
+  ButtonState readState(ButtonId btn) const;
 };
 
 #endif // BUTTON_H

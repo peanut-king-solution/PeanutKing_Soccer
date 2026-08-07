@@ -244,16 +244,12 @@ uint16_t PeanutKingSoccerV4::compoundEyeAngle(void) {
  *                       Button (wrapper for compatibility)
  * ============================================================================= */
 
-bool PeanutKingSoccerV4::buttonRead(ButtonId btn) {
-  return button.read(btn);
-}
-
 void PeanutKingSoccerV4::buttonUpdate(void) {
   button.update();
 }
 
-ButtonStatus PeanutKingSoccerV4::buttonGetStatus(ButtonId btn) {
-  return button.getStatus(btn);
+ButtonState PeanutKingSoccerV4::buttonStateRead(ButtonId btn) {
+  return button.readState(btn);
 }
 
 /* =============================================================================

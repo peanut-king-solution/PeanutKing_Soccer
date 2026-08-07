@@ -130,10 +130,13 @@ void setup() {
 }
 
 void loop() {
+  // Update button state machine
+  robot.buttonUpdate();
+
   // If button 1 is pressed, recalibrate baseline;
-  if (robot.button.read(BTN_1)) {
+  if (robot.buttonStateRead(Button1) == ButtonPressed) {
     ReCalibrateBaseline();
-  } 
+  }
   // Otherwise, display sensor readings and white line detection
   else {
     displayWhiteLine();

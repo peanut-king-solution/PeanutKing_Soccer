@@ -231,24 +231,18 @@ public:
 // =============================================================================
 
   /**
-   * Read button state (pressed or not)
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
-   *
-   * `Returns` - `true` if pressed, `false` otherwise
-   */
-  bool buttonRead(ButtonId btn);
-  /**
-   * Update button state machine
-   * Should be called regularly to detect `TAP`, `PRESS`, `HOLD`, etc.
+   * Update the button state machine
+   * This should be called regularly to update the button states.
    */
   void buttonUpdate(void);
+
   /**
-   * Get the current status of a button
-   * `btn` - Button ID (`BTN_1` - `BTN_4`)
-   * 
-   * `Returns` - Current button status, e.g., `TAP`, `PRESS`, `HOLD`, etc.
+   * Get the current state of a button, should be called after buttonUpdate() to get the latest state.
+   * `btn` - Button ID (`Button1` - `Button4`)
+   *
+   * `Returns` - Current button state, e.g., `ButtonIdle`, `ButtonPressed`, `ButtonHolding`, `ButtonReleased`
    */
-  ButtonStatus buttonGetStatus(ButtonId btn);
+  ButtonState buttonStateRead(ButtonId btn);
 
 // =============================================================================
 //                LED Functions (wrapper for compatibility)

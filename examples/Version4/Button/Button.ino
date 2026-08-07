@@ -1,29 +1,47 @@
-#include <PeanutKingSoccerV4.h>
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+/* Button Example 
+It demonstrates how to read the state of buttons on the PeanutKingSoccerV4 robot.
+*/
 
-void setup() {
+#include <PeanutKingSoccerV4.h>
+static PeanutKingSoccerV4 robot;
+
+void setup()
+{
   robot.init();
 }
 
-void loop() {
-  bool noButtonPressed = true;
-  // Check all buttons' state (pressed or not) and print the result to Serial Monitor
-  for (int i = 1; i <=4; i++) {
-    // Parameter `i` is changed to `ButtonId` enum type to read the button state
-    // if call singlely, can use `robot.buttonRead(BTN_1)` or `robot.buttonRead(BTN_2)` etc.
+void loop()
+{
+  // Update button states
+  robot.buttonUpdate();
 
-    // Check if the button is pressed
-    if (robot.buttonRead((ButtonId) i)) {
-      // Print the button state to Serial Monitor
+  // Check each button's state (after buttonUpdate() to get the latest state)
+  for (int button = Button1; button <= Button4; button++)
+  {
+    // Read the current state of the button
+    ButtonState state = robot.buttonStateRead(button);
+    // Print the button state to the Serial Monitor
+    switch (state)
+    {
+    case ButtonIdle:
+      break;
+    case ButtonPressed:
       Serial.print("Button ");
-      Serial.print(i);
-      Serial.println(" pressed");
-      // Have at least one button pressed, so set the flag to false
-      noButtonPressed = false;
+      Serial.print(button);
+      Serial.println(" - PRESSED");
+      break;
+    case ButtonHolding:
+      Serial.print("Button ");
+      Serial.print(button);
+      Serial.println(" - HOLDING");
+      break;
+    case ButtonReleased:
+      Serial.print("Button ");
+      Serial.print(button);
+      Serial.println(" - RELEASED");
+      break;
     }
   }
-  // No button pressed
-  if (noButtonPressed) {
-    Serial.println("No button pressed");
-  }
+
+  delay(5);
 }
