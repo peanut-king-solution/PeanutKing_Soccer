@@ -256,11 +256,11 @@ ButtonState PeanutKingSoccerV4::buttonStateRead(ButtonId btn) {
  *                       LED (wrapper for compatibility)
  * ============================================================================= */
 
-void PeanutKingSoccerV4::setOnBrdLED(LEDColor color) {
+void PeanutKingSoccerV4::onBoardLedSet(LEDColor color) {
   led.setLED(color);
 }
 
-void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
+void PeanutKingSoccerV4::onBoardLedSet(uint8_t LED, uint8_t status) {
   led.setLED(LED, status);
 }
 

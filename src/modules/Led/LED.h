@@ -4,15 +4,15 @@
 #include <Arduino.h>
 
 // On-board RGB LED color enumeration
-enum class LEDColor : uint8_t {
-  OFF,    // 000
-  BLUE,   // 001
-  GREEN,  // 010
-  CYAN,   // 011
-  RED,    // 100
-  PURPLE, // 101
-  YELLOW, // 110
-  WHITE   // 111
+enum LEDColor : uint8_t {
+  LEDOff    = 0,  // 000
+  LEDBlue   = 1,  // 001
+  LEDGreen  = 2,  // 010
+  LEDCyan   = 3,  // 011
+  LEDRed    = 4,  // 100
+  LEDPurple = 5,  // 101
+  LEDYellow = 6,  // 110
+  LEDWhite  = 7   // 111
 };
 
 /**
@@ -21,19 +21,21 @@ enum class LEDColor : uint8_t {
  */
 class LED
 {
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
+
 private:
   const uint8_t _ledPin[3];  // On-board LED pins (R, G, B)
 
-public:
-  // Constructor
+  // Constructor (accessible only to the friend PeanutKingSoccerV4)
   LED();
 
-  // Initialize LED pins as OUTPUT
+public:
+  // Initialize LED pins as OUTPUT (called by PeanutKingSoccerV4)
   void init(void);
 
   /**
    * Set all on-board LEDs to a specific color
-   * `color` - Color to set (`LEDColor::OFF` - `LEDColor::WHITE`)
+   * `color` - Color to set (`LEDOff` - `LEDWhite`)
    */
   void setLED(LEDColor color);
 

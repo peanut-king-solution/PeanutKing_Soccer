@@ -256,15 +256,15 @@ public:
 
   /**
    * Set all on-board LEDs to a specific color
-   * `color` - Color to set (`LEDColor::OFF` - `LEDColor::WHITE`)
+   * `color` - Color to set (`LEDOff` - `LEDWhite`)
    */
-  void setOnBrdLED(LEDColor color);
+  void onBoardLedSet(LEDColor color);
   /**
-   * Set a single on-board LED `on`/`off`
-   * `LED`    - LED index (`0-2`)
-   * `status` - `0` = off, `1` = on
+   * Set a single channel on-board LED `on`/`off`
+   * `LED`    - RGB Pin index (`0`=Red, `1`=Green, `2`=Blue)
+   * `status` - `LOW` = off, `HIGH` = on
    */
-  void setOnBrdLED(uint8_t LED, uint8_t status);
+  void onBoardLedSet(uint8_t LED, uint8_t status);
 
 // =============================================================================
 //                      Ultrasound Functions (wrapper for compatibility)
