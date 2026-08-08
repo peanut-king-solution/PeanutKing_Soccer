@@ -15,7 +15,7 @@ void setup() {
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.readCompassHeading();
+  uint16_t heading = robot.compassReadHeading();
   int rotationSpeed = 100;  // Set rotation speed
   int compassDeadZone = 10; // +- 10° deadzone
 

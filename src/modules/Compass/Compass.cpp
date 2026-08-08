@@ -54,15 +54,15 @@ int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   return dataArr;
 }
 
-int16_t* Compass::readAccelerometerRaw(void) {
+int16_t* Compass::readRawAccel(void) {
   return readRaw6(ACC_RAW, accelData);
 }
 
-int16_t* Compass::readGyroscopeRaw(void) {
+int16_t* Compass::readRawGyro(void) {
   return readRaw6(GYR_RAW, gyroData);
 }
 
-int16_t* Compass::readMagnetometerRaw(void) {
+int16_t* Compass::readRawMag(void) {
   return readRaw6(MAG_RAW, magData);
 }
 

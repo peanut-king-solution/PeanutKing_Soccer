@@ -42,6 +42,20 @@ private:
   int16_t magData[3]   = {0};  // Magnetometer raw data (X, Y, Z)
 
   /**
+   * Clear the receive buffer
+   */
+  void clearBuffer(void);
+
+  /**
+   * Read raw 6-byte sensor data
+   * `reg`      - Register address to read from
+   * `dataArr`  - Output array to store data (int16_t[3])
+   *
+   * `Returns` - pointer to the data array
+   */
+  int16_t* readRaw6(uint8_t reg, int16_t* dataArr);
+
+  /**
    * Constructor (accessible only to the friend PeanutKingSoccerV4)
    * Uses the fixed compass I2C address (`COMPASS_I2C_ADDRESS`).
    */
@@ -67,38 +81,23 @@ public:
    *
    * `Returns` - array of `accelData[3]` (X, Y, Z)
    */
-  int16_t* readAccelerometerRaw(void);
+  int16_t* readRawAccel(void);
 
   /**
    * Read raw gyroscope data
    *
    * `Returns` - array of `gyroData[3]` (X, Y, Z)
    */
-  int16_t* readGyroscopeRaw(void);
+  int16_t* readRawGyro(void);
 
   /**
    * Read raw magnetometer data
    *
    * `Returns` - array of `magData[3]` (X, Y, Z)
    */
-  int16_t* readMagnetometerRaw(void);
-
-  /**
-   * Clear the receive buffer
-   */
-  void clearBuffer(void);
+  int16_t* readRawMag(void);
 
   Converter converter; // Converter for compass readings
-
-private:
-  /**
-   * Read raw 6-byte sensor data
-   * `reg`      - Register address to read from
-   * `dataArr`  - Output array to store data (int16_t[3])
-   *
-   * `Returns` - pointer to the data array
-   */
-  int16_t* readRaw6(uint8_t reg, int16_t* dataArr);
 };
 
 #endif // COMPASS_H

@@ -4,8 +4,7 @@
  */
 
 #include <PeanutKingSoccerV4.h>
-
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
@@ -24,7 +23,7 @@ uint16_t prevHeading = 0;
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.readCompassHeading();
+  uint16_t heading = robot.compassReadHeading();
 
   // Set text size for heading display
   robot.setTextSize(3);
