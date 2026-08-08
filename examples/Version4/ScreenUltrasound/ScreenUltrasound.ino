@@ -25,10 +25,10 @@ void setup() {
 void loop() {
   // Read distances from all four ultrasonic sensors
   uint16_t dist[4];
-  dist[0] = robot.ultrasoundGetDist(Position::FRONT);  // Front
-  dist[1] = robot.ultrasoundGetDist(Position::RIGHT);  // Right
-  dist[2] = robot.ultrasoundGetDist(Position::BACK);   // Back
-  dist[3] = robot.ultrasoundGetDist(Position::LEFT);   // Left
+  dist[0] = robot.ultrasoundGetDist(Front);  // Front
+  dist[1] = robot.ultrasoundGetDist(Right);  // Right
+  dist[2] = robot.ultrasoundGetDist(Back);   // Back
+  dist[3] = robot.ultrasoundGetDist(Left);   // Left
 
   // Sensor labels (drawn once, no need to clear)
   robot.setTextSize(1);

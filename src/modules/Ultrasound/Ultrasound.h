@@ -6,13 +6,14 @@
 #include "PeanutKingDef.h"
 
 // Ultrasound port enumeration (U1-U4)
-typedef enum : uint8_t
+enum UltrasoundId : uint8_t
 {
   U1 = 0, // default pos: Front
   U2 = 1, // default pos: Right
   U3 = 2, // default pos: Back
-  U4 = 3  // default pos: Left
-} UltrasoundId;
+  U4 = 3, // default pos: Left
+  UltrasoundMaxCount = 4 // Total number of ultrasound sensors
+};
 
 /**
  * Ultrasound class for managing 4 ultrasonic sensors
@@ -21,6 +22,8 @@ typedef enum : uint8_t
  */
 class Ultrasound
 {
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
+
 private:
   // Pin configuration
   const uint8_t _trigPin[4]; // Trigger pins
@@ -28,21 +31,24 @@ private:
 
   // Sensor mapping: maps logical sensor ID (U1~U4) to physical pin index
   // Default: U1→0 (Front), U2→1 (Right), U3→2 (Back), U4→3 (Left)
-  uint8_t _ultrasoundMap[4];
-
-  // Timing data
-  uint32_t _pulseStart[4];   // Rising edge timestamp (micros)
-  uint32_t _lastTriggerTime; // Rate limiting timestamp (millis)
-  uint8_t _currentSeq;       // Round-robin sensor index (0-3)
-
-  // Distance results (mm)
-  uint16_t _distance[4];
+  UltrasoundId _ultrasoundMap[4];
 
   // Enabled sensors bitmask (bit 0=U1, bit 1=U2, bit 2=U3, bit 3=U4)
   uint8_t _enabledMask;
 
-  // ISR infrastructure (static pointer pattern)
-  static Ultrasound *_instance;     // Pointer to the single instance of Ultrasound for ISR access
+  // Rising edge timestamps for each sensor (millis)
+  uint32_t _lastTriggerTime = 0;
+
+   // Round-robin sensor index (0-3)
+  uint8_t   _currentSeq = 0;
+  
+  // Rising edge timestamp (micros)
+  uint32_t _pulseStart[4] = {0, 0, 0, 0}; 
+  
+  // Distance results (mm)
+  uint16_t _distance[4] = {0, 0, 0, 0};
+
+  // ISR infrastructure
   void handleEcho(uint8_t n);       // Handle echo signal for sensor `n`
   static void echoISR_0();          // ISR for sensor 0
   static void echoISR_1();          // ISR for sensor 1
@@ -53,10 +59,10 @@ private:
   // Advance round-robin to next enabled sensor and send trigger pulse
   void _triggerNext(void);
 
-public:
-  // Constructor
+  // Constructor (accessible only to the friend PeanutKingSoccerV4)
   Ultrasound();
 
+public:
   // Initialize ultrasonic sensor pins and attach PCINT interrupts
   void init(void);
 
@@ -69,14 +75,21 @@ public:
    * `back`  - Ultrasound `port` plugged at the back position
    * `left`  - Ultrasound `port` plugged at the left position
    */
-  void setMap(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
-
+  void mapPort(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
+  // Check if a sensor port is valid (U1~U4)
+  bool portValidCheck(UltrasoundId port);
   /**
-   * Convert a Position (Front/Right/Back/Left) to the corresponding UltrasoundId (U1~U4)
+   * Convert a sensor position (Front/Right/Back/Left) to the corresponding UltrasoundId (U1~U4)
    * based on the current sensor mapping.
    */
-  UltrasoundId getPortFromPos(Position pos);
+  UltrasoundId getPortFromPos(SensorPos pos);
 
+  /**
+   * Set the enabled sensors mask.
+   *
+   * `mask` - Bitmask where each bit represents a sensor (bit 0=U1, bit 1=U2, bit 2=U3, bit 3=U4)
+   */
+  void setEnableMask(uint8_t mask);
   /**
    * Enable or disable a single sensor
    *
@@ -84,23 +97,14 @@ public:
    * `enabled` - `true` to enable, `false` to disable
    */
   void enable(UltrasoundId port, bool enabled);
-
   /**
-   * Enable or disable sensors by physical position
+   * Check if a single sensor is enabled.
    *
-   * `front` - `true` to enable front sensor, `false` to disable
-   * `right` - `true` to enable right sensor, `false` to disable
-   * `back`  - `true` to enable back sensor, `false` to disable
-   * `left`  - `true` to enable left sensor, `false` to disable
-   */
-  void setEnabledByPos(bool front, bool right, bool back, bool left);
-
-    /**
-   * Enable or disable all sensors at once
+   * `port` - Sensor port (`U1`, `U2`, `U3`, `U4`)
    *
-   * `enabled` - `true` to enable all, `false` to disable all
+   * `Returns` - `true` if the sensor is enabled, `false` otherwise
    */
-  void enableAll(bool enabled);
+  bool isEnabled(UltrasoundId port) const;
 
   /**
    * Read distance from a specified port (U1~U4)

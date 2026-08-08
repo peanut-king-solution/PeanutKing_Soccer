@@ -1,11 +1,12 @@
 #include "Ultrasound.h"
 
 /* =============================================================================
- *                              Static Members
+ *                              File-scope Static
  * ============================================================================= */
 
-// Pointer to the single instance of Ultrasound for ISR access
-Ultrasound *Ultrasound::_instance = nullptr;
+// Pointer to the sole instance of Ultrasound, used by ISR callbacks.
+// Declared as file-scope static so it is hidden from other translation units.
+static Ultrasound *s_instance = nullptr;
 
 void (*Ultrasound::_echoISR_ptr[4])() = {
   Ultrasound::echoISR_0,
@@ -18,18 +19,16 @@ void (*Ultrasound::_echoISR_ptr[4])() = {
  *                              Constructor
  * ============================================================================= */
 
-Ultrasound::Ultrasound() : 
+Ultrasound::Ultrasound() :
   _trigPin{49, 48, 47, 46},     // U1, U2, U3, U4
   _echoPin{A15, A14, A13, A12}, // U1, U2, U3, U4
-  _ultrasoundMap{0, 1, 2, 3},   // default mapping (no mapping applied)
-  _pulseStart{0, 0, 0, 0},      // Rising edge timestamps for each sensor
-  _lastTriggerTime(0),          // Rate limiting timestamp (millis)
-  _currentSeq(0),               // Round-robin sensor index (0-3)
-  _distance{0, 0, 0, 0},        // Distance results (mm)
+  _ultrasoundMap{U1, U2, U3, U4},   // default mapping (no mapping applied)
   _enabledMask(0x0F)            // all enabled by default
 {
-  // Set static instance pointer for ISR callbacks
-  _instance = this;
+  // Ensure only one instance of Ultrasound exists
+  if (s_instance == nullptr) {
+    s_instance = this;
+  }
 }
 
 /* =============================================================================
@@ -53,7 +52,7 @@ void Ultrasound::init(void)
  *                              Sensor Mapping
  * ============================================================================= */
 
-void Ultrasound::setMap(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left)
+void Ultrasound::mapPort(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left)
 {
   // Map logical sensor IDs to physical positions
   _ultrasoundMap[0] = (uint8_t)front;
@@ -62,45 +61,50 @@ void Ultrasound::setMap(UltrasoundId front, UltrasoundId right, UltrasoundId bac
   _ultrasoundMap[3] = (uint8_t)left;
 }
 
-UltrasoundId Ultrasound::getPortFromPos(Position pos)
+bool Ultrasound::portValidCheck(UltrasoundId port)
 {
-  // Convert Position enum to index (0-3)
-  uint8_t idx = (uint8_t)pos;
-  if (idx >= 4)  return U1;
+  return (port >= U1 && port <= U4);
+}
+
+UltrasoundId Ultrasound::getPortFromPos(SensorPos pos)
+{
+  // Validate position input
+  if (pos < Front || pos > Left) { return UltrasoundMaxCount; }
   // Return the corresponding UltrasoundId based on the current mapping
-  return (UltrasoundId)_ultrasoundMap[idx];
+  return _ultrasoundMap[pos];
 }
 
 /* =============================================================================
  *                              Single Sensor Enable / Disable
  * ============================================================================= */
 
+void Ultrasound::setEnableMask(uint8_t mask)
+{
+  if (mask > 0x0F) { mask = 0x0F; } // Ensure only lower 4 bits are used
+  _enabledMask = mask;  // Set the enabled sensors bitmask (bit 0=U1, bit 1=U2, bit 2=U3, bit 3=U4)
+}
+
 void Ultrasound::enable(UltrasoundId port, bool enabled)
 {
   // Validate port index
-  uint8_t n = (uint8_t)port;
-  if (n >= 4) return;
+  if (!portValidCheck(port)) { return; }
 
   // Update the enabled mask for the specified sensor
   if (enabled) {
-    _enabledMask |= (1 << n);
+    _enabledMask |= (1 << port);
   } 
   else {
-    _enabledMask &= ~(1 << n);
+    _enabledMask &= ~(1 << port);
   }
 }
 
-void Ultrasound::setEnabledByPos(bool front, bool right, bool back, bool left)
+bool Ultrasound::isEnabled(UltrasoundId port) const
 {
-  enable(getPortFromPos(Position::FRONT), front);
-  enable(getPortFromPos(Position::RIGHT), right);
-  enable(getPortFromPos(Position::BACK), back);
-  enable(getPortFromPos(Position::LEFT), left);
-}
+  // Validate port index
+  if (!portValidCheck(port)) { return false; }
 
-void Ultrasound::enableAll(bool enabled)
-{
-  _enabledMask = enabled ? 0x0F : 0x00;
+  // Check if the specified sensor is enabled in the mask
+  return (_enabledMask & (1 << port)) != 0;
 }
 
 /* =============================================================================
@@ -109,22 +113,18 @@ void Ultrasound::enableAll(bool enabled)
 
 uint16_t Ultrasound::read(UltrasoundId port)
 {
-  // Validate port index
-  uint8_t n = (uint8_t)port;
-  if (n >= 4) { return 0; }
-
-  // Check if the requested sensor is enabled
-  if (!(_enabledMask & (1 << n))) { return 0; }
+  // Return 65535 if the port is invalid or disabled
+  if (!portValidCheck(port) || !isEnabled(port)) { return 65535; }
 
   // Rate limiting - minimum 30ms between trigger pulses
   if (millis() - _lastTriggerTime < 30) {
-    return _distance[n];
+    return _distance[port];
   }
   
   // Round-robin trigger via private helper
   _triggerNext();
 
-  return _distance[n];
+  return _distance[port];
 }
 
 /* =============================================================================
@@ -136,23 +136,19 @@ void Ultrasound::_triggerNext(void)
   // Find next enabled sensor in round-robin order
   for (uint8_t i = 0; i < 4; i++) {
     _currentSeq = (_currentSeq >= 3) ? 0 : _currentSeq + 1;
-    if (_enabledMask & (1 << _currentSeq))
+    if (isEnabled(_currentSeq))
     {
-      break; // Found an enabled sensor
+      // Send 10us trigger pulse on the physical pin
+      digitalWrite(_trigPin[_currentSeq], LOW);
+      delayMicroseconds(2);
+      digitalWrite(_trigPin[_currentSeq], HIGH);
+      delayMicroseconds(10);
+      digitalWrite(_trigPin[_currentSeq], LOW);
+
+      // Update last trigger time
+      _lastTriggerTime = millis();
+      return; // Found an enabled sensor
     }
-  }
-
-  // Only trigger if the selected sensor is enabled
-  if (_enabledMask & (1 << _currentSeq)) {
-    // Send 10us trigger pulse on the physical pin
-    digitalWrite(_trigPin[_currentSeq], LOW);
-    delayMicroseconds(2);
-    digitalWrite(_trigPin[_currentSeq], HIGH);
-    delayMicroseconds(10);
-    digitalWrite(_trigPin[_currentSeq], LOW);
-
-    // Update last trigger time
-    _lastTriggerTime = millis();
   }
 }
 
@@ -166,7 +162,7 @@ void Ultrasound::handleEcho(uint8_t n)
   if (_currentSeq != n) { return; }
 
   // Skip if this sensor is disabled
-  if (!(_enabledMask & (1 << n))) { return; }
+  if (!isEnabled(n)) { return; }
 
   if (digitalRead(_echoPin[n])) {
     // Rising edge - capture start time
@@ -192,7 +188,7 @@ void Ultrasound::handleEcho(uint8_t n)
  *                              Static ISR Wrappers
  * ============================================================================= */
 
-void Ultrasound::echoISR_0() { _instance->handleEcho(0); }
-void Ultrasound::echoISR_1() { _instance->handleEcho(1); }
-void Ultrasound::echoISR_2() { _instance->handleEcho(2); }
-void Ultrasound::echoISR_3() { _instance->handleEcho(3); }
+void Ultrasound::echoISR_0() { s_instance->handleEcho(0); }
+void Ultrasound::echoISR_1() { s_instance->handleEcho(1); }
+void Ultrasound::echoISR_2() { s_instance->handleEcho(2); }
+void Ultrasound::echoISR_3() { s_instance->handleEcho(3); }

@@ -331,7 +331,7 @@ public:
    *
    * `Returns` - Distance in mm (0~4500mm)
    */
-  uint16_t ultrasoundGetDist(Position pos);
+  uint16_t ultrasoundGetDist(SensorPos pos);
 
   /**
    * Configure which ultrasound port (U1~U4) is at each physical position
@@ -341,7 +341,7 @@ public:
    * `back`  - ultrasound port plugged at the back position
    * `left`  - ultrasound port plugged at the left position
    */
-  void ultrasoundConfig(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
+  void ultrasoundConfiguration(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
 
   /**
    * Enable or disable sensors by position

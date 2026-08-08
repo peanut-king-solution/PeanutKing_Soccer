@@ -77,6 +77,9 @@ void PeanutKingSoccerV4::dataFetch(void) {
     colorRGB[pos]  = colorSensorReadRGB(pos);
     colorHSL[pos]  = colorSensorReadHSL(pos);
     isWhite[pos]   = isWhiteLine(pos);
+
+    // Ultrasound - distance by physical position
+    distances[pos] = ultrasoundGetDist(pos);
   }
 
   // Compound eye
@@ -84,13 +87,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   maxEye    = compoundMaxEyeRead();       // Read the index of the IR sensor with maximum reading
   maxEyeVal = compoundMaxEyeValueRead();  // Read the maximum IR sensor value
   irAngle   = compoundEyeAngleRead();     // Read the angle of the detected object
-
-  // Ultrasound read by position (not sure will it have any effect on the performance)
-  for (uint8_t i = 0; i < 4; i++) {
-    UltrasoundId port = ultrasound.getPortFromPos((Position)i);
-    distances[i] = ultrasound.read(port);
-  }
-
+  
   // Compass
   heading = readCompassHeading();
 }
@@ -292,21 +289,24 @@ void PeanutKingSoccerV4::onBoardLedSet(uint8_t LED, uint8_t status) {
  *                       Ultrasound (wrapper)
  * ============================================================================= */
 
-uint16_t PeanutKingSoccerV4::ultrasoundGetDist(Position pos) {
+uint16_t PeanutKingSoccerV4::ultrasoundGetDist(SensorPos pos) {
   UltrasoundId port = ultrasound.getPortFromPos(pos);
   return ultrasound.read(port);
 }
 
-void PeanutKingSoccerV4::ultrasoundConfig(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left) {
-  ultrasound.setMap(front, right, back, left);
+void PeanutKingSoccerV4::ultrasoundConfiguration(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left) {
+  ultrasound.mapPort(front, right, back, left);
 }
 
 void PeanutKingSoccerV4::ultrasoundSetEnabled(bool front, bool right, bool back, bool left) {
-  ultrasound.setEnabledByPos(front, right, back, left);
+  ultrasound.enable(ultrasound.getPortFromPos(Front), front);
+  ultrasound.enable(ultrasound.getPortFromPos(Right), right);
+  ultrasound.enable(ultrasound.getPortFromPos(Back),  back);
+  ultrasound.enable(ultrasound.getPortFromPos(Left),  left);
 }
 
 void PeanutKingSoccerV4::ultrasoundEnableAll(bool enabled) {
-  ultrasound.enableAll(enabled);
+  ultrasound.setEnableMask(enabled ? 0x0F : 0x00);
 }
 
 /* =============================================================================
@@ -314,7 +314,6 @@ void PeanutKingSoccerV4::ultrasoundEnableAll(bool enabled) {
  * ============================================================================= */
 
 uint16_t PeanutKingSoccerV4::readCompassHeading(void)   { return compass.readHeading(); }
-
 int16_t* PeanutKingSoccerV4::readAccelerometerRaw(void) { return compass.readAccelerometerRaw(); }
 int16_t* PeanutKingSoccerV4::readGyroscopeRaw(void)     { return compass.readGyroscopeRaw(); }
 int16_t* PeanutKingSoccerV4::readMagnetometerRaw(void)  { return compass.readMagnetometerRaw(); }
