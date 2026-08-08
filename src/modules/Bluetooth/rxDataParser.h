@@ -2,7 +2,7 @@
 #define RX_DATA_PARSER_H
 
 // PILA remote control command codes
-typedef enum
+enum PILA_RX_Cmd
 {
   CMD_FORWARD  = 'F',
   CMD_BACKWARD = 'B',
@@ -15,7 +15,7 @@ typedef enum
   CMD_START    = 'A',
   CMD_LIGHT    = 'Z',
   CMD_PAUSE    = 'P'
-} PILA_RX_Cmd;
+};
 
 class rxDataParser
 {

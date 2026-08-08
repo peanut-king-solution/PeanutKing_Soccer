@@ -20,6 +20,8 @@ enum class RemoteMode : uint8_t
 
 class Bluetooth
 {
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
+
 private:
   // Remote mode (PILA or DASHBOARD)
   RemoteMode _mode;
@@ -32,9 +34,10 @@ private:
   txDataPacker _txPacker; // Instance of txDataPacker for packing data to send
   rxDataParser _rxParser; // Instance of rxDataParser for parsing received data
 
-public:
-  // Constructor
+  // Constructor (accessible only to the friend PeanutKingSoccerV4)
   Bluetooth();
+
+public:
 
 // ============================================================================
 //                              Configuration 
