@@ -26,16 +26,6 @@ bool I2CManager::init(void)
   return true;
 }
 
-I2C_Handle I2CManager::RegisterDevice(BusIndex busIndex, uint8_t deviceAddress, uint32_t speed)
-{
-  // Validate the bus index and device address
-  if (busIndex > BusIndex::HW || deviceAddress > 0x7F || deviceAddress == 0x00)
-  {
-    return I2C_Handle(BusIndex::HW, 0x00, 0); // Return an invalid handle
-  }
-  return I2C_Handle(busIndex, deviceAddress, speed); // Return a valid handle
-}
-
 bool I2CManager::SensorRead(const I2C_Handle &handle, uint8_t reg, uint8_t *rxBuffer, uint8_t length)
 {
   // Validate the I2C handle and buffer parameters
@@ -57,6 +47,9 @@ bool I2CManager::SensorRead(const I2C_Handle &handle, uint8_t reg, uint8_t *rxBu
       return false;
     }
     swiic[busIdx].write(reg);
+
+    // full Stop before Repeated START is not strictly necessary, but some devices require it
+    swiic[busIdx].stop();
 
     // Repeated START + write device address (read mode)
     swiic[busIdx].start();

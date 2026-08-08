@@ -13,8 +13,30 @@
  */
 enum class BusIndex : uint8_t
 {
-  SW0 = 0, SW1, SW2, SW3, SW4, SW5, SW6, SW7, HW = 8
+  SW0 = 0, SW1, SW2, SW3, SW4, SW5, SW6, SW7, HW, INVALID = 9
 };
+
+/**
+ * Check if a bus index is within the valid range (`SW0`-`HW`)
+ * `busIndex` - Bus index to validate
+ *
+ * `Returns` - `true` if valid, `false` otherwise
+ */
+inline bool isValidBusIndex(BusIndex busIndex)
+{
+  return (busIndex >= BusIndex::SW0) && (busIndex <= BusIndex::HW) && (busIndex != BusIndex::INVALID);
+}
+
+/**
+ * Check if a device address is within the valid I2C range (`0x01`-`0x7F`)
+ * `deviceAddress` - Device address to validate
+ *
+ * `Returns` - `true` if valid, `false` otherwise
+ */
+inline bool isValidDeviceAddress(uint8_t deviceAddress)
+{
+  return (deviceAddress != 0x00) && (deviceAddress <= 0x7F);
+}
 
 /**
  * I2C device handle structure
@@ -28,6 +50,9 @@ struct I2C_Handle
   uint8_t deviceAddress;
   uint32_t speed;
 
+  // Default Constructor
+  I2C_Handle() : busIndex(BusIndex::INVALID), deviceAddress(0), speed(0) {}
+
   /**
    * Constructor to initialize the I2C handle
    * `index`    - Bus index
@@ -35,7 +60,15 @@ struct I2C_Handle
    * `i2cSpeed` - I2C speed in `Hz`
    */
   I2C_Handle(BusIndex index, uint8_t address, uint32_t i2cSpeed)
-      : busIndex(index), deviceAddress(address), speed(i2cSpeed) {}
+    : busIndex(index), deviceAddress(address), speed(i2cSpeed) 
+  {
+    if (!isValidBusIndex(busIndex)) {
+      busIndex = BusIndex::INVALID; // Mark as invalid if bus index is out of range
+    }
+    if (!isValidDeviceAddress(deviceAddress)) {
+      deviceAddress = 0; // Mark as invalid if device address is out of range
+    }
+  }
 
   /**
    * Check if the I2C handle is valid
@@ -44,7 +77,7 @@ struct I2C_Handle
    */
   bool isValid() const
   {
-    return (busIndex <= BusIndex::HW) && (deviceAddress <= 0x7F) && (deviceAddress != 0x00);
+    return isValidBusIndex(busIndex) && isValidDeviceAddress(deviceAddress);
   }
 };
 
@@ -60,7 +93,6 @@ private:
 
   SoftI2cMaster swiic[8];   // Software I2C instances for color sensors
   hwI2CMaster hwiic;        // Hardware I2C master instance
-  uint8_t regBuf[1];        // Buffer for register address during read operations
 
 public:
   /**
@@ -80,16 +112,6 @@ public:
    * `Returns` - `true` if successful, `false` otherwise
    */
   bool init(void);
-
-  /**
-   * Register an I2C device
-   * `busIndex`      - Bus index (`BusIndex::SW0`-`SW7` or `BusIndex::HW`)
-   * `deviceAddress` - I2C device address
-   * `speed`         - I2C speed in `Hz`
-   *
-   * `Returns` - I2C handle for subsequent operations
-   */
-  I2C_Handle RegisterDevice(BusIndex busIndex, uint8_t deviceAddress, uint32_t speed);
 
   /**
    * Read data from I2C device

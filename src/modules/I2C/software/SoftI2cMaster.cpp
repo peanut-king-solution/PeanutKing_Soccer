@@ -225,14 +225,15 @@ bool SoftI2cMaster::write(uint8_t data) {
   // Go to sda high Z mode for input.
   writeSda(HIGH);
   writeScl(HIGH);
-  sclDelay(16);
+  sclDelay(80);
 
   // Get ACK or NACK.
   uint8_t rtn = readSda();
 
   // pull scl low.
   writeScl(LOW);
-
+  sclDelay(40);
+  
   // Pull sda low.
   writeSda(LOW);
   return rtn == 0;
