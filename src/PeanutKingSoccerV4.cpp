@@ -83,7 +83,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   compoundEyeReadAll();  // Read all 12 IR sensor values
   maxEye    = compoundMaxEyeRead();       // Read the index of the IR sensor with maximum reading
   maxEyeVal = compoundMaxEyeValueRead();  // Read the maximum IR sensor value
-  irAngle   = compoundEyeAngleRead();     // Read the angle of the detected object, 
+  irAngle   = compoundEyeAngleRead();     // Read the angle of the detected object
 
   // Ultrasound read by position (not sure will it have any effect on the performance)
   for (uint8_t i = 0; i < 4; i++) {
