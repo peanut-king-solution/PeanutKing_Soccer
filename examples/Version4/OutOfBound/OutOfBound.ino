@@ -23,11 +23,11 @@ void setup() {
 }
 
 void loop() {
-  // Check white lines
-  bool whiteF = robot.colorSensor.isWhiteLine(CL1);
-  bool whiteR = robot.colorSensor.isWhiteLine(CL2);
-  bool whiteB = robot.colorSensor.isWhiteLine(CL3);
-  bool whiteL = robot.colorSensor.isWhiteLine(CL4);
+  // Check white lines (by physical position)
+  bool whiteF = robot.isWhiteLine(Front);
+  bool whiteR = robot.isWhiteLine(Right);
+  bool whiteB = robot.isWhiteLine(Back);
+  bool whiteL = robot.isWhiteLine(Left);
 
   // If white line detected, move in opposite direction
   if (whiteF || whiteR || whiteB || whiteL) {

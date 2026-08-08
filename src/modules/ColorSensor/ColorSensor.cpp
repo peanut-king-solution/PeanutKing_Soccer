@@ -1,55 +1,41 @@
 #include "ColorSensor.h"
 
-I2C_Handle &ColorSensor::getHandle(CLR_SENSOR_ID sensorNum)
+I2C_Handle &ColorSensor::getHandle(ColorSensorId sensorNum)
 {
   return _handles[sensorNum];
 }
 
 ColorSensor::ColorSensor() :
   _handles{    // Initialize I2C handles for 8 color sensors
-    I2C_Handle(BusIndex::SW0, 0, 0),
-    I2C_Handle(BusIndex::SW1, 0, 0),
-    I2C_Handle(BusIndex::SW2, 0, 0),
-    I2C_Handle(BusIndex::SW3, 0, 0),
-    I2C_Handle(BusIndex::SW4, 0, 0),
-    I2C_Handle(BusIndex::SW5, 0, 0),
-    I2C_Handle(BusIndex::SW6, 0, 0),
-    I2C_Handle(BusIndex::SW7, 0, 0)
+    I2C_Handle(BusIndex::SW0, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW1, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW2, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW3, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW4, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW5, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW6, COLOR_SENSOR_ADDRESS, 0),
+    I2C_Handle(BusIndex::SW7, COLOR_SENSOR_ADDRESS, 0)
   },
   _enabledMask(0x0F), // Default: first four sensors enabled (CL1-CL4)
   _sensorMap{CL1, CL2, CL3, CL4}  // Default: CL1=Front, CL2=Right, CL3=Back, CL4=Left
 {
   // Initialize baseline data for all sensors
-  for (uint8_t i = 0; i < 8; i++) {
-    _baseline[i] = {0, 0, 0, false};
-    _isWhite[i] = false;
+  for (uint8_t port = CL1; port <= CL8; port++) {
+    _baseline[port] = {0, 0, 0, false};
+    _isWhite[port] = false;
   }
 }
 
 bool ColorSensor::init(void)
 {
-  I2CManager &i2cManager = I2CManager::getInstance();
-  // Register only enabled sensors with I2CManager
-  for (uint8_t i = 0; i < 8; i++) {
+  // Initialize all enabled sensors and calibrate their baselines
+  for (uint8_t port = CL1; port <= CL8; port++) {
+    ColorSensorId sensorId = static_cast<ColorSensorId>(port);
     // Skip disabled sensors
-    if (!(_enabledMask & (1 << i))) { continue; }
-
-    // Register the sensor with I2CManager and store the handle
-    _handles[i] = i2cManager.RegisterDevice(
-      static_cast<BusIndex>(i),
-      COLOR_SENSOR_ADDRESS,
-      100000
-    );
-
-    // Check if the handle is valid after registration
-    if (!_handles[i].isValid()) { return false; }
-  }
-
-  // calibrate all enabled sensors for white line detection
-  for (uint8_t i = 0; i < 8; i++) {
-    if (isEnabled((CLR_SENSOR_ID)i)) {
-      calBaseline((CLR_SENSOR_ID)i);
-    }
+    if (!isEnabled(sensorId)) { continue; }
+    
+    // Calibrate the baseline for this sensor
+    calBaseline(sensorId);
   }
   return true;
 }
@@ -58,62 +44,127 @@ bool ColorSensor::init(void)
  *                        Sensor Configuration
  * ============================================================================= */
 
-void ColorSensor::configuration(CLR_SENSOR_ID Front, CLR_SENSOR_ID Right, CLR_SENSOR_ID Back, CLR_SENSOR_ID Left)
+bool ColorSensor::portValidCheck(ColorSensorId sensorNum)
 {
+  return (sensorNum >= CL1 && sensorNum <= CL8);
+}
+
+ColorSensorId ColorSensor::getPortFromPos(SensorPos pos)
+{
+  // Validate position input
+  if (pos < Front || pos > Left) { return ColorSensorMaxCount; } 
+  // Return the corresponding ColorSensorId based on the current mapping
+  return _sensorMap[pos];
+}
+
+void ColorSensor::mapPort(ColorSensorId Front, ColorSensorId Right, ColorSensorId Back, ColorSensorId Left)
+{
+  if (  // Check if all sensor ports are valid
+    !portValidCheck(Front) || 
+    !portValidCheck(Right) || 
+    !portValidCheck(Back) || 
+    !portValidCheck(Left)
+  ) {
+    return; // Invalid sensor port, do nothing
+  }
+
+  // 1. Snapshot old map before overwriting
+  ColorSensorId oldMap[4] = { _sensorMap[0], _sensorMap[1], _sensorMap[2], _sensorMap[3] };
+
+  // 2. Update sensor position mapping
   _sensorMap[0] = Front;
   _sensorMap[1] = Right;
   _sensorMap[2] = Back;
   _sensorMap[3] = Left;
+
+  // 3. Old handle cleanup: sensors that were in old map but not in new map
+  //    `enable(oldSid, false)` handles unregistering the I2C slot, resetting the
+  //    handle, clearing the baseline, and clearing the enable bit.
+  for (uint8_t i = 0; i < 4; i++) {
+    ColorSensorId oldSid = oldMap[i];
+
+    // Check if this old sensor is still referenced in the new map
+    bool stillReferenced = false;
+    for (uint8_t j = 0; j < 4; j++) {
+      if (_sensorMap[j] == oldSid) { stillReferenced = true; break; }
+    }
+    if (stillReferenced || !isEnabled(oldSid)) { continue; }
+
+    enable(oldSid, false);
+  }
+
+  // 4. Enable and calibrate any new sensor not yet enabled in the map
+  //    `enable(sid, true)` registers the I2C slot and hands out a valid handle.
+  for (uint8_t i = 0; i < 4; i++) {
+    SensorPos pos = static_cast<SensorPos>(i);
+    ColorSensorId sid = getPortFromPos(pos);
+
+    // Already handled by init() or a previous mapPort()
+    if (isEnabled(sid)) { continue; }
+    // Enable the new sensor (registers with I2CManager)
+    enable(sid, true);
+    calBaseline(sid);
+  }
 }
 
 /* =============================================================================
  *                        Sensor Enable/Disable
  * ============================================================================= */
 
-void ColorSensor::setEnabled(uint8_t mask)
+void ColorSensor::setEnableMask(uint8_t mask)
 {
-  _enabledMask = mask;
+  // Apply the enable/disable edge on a per-sensor basis so that `enable()`
+  // handles I2C registration/unregistration alongside the mask bit.
+  // Sensors newly added to the mask get registered; sensors removed get unregistered.
+  for (uint8_t port = CL1; port <= CL8; port++) {
+    ColorSensorId sensorId = static_cast<ColorSensorId>(port);
+    // Determine if this sensor should be enabled based on the mask
+    bool wantEnabled = mask & (1 << port);
+    // If the desired state differs from the current state, call `enable()` to handle the transition
+    if (wantEnabled != isEnabled(sensorId)) {
+      enable(sensorId, wantEnabled);
+    }
+  }
 }
 
-void ColorSensor::enableSensor(CLR_SENSOR_ID sensor, bool enabled)
+void ColorSensor::enable(ColorSensorId sensor, bool enabled)
 {
-  if (enabled)  {
+  if (!portValidCheck(sensor)) { return; }  // Invalid sensor port, do nothing
+
+  if (enabled) {
+    // Avoid re-enabling an already-enabled sensor
+    if (isEnabled(sensor)) return;
+
     _enabledMask |= (1 << sensor);
   }
   else {
+    // Avoid disabling an already-disabled sensor
+    if (!isEnabled(sensor)) return;
+
+    // Clear calibration baseline
+    _baseline[sensor] = {0, 0, 0, false};
+    // Clear white line detection state
+    _isWhite[sensor] = false;
+    // Disable the sensor in the enable mask
     _enabledMask &= ~(1 << sensor);
   }
 }
 
-bool ColorSensor::isEnabled(CLR_SENSOR_ID sensor) const
+bool ColorSensor::isEnabled(ColorSensorId sensor) const
 {
   return _enabledMask & (1 << sensor);
 }
 
 /* =============================================================================
- *                             Data Reading
+ *                            Read Functions
  * ============================================================================= */
 
-uint8_t ColorSensor::readColor(CLR_SENSOR_ID sensorNum)
+RGBC ColorSensor::readRGBRaw(ColorSensorId sensorNum)
 {
-  // Return early if the sensor is disabled
-  if (!isEnabled(sensorNum))  { return 0; }
-
-  uint8_t val = 0;
-
-  // Read single byte from register 0x01 (color index)
-  I2CManager &i2cManager = I2CManager::getInstance();
-  i2cManager.SensorRead(_handles[sensorNum], 0x01, &val, 1);
-
-  return val;
-}
-
-rgbc_t ColorSensor::readRGBRaw(CLR_SENSOR_ID sensorNum)
-{
-  rgbc_t temp = {0, 0, 0, 0};
+  RGBC temp = {0, 0, 0, 0};
 
   // Return early if the sensor is disabled
-  if (!isEnabled(sensorNum))  { return temp; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return temp; }
 
   // Read 16 bytes from register 0x02
   // Datasheet order: [127:96] BLUE_RAW [95:64] GREEN_RAW [63:32] RED_RAW [31:0] CLEAR_RAW
@@ -131,41 +182,53 @@ rgbc_t ColorSensor::readRGBRaw(CLR_SENSOR_ID sensorNum)
   return temp;
 }
 
-rgb_t ColorSensor::readRGB(CLR_SENSOR_ID sensorNum)
+RGB ColorSensor::readRGB(ColorSensorId sensorNum)
 {
-  rgb_t temp = {0, 0, 0};
+  RGB temp = {0, 0, 0};
 
   // Return early if the sensor is disabled
-  if (!isEnabled(sensorNum))  { return temp; }
-
-  // Read 3 bytes from register 0x08 (calculated RGB: R=8, G=8, B=8)
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return temp; }
+  
   I2CManager &i2cManager = I2CManager::getInstance();
-  if (i2cManager.SensorRead(_handles[sensorNum], 0x08, _rxBuffer, 3))
-  {
-    temp.r = _rxBuffer[0];
-    temp.g = _rxBuffer[1];
-    temp.b = _rxBuffer[2];
-  }
+  for (int i = 0; i < _maxRetry; i++) {
+    // Read 3 bytes from register 0x08 (calculated RGB: R=8, G=8, B=8)
+    if (i2cManager.SensorRead(_handles[sensorNum], 0x08, _rxBuffer, 3))
+    {
+      temp.r = _rxBuffer[0];
+      temp.g = _rxBuffer[1];
+      temp.b = _rxBuffer[2];
 
+      if (temp.r <= 255 && temp.g <= 255 && temp.b <= 255) {
+        return temp; // Successful read within valid range
+      }
+    }
+    // If the read failed or values are out of range, retry up to 5 times
+  }
   return temp;
 }
 
-hsl_t ColorSensor::readHSL(CLR_SENSOR_ID sensorNum)
+HSL ColorSensor::readHSL(ColorSensorId sensorNum)
 {
-  hsl_t temp = {0, 0, 0};
+  HSL temp = {0, 0, 0};
 
   // Return early if the sensor is disabled
-  if (!isEnabled(sensorNum))  { return temp; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return temp; }
 
   // Read 4 bytes from register 0x03 (HSL: H=16, S=8, L=8)
   I2CManager &i2cManager = I2CManager::getInstance();
-  if (i2cManager.SensorRead(_handles[sensorNum], 0x03, _rxBuffer, 4))
-  {
-    temp.h = (uint16_t)(_rxBuffer[0] | (_rxBuffer[1] << 8));
-    temp.s = _rxBuffer[2];
-    temp.l = _rxBuffer[3];
-  }
+  for (int i = 0; i < _maxRetry; i++) {
+    if (i2cManager.SensorRead(_handles[sensorNum], 0x03, _rxBuffer, 4))
+    {
+      temp.h = (uint16_t)(_rxBuffer[0] | (_rxBuffer[1] << 8));
+      temp.s = _rxBuffer[2];
+      temp.l = _rxBuffer[3];
 
+      if (temp.h < 360 && temp.s <= 100 && temp.l <= 100) {
+        return temp; // Successful read within valid range
+      }
+    }
+    // If the read failed or values are out of range, retry up to 5 times
+  }
   return temp;
 }
 
@@ -173,9 +236,9 @@ hsl_t ColorSensor::readHSL(CLR_SENSOR_ID sensorNum)
  *                             LED Control
  * ============================================================================= */
 
-bool ColorSensor::whiteLedOn(CLR_SENSOR_ID sensorNum)
+bool ColorSensor::whiteLedOn(ColorSensorId sensorNum)
 {
-  if (!isEnabled(sensorNum))  { return false; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return false; }
 
   // Write register address 0x04 to turn on white LED
   uint8_t reg = 0x04;
@@ -183,9 +246,9 @@ bool ColorSensor::whiteLedOn(CLR_SENSOR_ID sensorNum)
   return i2cManager.SensorSend(_handles[sensorNum], &reg, 1);
 }
 
-bool ColorSensor::whiteLedOff(CLR_SENSOR_ID sensorNum)
+bool ColorSensor::whiteLedOff(ColorSensorId sensorNum)
 {
-  if (!isEnabled(sensorNum))  { return false; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return false; }
 
   // Write register address 0x05 to turn off white LED
   uint8_t reg = 0x05;
@@ -193,9 +256,9 @@ bool ColorSensor::whiteLedOff(CLR_SENSOR_ID sensorNum)
   return i2cManager.SensorSend(_handles[sensorNum], &reg, 1);
 }
 
-bool ColorSensor::rgbwLedOn(CLR_SENSOR_ID sensorNum)
+bool ColorSensor::rgbwLedOn(ColorSensorId sensorNum)
 {
-  if (!isEnabled(sensorNum))  { return false; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return false; }
 
   // Write register address 0x06 to turn on RGBW LED
   uint8_t reg = 0x06;
@@ -203,9 +266,9 @@ bool ColorSensor::rgbwLedOn(CLR_SENSOR_ID sensorNum)
   return i2cManager.SensorSend(_handles[sensorNum], &reg, 1);
 }
 
-bool ColorSensor::rgbwLedOff(CLR_SENSOR_ID sensorNum)
+bool ColorSensor::rgbwLedOff(ColorSensorId sensorNum)
 {
-  if (!isEnabled(sensorNum))  { return false; }
+  if (!portValidCheck(sensorNum) || !isEnabled(sensorNum))  { return false; }
 
   // Write register address 0x07 to turn off RGBW LED
   uint8_t reg = 0x07;
@@ -217,17 +280,17 @@ bool ColorSensor::rgbwLedOff(CLR_SENSOR_ID sensorNum)
  *                        White Line Detection (Plan A: Baseline)
  * ============================================================================= */
 
-void ColorSensor::calBaseline(CLR_SENSOR_ID n, uint8_t samples)
+bool ColorSensor::calBaseline(ColorSensorId n, uint8_t samples)
 {
-  // Return early if the sensor is disabled
-  if (!isEnabled(n)) return;
+  // Return early if the sensor port is invalid or disabled
+  if (!portValidCheck(n) || !isEnabled(n)) { return false; }
 
   uint32_t sumH = 0, sumS = 0, sumL = 0;
   uint8_t  count = 0;
 
   // Collect multiple samples to average the baseline values
   for (uint8_t i = 0; i < samples; i++) {
-    hsl_t hsl = readHSL(n);
+    HSL hsl = readHSL(n);
     sumH += hsl.h; sumS += hsl.s; sumL += hsl.l;
     count++;
     delay(10);
@@ -236,34 +299,38 @@ void ColorSensor::calBaseline(CLR_SENSOR_ID n, uint8_t samples)
   _baseline[n].greenHue   = (uint16_t)(sumH / count);
   _baseline[n].greenSat   = (uint8_t) (sumS / count);
   _baseline[n].greenLight = (uint8_t) (sumL / count);
-  _baseline[n].done       = true;
+  _baseline[n].calibrated = true;
+  return true;
 }
 
-bool ColorSensor::isCalibrated(CLR_SENSOR_ID n) const
+GreenBaseline ColorSensor::getBaseline(ColorSensorId n) const
 {
-  return _baseline[n].done;
-}
-
-GreenBaseLine ColorSensor::getBaseline(CLR_SENSOR_ID n) const
-{
+  GreenBaseline temp = {0, 0, 0, false};
+  // Return early if the sensor port is invalid or disabled
+  if (!portValidCheck(n) || !isEnabled(n)) { return temp; }
   return _baseline[n];
 }
 
-bool ColorSensor::isWhiteLine(CLR_SENSOR_ID n)
+bool ColorSensor::isWhiteLine(ColorSensorId n)
 {
-  if (!isEnabled(n) || !_baseline[n].done) return false;
+  if (!portValidCheck(n) || !isEnabled(n) || !_baseline[n].calibrated) return false;
 
-  hsl_t hsl = readHSL(n);
+  HSL hsl = readHSL(n);
 
   // 3D detection: Light + Sat + Hue, 2/3 vote
-  uint8_t lightMargin = _baseline[n].greenLight / 5;
-  uint8_t satThresh   = (_baseline[n].greenSat * 80) / 100;
-  int     hueDiff     = abs((int)hsl.h - (int)_baseline[n].greenHue);
+  // uint8_t lightMargin = _baseline[n].greenLight / 5;
+  // uint8_t satThresh   = (_baseline[n].greenSat * 80) / 100;
+  // uint16_t hueDiff    = abs((int)hsl.h - (int)_baseline[n].greenHue);
 
-  bool lightCheck = hsl.l > _baseline[n].greenLight + lightMargin;
-  bool satCheck   = hsl.s < satThresh;
-  bool hueCheck   = hueDiff > 30;
+  // bool lightCheck = hsl.l > _baseline[n].greenLight + lightMargin;
+  // bool satCheck   = hsl.s < satThresh;
+  // bool hueCheck   = hueDiff > 30;
 
-  _isWhite[n] = (lightCheck + satCheck + hueCheck) >= 2;
+  // _isWhite[n] = (lightCheck + satCheck + hueCheck) >= 2;
+
+  uint16_t hueMargin = _baseline[n].greenHue / 3;
+  bool hueCheck = hsl.h > (_baseline[n].greenHue + hueMargin);
+  _isWhite[n] = hueCheck;
+
   return _isWhite[n];
 }

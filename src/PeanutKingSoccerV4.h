@@ -201,33 +201,54 @@ public:
 // =============================================================================
 
   /**
-   * Read color index from a sensor
-   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
-   *
-   * `Returns` - Color index (`0`=Black ... `7`=Cyan)
+   * Assign which color sensor port (`CL1`-`CL8`) corresponds to which physical position
+   * `Front` - Color sensor port at front position
+   * `Right` - Color sensor port at right position
+   * `Back`  - Color sensor port at back position
+   * `Left`  - Color sensor port at left position
    */
-  uint8_t  getColorSensor(CLR_SENSOR_ID sensorNum);
+  void colorSensorConfiguration(ColorSensorId Front, ColorSensorId Right, ColorSensorId Back, ColorSensorId Left);
   /**
-   * Read RGB values from a sensor
-   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   * Read raw RGBC values from a color sensor at the specified position
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
-   * `Returns` - RGB structure
+   * `Returns` - RGBC raw structure (0-65535 each)
    */
-  rgb_t    getColorSensorRGB(CLR_SENSOR_ID sensorNum);
+  RGBC   colorSensorReadRGBC(SensorPos pos);
   /**
-   * Read HSL values from a sensor
-   * `sensorNum` - Sensor ID (`CL1` - `CL8`)
+   * Read RGB values from a color sensor at the specified position
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
+   *
+   * `Returns` - RGB structure (0-255 each)
+   */
+  RGB    colorSensorReadRGB(SensorPos pos);
+  /**
+   * Read HSL values from a color sensor at the specified position
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
    * `Returns` - HSL structure
    */
-  hsl_t    getColorSensorHSL(CLR_SENSOR_ID sensorNum);
+  HSL    colorSensorReadHSL(SensorPos pos);
   /**
-   * Check if a sensor detects white line
-   * `i`      - Sensor ID (`CL1` - `CL8`)
+   * Check if a color sensor at the specified position detects a white line
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
-   * `Returns` - `true` if white line detected
+   * `Returns` - `true` if white line detected, `false` otherwise
    */
-  bool     whiteLineCheck(CLR_SENSOR_ID i);
+  bool   isWhiteLine(SensorPos pos);
+  /**
+   * Calibrate the baseline for a color sensor at the specified position
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
+   * `samples` - Number of samples to take for calibration (default: 10)
+   */
+  void   colorSensorCalBaseline(SensorPos pos, uint8_t samples = 10);
+  /**
+   * Get the calibrated baseline for a color sensor
+   * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
+   *
+   * `Returns` - `GreenBaseline` struct (check `.calibrated` before use)
+   */
+  GreenBaseline colorSensorGetBaseline(SensorPos pos);
 
 // =============================================================================
 //                    IR Compound Eye Functions (wrapper)
@@ -503,11 +524,11 @@ public:
 //                      Public Sensor Data
 // =============================================================================
 
-  // Color sensor
-  rgb_t    colorRGB[8] = {};   // RGB values
-  hsl_t    colorHSL[8] = {};   // HSL values
-  bool     isWhite[8]  = {};   // Set all to false
-  uint16_t whiteLineThreshold[8] = {30, 30, 30, 30, 30, 30, 30, 30};
+  // Color sensor (indices 0-3 = Front, Right, Back, Left)
+  RGBC  colorRGBC[4] = {};  // RGBC raw values
+  RGB   colorRGB[4]  = {};   // RGB values
+  HSL   colorHSL[4]  = {};   // HSL values
+  bool  isWhite[4]   = {};   // White line detection flags
 
   // Compound eye
   uint8_t  eye[12]   = {};   // 12 IR readings

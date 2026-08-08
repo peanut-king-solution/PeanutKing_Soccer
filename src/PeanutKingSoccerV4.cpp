@@ -71,18 +71,12 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
  * ============================================================================= */
 
 void PeanutKingSoccerV4::dataFetch(void) {
-  // Color sensor - RGB (via SW I2C)
-  for (uint8_t i = CL1; i <= CL8; i++) {
-    if (colorSensor.isEnabled((CLR_SENSOR_ID)i)) {
-      colorRGB[i] = colorSensor.readRGB((CLR_SENSOR_ID)i);
-    }
-  }
-
-  // Color sensor - HSL (via SW I2C)
-  for (uint8_t i = CL1; i <= CL8; i++) {
-    if (colorSensor.isEnabled((CLR_SENSOR_ID)i)) {
-      colorHSL[i] = colorSensor.readHSL((CLR_SENSOR_ID)i);
-    }
+  for (uint8_t pos = Front; pos < PositionCount; pos++) {
+    // Color sensor - RGBC/RGB/HSL/white line by physical position
+    colorRGBC[pos] = colorSensorReadRGBC(pos);
+    colorRGB[pos]  = colorSensorReadRGB(pos);
+    colorHSL[pos]  = colorSensorReadHSL(pos);
+    isWhite[pos]   = isWhiteLine(pos);
   }
 
   // Compound eye
@@ -153,10 +147,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
     // Check out-of-bounds status using color sensors (only when prevention is enabled)
     bool isOutBound[4] = {false, false, false, false};
     if (outBoundPreventEnabled) {
-      isOutBound[0] = this->whiteLineCheck(CL1); // Front
-      isOutBound[1] = this->whiteLineCheck(CL2); // Right
-      isOutBound[2] = this->whiteLineCheck(CL3); // Back
-      isOutBound[3] = this->whiteLineCheck(CL4); // Left
+      isOutBound[0] = this->isWhiteLine(Front); // Front
+      isOutBound[1] = this->isWhiteLine(Right); // Right
+      isOutBound[2] = this->isWhiteLine(Back); // Back
+      isOutBound[3] = this->isWhiteLine(Left); // Left
     }
 
     // Determine movement method based on enabled features
@@ -211,21 +205,31 @@ void PeanutKingSoccerV4::dataFetch(void) {
  *                              Color Sensor (soft I2C)
  * ============================================================================= */
 
-uint8_t PeanutKingSoccerV4::getColorSensor(CLR_SENSOR_ID color_sensor_num) {
-  return colorSensor.readColor(color_sensor_num);
+void PeanutKingSoccerV4::colorSensorConfiguration(ColorSensorId Front, ColorSensorId Right, ColorSensorId Back, ColorSensorId Left) {
+  colorSensor.mapPort(Front, Right, Back, Left);
 }
 
-rgb_t PeanutKingSoccerV4::getColorSensorRGB(CLR_SENSOR_ID color_sensor_num) {
-  return colorSensor.readRGB(color_sensor_num);
+RGBC PeanutKingSoccerV4::colorSensorReadRGBC(SensorPos pos) {
+  return colorSensor.readRGBRaw(colorSensor.getPortFromPos(pos));
 }
 
-hsl_t PeanutKingSoccerV4::getColorSensorHSL(CLR_SENSOR_ID color_sensor_num) {
-  return colorSensor.readHSL(color_sensor_num);
+RGB PeanutKingSoccerV4::colorSensorReadRGB(SensorPos pos) {
+  return colorSensor.readRGB(colorSensor.getPortFromPos(pos));
 }
 
+HSL PeanutKingSoccerV4::colorSensorReadHSL(SensorPos pos) {
+  return colorSensor.readHSL(colorSensor.getPortFromPos(pos));
+}
 
-bool PeanutKingSoccerV4::whiteLineCheck(CLR_SENSOR_ID i) {
-  return colorSensor.isWhiteLine(i);
+bool PeanutKingSoccerV4::isWhiteLine(SensorPos pos) {
+  return colorSensor.isWhiteLine(colorSensor.getPortFromPos(pos));
+}
+
+void PeanutKingSoccerV4::colorSensorCalBaseline(SensorPos pos, uint8_t samples) {
+  colorSensor.calBaseline(colorSensor.getPortFromPos(pos), samples);
+}
+GreenBaseline PeanutKingSoccerV4::colorSensorGetBaseline(SensorPos pos) {
+  return colorSensor.getBaseline(colorSensor.getPortFromPos(pos));
 }
 
 /* =============================================================================
