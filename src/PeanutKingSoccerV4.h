@@ -347,25 +347,25 @@ public:
    *
    * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
-  uint16_t compassRead(void);
+  uint16_t readCompassHeading(void);
   /**
-   * Get raw accelerometer data
+   * Read raw accelerometer data
    *
    * `Returns` - array of `accelData[3]` (X, Y, Z)
    */
-  int16_t* getAccelerometerRaw(void);
+  int16_t* readAccelerometerRaw(void);
   /**
-   * Get raw gyroscope data
+   * Read raw gyroscope data
    *
    * `Returns` - array of `gyroData[3]` (X, Y, Z)
    */
-  int16_t* getGyroscopeRaw(void);
+  int16_t* readGyroscopeRaw(void);
   /**
-   * Get raw magnetometer data
+   * Read raw magnetometer data
    *
    * `Returns` - array of `magData[3]` (X, Y, Z)
    */
-  int16_t* getMagnetometerRaw(void);
+  int16_t* readMagnetometerRaw(void);
 
 // =============================================================================
 //                     TFT Display Functions

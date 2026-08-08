@@ -24,7 +24,7 @@ uint16_t prevHeading = 0;
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.compass.read();
+  uint16_t heading = robot.readCompassHeading();
 
   // Set text size for heading display
   robot.setTextSize(3);

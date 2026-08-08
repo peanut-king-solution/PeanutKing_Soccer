@@ -27,8 +27,9 @@
 
 class Compass
 {
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
+
 private:
-  uint8_t _address;   // I2C address of the compass module
   I2C_Handle _handle; // I2C handle for communication with the compass module
 
   uint16_t compass = 0; // Variable to store the compass reading
@@ -40,48 +41,47 @@ private:
   int16_t gyroData[3]  = {0};  // Gyroscope raw data (X, Y, Z)
   int16_t magData[3]   = {0};  // Magnetometer raw data (X, Y, Z)
 
+  /**
+   * Constructor (accessible only to the friend PeanutKingSoccerV4)
+   * Uses the fixed compass I2C address (`COMPASS_I2C_ADDRESS`).
+   */
+  Compass();
+
 public:
   /**
-   * Constructor
-   * `address` - I2C address of the compass module (default: `0x08`)
-   */
-  Compass(uint8_t address = COMPASS_I2C_ADDRESS);
-
-  /**
    * Initialize the compass module
-   * `speed` - I2C bus speed in `Hz` (default: `400000`)
    *
-   * `Returns` - `true` if successful, `false` otherwise
+   * `Returns` - `true` if initialization is successful, `false` otherwise
    */
-  bool init(uint32_t speed = 400000L);
+  bool init();
 
   /**
    * Read the compass heading
    *
    * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
-  uint16_t read(void);
+  uint16_t readHeading(void);
 
   /**
-   * Get raw accelerometer data
+   * Read raw accelerometer data
    *
    * `Returns` - array of `accelData[3]` (X, Y, Z)
    */
-  int16_t* getAccelerometerRaw(void);
+  int16_t* readAccelerometerRaw(void);
 
   /**
-   * Get raw gyroscope data
+   * Read raw gyroscope data
    *
    * `Returns` - array of `gyroData[3]` (X, Y, Z)
    */
-  int16_t* getGyroscopeRaw(void);
+  int16_t* readGyroscopeRaw(void);
 
   /**
-   * Get raw magnetometer data
+   * Read raw magnetometer data
    *
    * `Returns` - array of `magData[3]` (X, Y, Z)
    */
-  int16_t* getMagnetometerRaw(void);
+  int16_t* readMagnetometerRaw(void);
 
   /**
    * Clear the receive buffer

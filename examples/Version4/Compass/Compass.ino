@@ -1,6 +1,5 @@
 #include <PeanutKingSoccerV4.h>
-
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
@@ -8,11 +7,8 @@ void setup() {
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.compass.read();
-  
-  // Alternatively, you can use the wrapper function for compatibility:
-  // uint16_t heading = robot.compassRead();
-  
+  uint16_t heading = robot.readCompassHeading();
+
   // or use the public variable directly
   // robot.dataFetch(); // Update all sensor data
   // uint16_t heading = robot.heading;
@@ -22,7 +18,7 @@ void loop() {
   Serial.print(heading);
 
   // Read and print raw accelerometer data
-  int16_t* accelData = robot.compass.getAccelerometerRaw();
+  int16_t* accelData = robot.readAccelerometerRaw();
   Serial.print(", Accel: X= ");
   Serial.print(accelData[0]);
   Serial.print(", Y= ");
@@ -31,7 +27,7 @@ void loop() {
   Serial.print(accelData[2]);
   
   // Read and print raw gyroscope data
-  int16_t* gyroData = robot.compass.getGyroscopeRaw();
+  int16_t* gyroData = robot.readGyroscopeRaw();
   Serial.print(", Gyro: X= ");
   Serial.print(gyroData[0]);
   Serial.print(", Y= ");
@@ -40,7 +36,7 @@ void loop() {
   Serial.println(gyroData[2]);
 
   // Read and print raw magnetometer data
-  int16_t* magData = robot.compass.getMagnetometerRaw();
+  int16_t* magData = robot.readMagnetometerRaw();
   Serial.print(", Magnet: X= ");
   Serial.print(magData[0]);
   Serial.print(", Y= ");

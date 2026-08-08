@@ -1,16 +1,13 @@
 #include "Compass.h"
 
-Compass::Compass(uint8_t address)
-  : _address(address), _handle(BusIndex::HW, 0x00, 0) // Initialize the I2C address and a default (invalid) handle
+Compass::Compass()
+  : _handle(BusIndex::HW, COMPASS_I2C_ADDRESS, 400000)  // I2C speed: 400kHz
 {
 }
 
-bool Compass::init(uint32_t speed) {
-  // Register the compass device with the I2C manager
-  I2CManager &i2cManager = I2CManager::getInstance();
-  _handle = i2cManager.RegisterDevice(BusIndex::HW, _address, speed);
-
-  if (!_handle.isValid()) { return false; } // Return false if the handle is invalid
+bool Compass::init(void) {
+  // Return false if the handle is invalid
+  if (!_handle.isValid()) { return false; }
 
   // Compass Reset Heading
   // delay(10); // wait for compass calibration
@@ -27,9 +24,9 @@ bool Compass::init(uint32_t speed) {
   return true; // Return true if initialization is successful
 }
 
-uint16_t Compass::read() {
+uint16_t Compass::readHeading() {
   // Clear the receive buffer before reading
-  clearBuffer();
+  // clearBuffer();
 
   // Read the compass value from the compass module using the I2C manager
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -44,7 +41,7 @@ uint16_t Compass::read() {
 
 int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   // Clear the receive buffer before reading
-  clearBuffer();
+  // clearBuffer();
 
   // Read 6 bytes of raw sensor data from the specified register
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -57,15 +54,15 @@ int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
   return dataArr;
 }
 
-int16_t* Compass::getAccelerometerRaw(void) {
+int16_t* Compass::readAccelerometerRaw(void) {
   return readRaw6(ACC_RAW, accelData);
 }
 
-int16_t* Compass::getGyroscopeRaw(void) {
+int16_t* Compass::readGyroscopeRaw(void) {
   return readRaw6(GYR_RAW, gyroData);
 }
 
-int16_t* Compass::getMagnetometerRaw(void) {
+int16_t* Compass::readMagnetometerRaw(void) {
   return readRaw6(MAG_RAW, magData);
 }
 

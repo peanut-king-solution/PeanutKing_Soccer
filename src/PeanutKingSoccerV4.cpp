@@ -98,7 +98,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   }
 
   // Compass
-  heading = compass.read();
+  heading = readCompassHeading();
 }
 
 /* =============================================================================
@@ -149,7 +149,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
   
   void PeanutKingSoccerV4::move(float mAngle, float mSpeed, float rotate) {
     // Read compass heading
-    uint16_t compassReading = compass.read();
+    uint16_t compassReading = readCompassHeading();
     // Check out-of-bounds status using color sensors (only when prevention is enabled)
     bool isOutBound[4] = {false, false, false, false};
     if (outBoundPreventEnabled) {
@@ -305,14 +305,11 @@ void PeanutKingSoccerV4::ultrasoundEnableAll(bool enabled) {
  *                              Compass (wrapper)
  * ============================================================================= */
 
-uint16_t PeanutKingSoccerV4::compassRead(void) {
-  heading = compass.read();
-  return heading;
-}
+uint16_t PeanutKingSoccerV4::readCompassHeading(void)   { return compass.readHeading(); }
 
-int16_t* PeanutKingSoccerV4::getAccelerometerRaw(void) { return compass.getAccelerometerRaw(); }
-int16_t* PeanutKingSoccerV4::getGyroscopeRaw(void)     { return compass.getGyroscopeRaw(); }
-int16_t* PeanutKingSoccerV4::getMagnetometerRaw(void)  { return compass.getMagnetometerRaw(); }
+int16_t* PeanutKingSoccerV4::readAccelerometerRaw(void) { return compass.readAccelerometerRaw(); }
+int16_t* PeanutKingSoccerV4::readGyroscopeRaw(void)     { return compass.readGyroscopeRaw(); }
+int16_t* PeanutKingSoccerV4::readMagnetometerRaw(void)  { return compass.readMagnetometerRaw(); }
 
 /* =============================================================================
  *                              TFT Display
