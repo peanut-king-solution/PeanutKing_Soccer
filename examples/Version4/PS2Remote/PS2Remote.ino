@@ -1,6 +1,10 @@
-#include <PeanutKingSoccerV4.h>
+/**
+ * PeanutKing Soccer V4 PS2 Remote Control Example
+ * Demonstrates how to control the PeanutKing Soccer V4 robot using a PS2 controller.
+ */
 
-PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+#include <PeanutKingSoccerV4.h>
+PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
@@ -20,11 +24,11 @@ void setup() {
 }
 
 bool handleJoystick(PS2Button triggerBtn, PS2Joystick stick) {
-  if (!robot.ps2ButtonHolding(triggerBtn)) { return false; }
+  if (robot.ps2ButtonStateRead(triggerBtn) != PS2Holding) { return false; }
   PS2JoystickData js = robot.ps2JoystickRead(stick);
   // Print joystick data for debugging
   Serial.print("Joystick ");
-  Serial.print((stick == PS2Joystick::LEFT) ? "L" : "R");
+  Serial.print((stick == PS2LeftJoystick) ? "L" : "R");
   Serial.print(" angle:"); Serial.print(js.angle);
   Serial.print(" str:");   Serial.println(js.strength);
   // Set vibration strength based on joystick strength
@@ -40,12 +44,12 @@ bool rightControlling = false;
 void loop() {
   robot.ps2Update();
   // Handle left joystick if L1 is held
-  leftControlling = handleJoystick(PS2Button::L1, PS2Joystick::LEFT);
-  
+  leftControlling = handleJoystick(PS2L1, PS2LeftJoystick);
+
   // If L1 is not held, check R1 and handle right joystick
-  if (!leftControlling){ 
+  if (!leftControlling){
     // Handle right joystick if R1 is held
-    rightControlling = handleJoystick(PS2Button::R1, PS2Joystick::RIGHT);
+    rightControlling = handleJoystick(PS2R1, PS2RightJoystick);
   }
 
   // If neither joystick is controlling, stop movement and vibration

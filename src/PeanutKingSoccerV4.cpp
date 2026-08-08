@@ -447,7 +447,7 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
  *                              PS2 Controller
  * ============================================================================= */
 
-byte PeanutKingSoccerV4::ps2Init(D_PIN CLK, D_PIN DAT, bool pressure, bool vibration) {
+byte PeanutKingSoccerV4::ps2Init(DigitalPinId CLK, DigitalPinId DAT, bool pressure, bool vibration) {
   uint8_t PS2_CLK_PIN = static_cast<uint8_t>(CLK);
   uint8_t PS2_DAT_PIN = static_cast<uint8_t>(DAT);
 
@@ -475,33 +475,18 @@ void PeanutKingSoccerV4::ps2SetVibration(byte strength) {
 void PeanutKingSoccerV4::ps2Update(void) {
   ps2x.read_gamepad(false, vibrationStr);
 }
-PS2ButtonState PeanutKingSoccerV4::ps2ButtonRead(PS2Button button) {
-  PS2ButtonState state;
-  return state; // Not implemented yet
-}
-bool PeanutKingSoccerV4::ps2ButtonPressed(PS2Button button) {
-  // if (ps2x.NewButtonState()) {
-  //   uint16_t btn = static_cast<uint16_t>(button);
-  //   return ps2x.Button(btn);
-  // }
-  // return false;
-  // or 
+PS2ButtonState PeanutKingSoccerV4::ps2ButtonStateRead(PS2Button button) {
   uint16_t btn = static_cast<uint16_t>(button);
-  return ps2x.ButtonPressed(btn);
-}
-bool PeanutKingSoccerV4::ps2ButtonHolding(PS2Button button) {
-  uint16_t btn = static_cast<uint16_t>(button);
-  return ps2x.Button(btn);
-}
-bool PeanutKingSoccerV4::ps2ButtonReleased(PS2Button button) {
-  uint16_t btn = static_cast<uint16_t>(button);
-  return ps2x.ButtonReleased(btn);
+  if (ps2x.ButtonPressed(btn))      { return PS2Pressed; }
+  if (ps2x.Button(btn))             { return PS2Holding; }
+  if (ps2x.ButtonReleased(btn))     { return PS2Released; }
+  return PS2Idle;
 }
 PS2JoystickData PeanutKingSoccerV4::ps2JoystickRead(PS2Joystick joystick) {
   // Prepare the data structure to hold the results
   PS2JoystickData data;
-  byte x = (joystick == PS2Joystick::LEFT) ? ps2x.Analog(PSS_LX) : ps2x.Analog(PSS_RX);
-  byte y = (joystick == PS2Joystick::LEFT) ? ps2x.Analog(PSS_LY) : ps2x.Analog(PSS_RY);
+  byte x = (joystick == PS2LeftJoystick) ? ps2x.Analog(PSS_LX) : ps2x.Analog(PSS_RX);
+  byte y = (joystick == PS2LeftJoystick) ? ps2x.Analog(PSS_LY) : ps2x.Analog(PSS_RY);
 
   const float CX = 128.0;   // X-axis center point (for LX and RX)
   const float CY = 127.0;   // Y-axis center point (for LY and RY)
@@ -538,16 +523,4 @@ PS2JoystickData PeanutKingSoccerV4::ps2JoystickRead(PS2Joystick joystick) {
     if (data.strength > 255.0) { data.strength = 255.0; } // Cap at 255
   }
   return data;
-}
-
-/* =============================================================================
- *                              Strategy Functions
- * ============================================================================= */
-
-void PeanutKingSoccerV4::Chase(int& direct, int& speed, int& rotation) {
-  (void)direct; (void)speed; (void)rotation;
-}
-
-void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
-  (void)direct; (void)speed; (void)rotation;
 }

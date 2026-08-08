@@ -60,19 +60,17 @@
 //                              Type Definitions
 // =============================================================================
 
-typedef enum {
+enum S_PIN {
   S1_P = 10, S2_P, S3_P, S4_P
-} S_PIN;
+};
 
-typedef enum {
-  // D6_P = 56, D5_P, D4_P, D3_P, D2_P, D1_P
+enum DigitalPinId {
   D6_P = A2, D5_P, D4_P, D3_P, D2_P, D1_P = A7
-} D_PIN;
+};
 
-typedef enum {
-  // A4_P = 62, A3_P, A2_P, A1_P
+enum AnalogPinId {
   A4_P = A8, A3_P, A2_P, A1_P = A11
-} A_PIN;
+};
 
 // =============================================================================
 //                              Main Class
@@ -469,7 +467,7 @@ public:
    * 
    * `Returns` - `0` if successful, error code otherwise
    */
-  byte ps2Init(D_PIN CLK = D1_P, D_PIN DAT = D4_P,bool pressure = false, bool vibration = false);
+  byte ps2Init(DigitalPinId CLK = D1_P, DigitalPinId DAT = D4_P,bool pressure = false, bool vibration = false);
   /**
    * Set the vibration strength of the PS2 controller
    * `strength` - Vibration strength (0-255)
@@ -480,47 +478,19 @@ public:
    */
   void ps2Update(void);
   /**
-   * Read the state of a PS2 controller button
-   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
+   * Get the current state of a PS2 button
+   * `button` - Button ID (e.g., `PS2Cross`, `PS2Circle`, etc.)
    *
-   * `Returns` - `true` if pressed, `false` otherwise
+   * `Returns` - Current button state, e.g., `PS2Idle`, `PS2Pressed`, `PS2Holding`, `PS2Released`
    */
-  PS2ButtonState ps2ButtonRead(PS2Button button);
-  /**
-   * Check if a PS2 controller button was just pressed
-   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
-   *
-   * `Returns` - `true` if just pressed, `false` otherwise
-   */
-  bool ps2ButtonPressed(PS2Button button);
-  /**
-   * Check if a PS2 controller button is being held down
-   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
-   *
-   * `Returns` - `true` if being held, `false` otherwise
-   */
-  bool ps2ButtonHolding(PS2Button button);
-  /**
-   * Check if a PS2 controller button was just released
-   * `button` - Button ID (e.g., `PS2Button::CROSS`, `PS2Button::CIRCLE`, etc.)
-   *
-   * `Returns` - `true` if just released, `false` otherwise
-   */
-  bool ps2ButtonReleased(PS2Button button);
+  PS2ButtonState ps2ButtonStateRead(PS2Button button);
   /**
    * Read the data of a PS2 controller joystick
-   * `joystick` - Joystick ID (e.g., `PS2Joystick::LX`, `PS2Joystick::LY`, etc.)
+   * `joystick` - Joystick ID (e.g., `PS2LeftJoystick`, `PS2RightJoystick`)
    *
    * `Returns` - Structure containing angle and strength of the joystick
    */
   PS2JoystickData ps2JoystickRead(PS2Joystick joystick);
-
-// =============================================================================
-//                      Strategy Functions
-// =============================================================================
-
-  void Chase(int& direct, int& speed, int& rotation);
-  void Back(int& direct, int& speed, int& rotation);
 
 // =============================================================================
 //                      Public Sensor Data

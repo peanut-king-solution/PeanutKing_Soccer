@@ -4,43 +4,45 @@
 #include "PS2X_lib.h"
 
 // PS2 Joystick structure definition
-typedef struct
+struct PS2JoystickData
 {
   float angle;
   float strength;
-} PS2JoystickData;
-
-typedef struct
-{
-  bool holding;
-  bool pressed;
-  bool released;
-} PS2ButtonState;
-
-enum class PS2Button: uint16_t
-{
-  SELECT = PSB_SELECT,
-  L3 = PSB_L3,  // left joystick button
-  R3 = PSB_R3,  // right joystick button
-  START = PSB_START,
-  UP    = PSB_PAD_UP,
-  RIGHT = PSB_PAD_RIGHT,
-  DOWN  = PSB_PAD_DOWN,
-  LEFT  = PSB_PAD_LEFT,
-  L2 = PSB_L2,
-  R2 = PSB_R2,
-  L1 = PSB_L1,
-  R1 = PSB_R1,
-  TRIANGLE = PSB_TRIANGLE,
-  CIRCLE   = PSB_CIRCLE,
-  CROSS    = PSB_CROSS,
-  SQUARE   = PSB_SQUARE,
 };
 
-enum class PS2Joystick: uint8_t
+// PS2 button state enumeration
+enum PS2ButtonState : uint8_t
 {
-  LEFT = 0,  // Left joystick
-  RIGHT = 1, // Right joystick
+  PS2Idle = 0,
+  PS2Pressed = 1,
+  PS2Holding = 2,
+  PS2Released = 3,
+};
+
+enum PS2Button : uint16_t
+{
+  PS2Select = PSB_SELECT,
+  PS2L3 = PSB_L3,  // left joystick button
+  PS2R3 = PSB_R3,  // right joystick button
+  PS2Start = PSB_START,
+  PS2Up    = PSB_PAD_UP,
+  PS2Right = PSB_PAD_RIGHT,
+  PS2Down  = PSB_PAD_DOWN,
+  PS2Left  = PSB_PAD_LEFT,
+  PS2L2 = PSB_L2,
+  PS2R2 = PSB_R2,
+  PS2L1 = PSB_L1,
+  PS2R1 = PSB_R1,
+  PS2Triangle = PSB_TRIANGLE,
+  PS2Circle   = PSB_CIRCLE,
+  PS2Cross    = PSB_CROSS,
+  PS2Square   = PSB_SQUARE,
+};
+
+enum PS2Joystick : uint8_t
+{
+  PS2LeftJoystick  = 0,  // Left joystick
+  PS2RightJoystick = 1,  // Right joystick
 };
 
 #endif  // PS2_H
