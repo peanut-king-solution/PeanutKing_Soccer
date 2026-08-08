@@ -335,7 +335,7 @@ void PeanutKingSoccerV4::setTextSize(uint8_t size) {
   tft.setTextSize(size);
 }
 
-void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, char string[]) {
+void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, const char* string) {
   tft.setCursor(col*6, row*10);
   tft.print(string);
 }
@@ -347,6 +347,18 @@ void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
 
 void PeanutKingSoccerV4::clearScreen(void) {
   tft.fillScreen(ST7735_BLACK);
+}
+
+void PeanutKingSoccerV4::fillCircle(int x, int y, int r, uint16_t color) {
+  tft.fillCircle(x, y, r, color);
+}
+
+void PeanutKingSoccerV4::drawRect(int x, int y, int w, int h, uint16_t color) {
+  tft.drawRect(x, y, w, h, color);
+}
+
+void PeanutKingSoccerV4::fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint16_t color) {
+  tft.fillTriangle(x0, y0, x1, y1, x2, y2, color);
 }
 
 void PeanutKingSoccerV4::drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor) {

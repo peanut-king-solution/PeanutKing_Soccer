@@ -31,7 +31,7 @@ void loop() {
   robot.setScreen(0, 1, (int16_t)curr_tick);
   
   // Draw some shapes
-  robot.tft.fillCircle(40, 30, 10, ST7735_BLUE);
-  robot.tft.drawRect(40, 100, 50, 20, ST7735_YELLOW);
-  robot.tft.fillTriangle(45, 60, 10, 80, 60, 80, ST7735_MAGENTA);
+  robot.fillCircle(40, 30, 10, ST7735_BLUE);
+  robot.drawRect(40, 100, 50, 20, ST7735_YELLOW);
+  robot.fillTriangle(45, 60, 10, 80, 60, 80, ST7735_MAGENTA);
 }

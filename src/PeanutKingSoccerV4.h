@@ -415,7 +415,7 @@ public:
    * `row` - Row position (`0-based`, each row is `10 pixels` high)
    * `string` - Text string to display
    */
-  void setScreen(uint8_t col, uint8_t row, char string[]);
+  void setScreen(uint8_t col, uint8_t row, const char* string);
   /**
    * Display a `number` on the TFT screen at the specified column and row
    * `col` - Column position (`0-based`, each column is `6 pixels` wide)
@@ -427,6 +427,31 @@ public:
    * Clear the entire TFT screen (fill with `black`)
    */
   void clearScreen(void);
+  /**
+   * Draw a filled circle on the TFT screen
+   * `x` - Center X coordinate (pixels)
+   * `y` - Center Y coordinate (pixels)
+   * `r` - Radius (pixels)
+   * `color` - Color (e.g., `ST7735_BLUE`)
+   */
+  void fillCircle(int x, int y, int r, uint16_t color);
+  /**
+   * Draw a rectangle outline on the TFT screen
+   * `x` - Top-left X coordinate (pixels)
+   * `y` - Top-left Y coordinate (pixels)
+   * `w` - Width (pixels)
+   * `h` - Height (pixels)
+   * `color` - Color (e.g., `ST7735_YELLOW`)
+   */
+  void drawRect(int x, int y, int w, int h, uint16_t color);
+  /**
+   * Draw a filled triangle on the TFT screen
+   * `x0`, `y0` - First vertex (pixels)
+   * `x1`, `y1` - Second vertex (pixels)
+   * `x2`, `y2` - Third vertex (pixels)
+   * `color` - Color (e.g., `ST7735_MAGENTA`)
+   */
+  void fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint16_t color);
   /**
    * Draw a angle pointer (arrow + circle + N/S/E/W markers) on the TFT screen
    * `x` - Center X coordinate of the compass (pixels)
