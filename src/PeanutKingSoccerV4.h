@@ -257,34 +257,36 @@ public:
   /**
    * Read all 12 IR sensor values
    *
-   * `Returns` - Pointer to the `eye[12]` array
+   * `Returns` - Pointer to the `eyes[12]` array
    */
-  uint8_t* compoundEyeRead();
+  uint8_t* compoundEyeReadAll(void);
   /**
-   * Get the index of the IR sensor with maximum reading
+   * Get the index of the eye with maximum reading
    *
-   * `Returns` - Index `(0-11)` of the sensor with max value
+   * `Returns` - `EyeId` of the eye with max value
    */
-  uint8_t  compoundMaxEye(void);
+  EyeId    compoundMaxEyeRead(void);
   /**
    * Get the maximum IR sensor value
    *
    * `Returns` - Maximum value among all 12 sensors
    */
-  uint8_t  compoundMaxEyeVal(void);
+  uint8_t  compoundMaxEyeValueRead(void);
   /**
-   * Get the value of a specific IR sensor
-   * `n` - Sensor index `(0-11)`
+   * Get the value of a specific eye
+   * `eyeIndex` - Eye index ( `Eye0` - `Eye11` )
    *
    * `Returns` - IR sensor value
    */
-  uint8_t  compoundEyeVal(uint8_t n);
+  uint8_t  compoundEyeValueRead(EyeId eyeIndex);
   /**
    * Get the angle of the detected object
    *
    * `Returns` - Angle in degrees `(0-360)`
    */
-  uint16_t compoundEyeAngle(void);
+  uint16_t compoundEyeAngleRead(void);
+
+  uint8_t compoundEyeModeRead(void);
 
 // =============================================================================
 //                Button Functions (wrapper for compatibility)
@@ -531,10 +533,10 @@ public:
   bool  isWhite[4]   = {};   // White line detection flags
 
   // Compound eye
-  uint8_t  eye[12]   = {};   // 12 IR readings
-  uint16_t eyeAngle  = 0;    // Ball angle (0~360 degrees)
+  uint8_t  eyes[12]  = {};   // 12 IR readings
+  uint16_t irAngle   = 0;    // Ball angle (0~360 degrees)
   uint8_t  maxEye    = 0;    // Index of the maximum IR reading
-  uint8_t  maxEyeVal = 0;    // Maximum IR reading value
+  uint8_t  maxEyeVal = 0;   // Maximum IR reading value
   
   // Ultrasound
   uint16_t distances[4] = {}; // Ultrasound readings (Front, Right, Back, Left) in mm (0~4500mm)

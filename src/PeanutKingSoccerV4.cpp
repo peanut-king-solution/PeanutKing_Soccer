@@ -80,10 +80,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
   }
 
   // Compound eye
-  compoundEyeRead();    // Read all 12 IR sensor values
-  maxEye    = compoundEye.getMaxEye();
-  maxEyeVal = compoundEye.getMaxEyeVal();
-  eyeAngle  = compoundEye.getAngle();
+  compoundEyeReadAll();  // Read all 12 IR sensor values
+  maxEye    = compoundMaxEyeRead();       // Read the index of the IR sensor with maximum reading
+  maxEyeVal = compoundMaxEyeValueRead();  // Read the maximum IR sensor value
+  irAngle   = compoundEyeAngleRead();     // Read the angle of the detected object, 
 
   // Ultrasound read by position (not sure will it have any effect on the performance)
   for (uint8_t i = 0; i < 4; i++) {
@@ -236,28 +236,32 @@ GreenBaseline PeanutKingSoccerV4::colorSensorGetBaseline(SensorPos pos) {
  *                       IR Compound Eye (wrapper)
  * ============================================================================= */
 
-uint8_t* PeanutKingSoccerV4::compoundEyeRead() {
+uint8_t* PeanutKingSoccerV4::compoundEyeReadAll() {
   uint8_t* eyePtr = compoundEye.readAll();
   for (uint8_t i = 0; i < 12; i++) {
-    eye[i] = eyePtr[i];
+    eyes[i] = eyePtr[i];
   }
-  return eye;
+  return eyes;
 }
 
-uint8_t PeanutKingSoccerV4::compoundMaxEye() {
-  return compoundEye.getMaxEye();
+EyeId PeanutKingSoccerV4::compoundMaxEyeRead() {
+  return compoundEye.readMaxEye();
 }
 
-uint8_t PeanutKingSoccerV4::compoundMaxEyeVal() {
-  return compoundEye.getMaxEyeVal();
+uint8_t PeanutKingSoccerV4::compoundMaxEyeValueRead() {
+  return compoundEye.readMaxEyeVal();
 }
 
-uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n) {
-  return compoundEye.getEyeVal(n);
+uint8_t PeanutKingSoccerV4::compoundEyeValueRead(EyeId eyeIndex) {
+  return compoundEye.readEyeVal(eyeIndex);
 }
 
-uint16_t PeanutKingSoccerV4::compoundEyeAngle(void) {
-  return compoundEye.getAngle();
+uint16_t PeanutKingSoccerV4::compoundEyeAngleRead(void) {
+  return compoundEye.readAngle();
+}
+
+uint8_t PeanutKingSoccerV4::compoundEyeModeRead(void) {
+  return compoundEye.readMode();
 }
 
 /* =============================================================================

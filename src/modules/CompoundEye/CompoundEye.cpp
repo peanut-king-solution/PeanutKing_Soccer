@@ -1,20 +1,20 @@
 #include "CompoundEye.h"
 
-CompoundEye::CompoundEye(uint8_t address)
-  : _address(address), _handle(BusIndex::HW, 0x00, 0)
+CompoundEye::CompoundEye()
+  : _handle(BusIndex::HW, COMPOUND_EYE_I2C_ADDRESS, 400000)  // I2C speed: 400kHz
 {
-  // Initialize eye buffer to zero
-  for (uint8_t i = 0; i < 12; i++) {
-    _eye[i] = 0;
-  }
 }
 
 bool CompoundEye::init(void)
 {
-  I2CManager &i2cManager = I2CManager::getInstance();
-  _handle = i2cManager.RegisterDevice(BusIndex::HW, _address, 400000);
+  // Return false if the handle is invalid
+  if (!_handle.isValid()) { return false; }
+  return true;
+}
 
-  return _handle.isValid();
+bool CompoundEye::indexValidCheck(EyeId eyeIndex) const
+{
+  return (eyeIndex >= Eye0) && (eyeIndex <= Eye11);
 }
 
 uint8_t* CompoundEye::readAll(void)
@@ -24,7 +24,7 @@ uint8_t* CompoundEye::readAll(void)
   return _eye;
 }
 
-uint8_t CompoundEye::getMaxEye(void)
+EyeId CompoundEye::readMaxEye(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -32,7 +32,7 @@ uint8_t CompoundEye::getMaxEye(void)
   return val;
 }
 
-uint8_t CompoundEye::getMaxEyeVal(void)
+uint8_t CompoundEye::readMaxEyeVal(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -40,17 +40,17 @@ uint8_t CompoundEye::getMaxEyeVal(void)
   return val;
 }
 
-uint8_t CompoundEye::getEyeVal(uint8_t n)
+uint8_t CompoundEye::readEyeVal(EyeId eyeIndex)
 {
-  if (n >= 12) return 0;
+  if (!indexValidCheck(eyeIndex)) return 0;
 
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
-  i2cManager.SensorRead(_handle, n, &val, 1);
+  i2cManager.SensorRead(_handle, (uint8_t)eyeIndex, &val, 1);
   return val;
 }
 
-uint16_t CompoundEye::getAngle(void)
+uint16_t CompoundEye::readAngle(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
@@ -58,7 +58,7 @@ uint16_t CompoundEye::getAngle(void)
   return (uint16_t)val * 2;  // Firmware /2, multiply back to 0-360
 }
 
-uint8_t CompoundEye::getMode(void)
+uint8_t CompoundEye::readMode(void)
 {
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();

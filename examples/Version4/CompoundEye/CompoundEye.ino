@@ -7,8 +7,8 @@ void setup() {
 
 void loop() {
   // Read all 12 IR sensor values
-  uint8_t* ir = robot.compoundEyeRead();
-  
+  uint8_t* ir = robot.compoundEyeReadAll();
+
   // Print the readings to the Serial Monitor
   for(int i = 0;i<12;i++){
     Serial.print("eye");
@@ -20,11 +20,11 @@ void loop() {
   Serial.println();
 
   // Maximum Eye - The infrared senor with highest reading
-  int maxEye = robot.compoundMaxEye();
+  int maxEye = robot.compoundMaxEyeRead();
   // Maximum Eye Reading - The reading from the Maximum Eye
-  int maxEyeReading = robot.compoundMaxEyeVal();
+  int maxEyeReading = robot.compoundMaxEyeValueRead();
   // Ball Angle - The angle of the detected object based on the IR sensor readings
-  int ballAngle = robot.compoundEyeAngle();
+  int ballAngle = robot.compoundEyeAngleRead();
 
   // Print the maximum eye and its reading to the Serial Monitor
   Serial.print("MaxEye: ");
