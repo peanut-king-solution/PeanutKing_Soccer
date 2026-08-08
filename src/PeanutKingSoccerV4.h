@@ -146,15 +146,32 @@ public:
   /**
    * Test all motors sequentially ( `LeftFront` -> `RightFront` -> `RightBack` -> `LeftBack` )
    * `speed` - Test speed `(0~255)`
+   * `duration` - Duration for each motor test in milliseconds
    */
-  void motorTestAll(int16_t speed);
+  void motorTestAll(int16_t speed, int duration = 1000);
 
 // =============================================================================
 //                           Movement Functions
 // =============================================================================
 
   bool compassCorrectEnabled = true;   // Enable/disable compass correction for movement
-  bool outBoundPreventEnabled = false; // Enable/disable out-of-bounds prevention for movement
+  bool outBoundPreventEnabled = false;  // Enable/disable out-of-bounds prevention for movement
+
+  /**
+   * Move the robot in a specified direction with optional rotation
+   * `mAngle` - Movement angle (0-360 degrees)
+   * `mSpeed` - Movement speed (0-255)
+   * `rotate` - Rotation speed (-255 to +255)
+   *
+   * `Note:` The method automatically selects the appropriate movement algorithm based on the enabled features
+   * 1. `compassCorrectEnabled`, `outBoundPreventEnabled` = true → compass correction + out-of-bounds prevention
+   * 2. `compassCorrectEnabled` = true only → compass correction only
+   * 3. `outBoundPreventEnabled` = true only → out-of-bounds prevention only
+   * 4. both = false → direct movement without corrections
+   *
+   * `Note:` Out-of-bounds prevention is not yet implemented, so `outBoundPreventEnabled`
+   * defaults to `false`. Enable it only when the algorithm is ready.
+   */
   void move(float mAngle, float mSpeed, float rotate = 0);
 
   /**
@@ -162,6 +179,22 @@ public:
    * `speed` - Test speed `(0-255)`
    */
   void moveTest(float speed);
+
+  /**
+   * Reset the movement coordinate system to default
+   */
+  void movementCoordinateReset(void);
+
+  /**
+   * Shift the movement coordinate system by the specified degrees
+   * `shiftAngle` - Offset in degrees
+   */
+  void movementCoordinateShift(float shiftAngle);
+
+  /**
+   * Flip the movement coordinate system direction (CW <-> CCW)
+   */
+  void movementCoordinateFlip(void);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)

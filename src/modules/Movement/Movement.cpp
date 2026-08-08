@@ -14,7 +14,7 @@ WheelSpeeds Movement::byAngle(float mAngle, float mSpeed, float rotate)
   // convert the angle to the robot's coordinate system
   mAngle = converter.convert(mAngle);
 
-  // vector decomposition for mecanum wheels
+  // vector decomposition for omni wheels
   float mc[4];  // motor speeds for each wheel
   mc[0] =  mSpeed * sin((mAngle + 45.0) * pi / 180.0);  // LF
   mc[1] = -mSpeed * cos((mAngle + 45.0) * pi / 180.0);  // RF
@@ -22,10 +22,10 @@ WheelSpeeds Movement::byAngle(float mAngle, float mSpeed, float rotate)
   mc[3] = -mc[1];                                       // LB
 
   WheelSpeeds ws;
-  ws.lf = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
-  ws.rf = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
-  ws.rb = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
-  ws.lb = (int16_t)constrain(mc[3] + rotate, -255.0f, 255.0f);
+  ws.leftFront  = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
+  ws.rightFront = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
+  ws.rightBack  = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
+  ws.leftBack   = (int16_t)constrain(mc[3] + rotate, -255.0f, 255.0f);
   return ws;
 }
 
@@ -37,7 +37,7 @@ WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   // convert the angle to the robot's coordinate system
   mAngle = converter.convert(mAngle);
 
-  // vector decomposition for mecanum wheels
+  // vector decomposition for omni wheels
   float rad = (mAngle + 45.0f) * (pi / 180.0f);
   float a = cos(rad), b = sin(rad);
   float scaleFactor = max(fabsf(a), fabsf(b));
@@ -80,10 +80,10 @@ WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
 
   WheelSpeeds ws;
-  ws.lf = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
-  ws.rf = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
-  ws.rb = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
-  ws.lb = (int16_t)constrain(m[3] * factor + rotation, -255.0f, 255.0f);
+  ws.leftFront  = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
+  ws.rightFront = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
+  ws.rightBack  = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
+  ws.leftBack   = (int16_t)constrain(m[3] * factor + rotation, -255.0f, 255.0f);
   return ws;
 }
 
@@ -105,8 +105,8 @@ void Movement::coordinateReset(void) {
   converter.reset();
 }
 
-void Movement::coordinateShift(float amount) {
-  converter.shift(amount);
+void Movement::coordinateShift(float shiftAngle) {
+  converter.shift(shiftAngle);
 }
 
 void Movement::coordinateFlip(void) {

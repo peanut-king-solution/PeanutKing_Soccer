@@ -10,19 +10,22 @@
  * Mapping to actual motor ports is handled by the caller (V4 wrapper).
  */
 struct WheelSpeeds {
-  int16_t lf;   // LeftFront
-  int16_t rf;   // RightFront
-  int16_t rb;   // RightBack
-  int16_t lb;   // LeftBack
+  int16_t leftFront;   // LeftFront
+  int16_t rightFront;  // RightFront
+  int16_t rightBack;   // RightBack
+  int16_t leftBack;    // LeftBack
 };
 
 class Movement
 {
-public:
+  friend class PeanutKingSoccerV4;   // Only PeanutKingSoccerV4 may construct this module
+
   /**
-   * Constructor
+   * Constructor (accessible only to the friend PeanutKingSoccerV4)
    */
   Movement();
+
+public:
 
   // --- Tuning parameters (public) ---
 
@@ -77,7 +80,7 @@ public:
   void coordinateReset(void);
 
   /** Shift the angle coordinate system by the specified degrees */
-  void coordinateShift(float amount);
+  void coordinateShift(float shiftAngle);
 
   /** Flip the direction of the angle coordinate system */
   void coordinateFlip(void);

@@ -16,8 +16,22 @@ void Motor::init(void) {
   }
 }
 
+bool Motor::portValidCheck(MotorId mi) {
+  return (mi >= M1 && mi <= M4);
+}
+
+MotorId Motor::getPortFromPos(MotorPos pos)
+{
+  // Return the corresponding motor port based on the current mapping
+  return _motorMap[pos];
+}
+
 void Motor::mapPort(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack)
 {
+  // Check if all motor ports are valid
+  if (!portValidCheck(LeftFront) || !portValidCheck(RightFront) || !portValidCheck(RightBack) || !portValidCheck(LeftBack)) {
+    return; // Invalid motor port, do nothing
+  }
   // Remap motor ports to physical positions
   _motorMap[0] = LeftFront;
   _motorMap[1] = RightFront;
@@ -25,24 +39,19 @@ void Motor::mapPort(MotorId LeftFront, MotorId RightFront, MotorId RightBack, Mo
   _motorMap[3] = LeftBack;
 }
 
-MotorId Motor::getPortFromPos(MotorPos pos)
-{
-  // convert physical position (LF/RF/RB/LB) to the mapped motor port (M1-M4)
-  uint8_t idx = (uint8_t)pos;
-  if (idx >= 4) return M1;
-  return _motorMap[idx];
-}
-
 void Motor::flipDirection(MotorId mi, bool flip)
 {
+  // invalid motor port, do nothing
+  if (!portValidCheck(mi)) { return; }
+
   // Set the flip state of the specified motor
   _motorflip[mi] = flip;
 }
 
 void Motor::setSpeed(MotorId mi, int16_t speed)
 {
-  // drive the given port (M1-M4) directly, no _motorMap indirection here
-  // (resolving position->port is done by higher-level callers via getPortFromPos)
+  // invalid motor port, do nothing
+  if (!portValidCheck(mi)) { return; }
 
   // apply motor flip if needed
   if (_motorflip[mi]) { speed = -speed; }
@@ -67,6 +76,8 @@ void Motor::setSpeed(MotorId mi, int16_t speed)
 
 void Motor::stop(MotorId mi)
 {
+  // invalid motor port, do nothing
+  if (!portValidCheck(mi)) { return; }
   // Brake a single motor directly on port `mi`
   digitalWrite(_in1Pin[mi], HIGH);
   digitalWrite(_in2Pin[mi], HIGH);

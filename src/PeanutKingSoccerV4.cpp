@@ -126,17 +126,21 @@ void PeanutKingSoccerV4::dataFetch(void) {
 
   void PeanutKingSoccerV4::motorStopAll(void) {
     for (uint8_t i = 0; i < 4; i++) {
-      motor.stop((MotorId)i);
+      MotorId mi = static_cast<MotorId>(i);
+      motor.stop(mi);
     }
   }
 
-  void PeanutKingSoccerV4::motorTestAll(int16_t speed) {
-    for (uint8_t pos = 0; pos < 4; pos++) {
-      motorSetSpeed((MotorPos)pos, speed);
-      delay(500);
-      motorStopAll();
-      delay(200);
+  void PeanutKingSoccerV4::motorTestAll(int16_t speed, int duration) {
+    for (uint8_t i = 0; i < 4; i++) {
+      MotorPos pos = static_cast<MotorPos>(i);
+      motorSetSpeed(pos, speed);
+      delay(duration);
+      motorStop(pos);
+      delay(duration);
     }
+    motorStopAll();
+    delay(duration);
   }
 
 /* =============================================================================
@@ -156,7 +160,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
     }
 
     // Determine movement method based on enabled features
-    WheelSpeeds ws;
+    WheelSpeeds ws = {0, 0, 0, 0}; // Initialize wheel speeds
     // If both compass correction and out-of-bounds prevention are enabled, use correctedMove
     if (compassCorrectEnabled && outBoundPreventEnabled) {
       ws = movement.correctedMove(mAngle, mSpeed, compassReading, isOutBound);
@@ -174,10 +178,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
       ws = movement.byAngle(mAngle, mSpeed, rotate);
     }
     // Apply the computed speeds by mapping physical position to motor port
-    this->motorSetSpeed(MotorPos::LeftFront,  ws.lf);
-    this->motorSetSpeed(MotorPos::RightFront, ws.rf);
-    this->motorSetSpeed(MotorPos::RightBack,  ws.rb);
-    this->motorSetSpeed(MotorPos::LeftBack,   ws.lb);
+    motorSetSpeed(LeftFront,  ws.leftFront);
+    motorSetSpeed(RightFront, ws.rightFront);
+    motorSetSpeed(RightBack,  ws.rightBack);
+    motorSetSpeed(LeftBack,   ws.leftBack);
   }
 
   void PeanutKingSoccerV4::moveTest(float speed) {
@@ -189,6 +193,18 @@ void PeanutKingSoccerV4::dataFetch(void) {
     delay(1000);
     this->motorStopAll();
     delay(500);
+  }
+
+  void PeanutKingSoccerV4::movementCoordinateReset(void) {
+    movement.coordinateReset();
+  }
+
+  void PeanutKingSoccerV4::movementCoordinateShift(float shiftAngle) {
+    movement.coordinateShift(shiftAngle);
+  }
+
+  void PeanutKingSoccerV4::movementCoordinateFlip(void) {
+    movement.coordinateFlip();
   }
 
 /* =============================================================================

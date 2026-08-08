@@ -1,6 +1,10 @@
-#include <PeanutKingSoccerV4.h>
+/**
+ * A simple example to test the robot's motors.
+ * The robot will activate each motor in sequence.
+ */
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+#include <PeanutKingSoccerV4.h>
+static PeanutKingSoccerV4 robot;
 
 void setup()
 {
@@ -22,60 +26,38 @@ void setup()
   configure by uncommenting the below line of code
   */
   // robot.motorConfiguration(M2, M1, M3, M4); // swap Left Front and Right Front
-
-  /*
-  You should also check the movement direction of the robot,
-  to check the coordinate system of the robot's movement,
-  then configure the motor converter to adjust the robot's move direction.
-
-  For example, if the robot moves in the order of
-
-    leftward (270°) -> left back (225°) -> backward (180°)
-    (Correct should be forward (0°) -> right front (45°) -> rightward (90°))
-
-    -> means the robot's movement direction is wrong configured
-    (shifted by -90° and becomes counter-clockwise)
-
-  then you should adjust the movement direction,
-  configure by uncommenting the below line of code
-  */
-  // robot.movement.coordinateShift(90);
-  // robot.movement.coordinateFlip();
 }
 
 void loop()
 {
-
   int speed = 100;
+  int duration = 1000;
   /*
   If configured correctly, the motors should activate in the order of
 
   Left Front -> Right Front -> Right Back -> Left Back (clockwise),
   */
-  for (uint8_t i = 0; i < 4; i++) {
-    // convert index to MotorPos enum
-    MotorPos pos = (MotorPos)i;
-    // activate the motor at the given position with the specified speed
-    robot.motorSetSpeed(pos, speed);
-    delay(1000);
-    // stop the motor at the given position
-    robot.motorStop(pos);
-    delay(500);
-  }
+  robot.motorSetSpeed(LeftFront, speed);
+  delay(duration);
+  robot.motorStop(LeftFront);
+  delay(duration);
 
-  /*
-  if configured correctly, the robot should move
+  robot.motorSetSpeed(RightFront, speed);
+  delay(duration);
+  robot.motorStop(RightFront);
+  delay(duration);
 
-  forward (0°) -> right front (45°) -> rightward (90°)
-  */
-  robot.compassCorrectEnabled  = false;  // Disable compass correction for movement
-  robot.outBoundPreventEnabled = false;  // Disable out-of-bounds prevention for movement
-  robot.move(0, speed);
-  delay(1000);
-  robot.move(45, speed);
-  delay(1000);
-  robot.move(90, speed);
-  delay(1000);
+  robot.motorSetSpeed(RightBack, speed);
+  delay(duration);
+  robot.motorStop(RightBack);
+  delay(duration);
+
+  robot.motorSetSpeed(LeftBack, speed);
+  delay(duration);
+  robot.motorStop(LeftBack);
+  delay(duration);
+
+  // Stop all motors
   robot.motorStopAll();
-  delay(500);
+  delay(duration);
 }
