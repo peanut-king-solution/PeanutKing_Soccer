@@ -3,7 +3,7 @@
 // If white line detected, move in opposite direction
 
 #include <PeanutKingSoccerV4.h>
-PeanutKingSoccerV4 robot;
+static PeanutKingSoccerV4 robot;
 
 // Parameters
 const int SPEED = 80;      // Movement speed
@@ -15,6 +15,13 @@ unsigned long timer = 0;  // Timer for movement
 
 void setup() {
   robot.init();
+
+  // You should ensure that the robot's motors are properly configured,
+  // the movement coordinate system is set up correctly before running this example,
+  // color sensors are properly configured
+  // and the compass is calibrated and functioning correctly.
+  // You can refer to the void init() in Motor.ino, Movement.ino, ColorSensor.ino, and Compass.ino examples for guidance.
+
   // Enable compass correction, disable out-of-bounds prevention
   // as this example just demonstrates simple out of bounds prevention and square movement
   robot.compassCorrectEnabled = true;

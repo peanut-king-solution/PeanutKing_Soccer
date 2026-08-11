@@ -1,6 +1,6 @@
-/* Button Example 
-It demonstrates how to read the state of buttons on the PeanutKingSoccerV4 robot.
-*/
+/**
+ * This example demonstrates how to read the state of buttons on the PeanutKingSoccerV4 robot.
+ */
 
 #include <PeanutKingSoccerV4.h>
 static PeanutKingSoccerV4 robot;

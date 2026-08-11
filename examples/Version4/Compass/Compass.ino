@@ -1,3 +1,9 @@
+/**
+ * This example demonstrates how to read the compass heading
+ * and reading raw sensor data (accelerometer, gyroscope, magnetometer) 
+ * from the PeanutKingSoccerV4 robot.
+ */
+
 #include <PeanutKingSoccerV4.h>
 static PeanutKingSoccerV4 robot;
 

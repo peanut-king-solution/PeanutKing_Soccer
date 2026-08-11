@@ -1,6 +1,9 @@
-#include <PeanutKingSoccerV4.h>
+/**
+ * LED - Cycle through all 8 colors on the on-board RGB LED
+ */
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+#include <PeanutKingSoccerV4.h>
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();

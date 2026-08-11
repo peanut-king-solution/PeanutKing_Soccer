@@ -4,7 +4,7 @@
  */
 
 #include <PeanutKingSoccerV4.h>
-PeanutKingSoccerV4 robot;
+static PeanutKingSoccerV4 robot;
 
 void setup()
 {

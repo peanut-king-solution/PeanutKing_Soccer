@@ -25,13 +25,14 @@ void setup()
   then you should swap these two motors,
   configure by uncommenting the below line of code
   */
-  // robot.motorConfiguration(M2, M1, M3, M4); // swap Left Front and Right Front
+  robot.motorConfiguration(M4, M3, M1, M2); // swap Left Front and Right Front
 }
+
+int speed = 100;
+int duration = 1000;
 
 void loop()
 {
-  int speed = 100;
-  int duration = 1000;
   /*
   If configured correctly, the motors should activate in the order of
 

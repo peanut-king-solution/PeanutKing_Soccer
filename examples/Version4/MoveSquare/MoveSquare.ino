@@ -30,6 +30,10 @@ void setup()
 {
   robot.init();
 
+  // You should ensure that the robot's motors are properly configured 
+  // and the movement coordinate system is set up correctly before running this example.
+  // Check the Motor.ino and Movement.ino examples for guidance.
+
   // disable out-of-bounds prevention
   robot.outBoundPreventEnabled = false;
 }

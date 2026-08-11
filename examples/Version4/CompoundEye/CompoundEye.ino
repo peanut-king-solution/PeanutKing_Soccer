@@ -1,5 +1,10 @@
+/**
+ * This example demonstrates how to read the compound eye sensor values
+ * from the PeanutKingSoccerV4 robot.
+ */
+
 #include <PeanutKingSoccerV4.h>
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();

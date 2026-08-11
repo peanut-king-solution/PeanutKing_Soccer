@@ -1,3 +1,11 @@
+/**
+ * This example demonstrates how to make the PeanutKingSoccerV4 robot
+ * rotate to face a specific direction using the compass module.
+ * 
+ * The robot will rotate clockwise or counter-clockwise based on its current heading
+ * to align with the target direction (0°).
+ */
+
 #include <PeanutKingSoccerV4.h>
 static PeanutKingSoccerV4 robot;
 
