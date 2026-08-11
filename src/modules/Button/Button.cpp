@@ -44,7 +44,8 @@ void Button::update(void)
     if (pressed != lastRead[i]) {
       lastRead[i] = pressed;
       lastChange[i] = now;
-    } 
+      continue;
+    }
     // If the button state has changed but is still within the debounce time, skip processing
     else if (now - lastChange[i] < _debounceTime) {
       continue;  // still bouncing — keep previous state
