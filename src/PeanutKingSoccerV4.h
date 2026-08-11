@@ -396,62 +396,36 @@ public:
    * Set the foreground color for text on the TFT display
    * `color` - 16-bit color value (e.g., `ST7735_WHITE`, `ST7735_YELLOW`, `ST7735_BLACK`)
    */
-  void setTextColor(uint16_t color);
+  void screenSetTextColor(uint16_t color);
   /**
    * Set the foreground and background color for text on the TFT display
    * `fg` - Foreground color
    * `bg` - Background color
    */
-  void setTextColor(uint16_t fg, uint16_t bg);
+  void screenSetTextColor(uint16_t fg, uint16_t bg);
   /**
    * Set the text size for the TFT display
    * `size` - Text size
    */
-  void setTextSize(uint8_t size);
-
+  void screenSetTextSize(uint8_t size);
   /**
    * Display a text on the TFT screen at the specified column and row
    * `col` - Column position (`0-based`, each column is `6 pixels` wide)
    * `row` - Row position (`0-based`, each row is `10 pixels` high)
    * `string` - Text string to display
    */
-  void setScreen(uint8_t col, uint8_t row, const char* string);
+  void screenPrintText(uint8_t col, uint8_t row, const char* string);
   /**
    * Display a `number` on the TFT screen at the specified column and row
    * `col` - Column position (`0-based`, each column is `6 pixels` wide)
    * `row` - Row position (`0-based`, each row is `10 pixels` high)
    * `numbers` - Number to display
    */
-  void setScreen(uint8_t col, uint8_t row, int16_t numbers);
+  void screenPrintNumber(uint8_t col, uint8_t row, int16_t numbers);
   /**
    * Clear the entire TFT screen (fill with `black`)
    */
-  void clearScreen(void);
-  /**
-   * Draw a filled circle on the TFT screen
-   * `x` - Center X coordinate (pixels)
-   * `y` - Center Y coordinate (pixels)
-   * `r` - Radius (pixels)
-   * `color` - Color (e.g., `ST7735_BLUE`)
-   */
-  void fillCircle(int x, int y, int r, uint16_t color);
-  /**
-   * Draw a rectangle outline on the TFT screen
-   * `x` - Top-left X coordinate (pixels)
-   * `y` - Top-left Y coordinate (pixels)
-   * `w` - Width (pixels)
-   * `h` - Height (pixels)
-   * `color` - Color (e.g., `ST7735_YELLOW`)
-   */
-  void drawRect(int x, int y, int w, int h, uint16_t color);
-  /**
-   * Draw a filled triangle on the TFT screen
-   * `x0`, `y0` - First vertex (pixels)
-   * `x1`, `y1` - Second vertex (pixels)
-   * `x2`, `y2` - Third vertex (pixels)
-   * `color` - Color (e.g., `ST7735_MAGENTA`)
-   */
-  void fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint16_t color);
+  void screenClear(void);
   /**
    * Draw a angle pointer (arrow + circle + N/S/E/W markers) on the TFT screen
    * `x` - Center X coordinate of the compass (pixels)
@@ -459,8 +433,11 @@ public:
    * `radius` - Radius of the compass circle (pixels)
    * `angle` - Angle in degrees (`0~360`), clockwise
    * `arrowColor` - Color of the pointer arrow (default: `ST7735_MAGENTA`)
+   * 
+   * `Note:` This method will change the text size and color settings of the TFT display, 
+   * so you may need to reset them after calling this method if you want to continue using text functions.
    */
-  void drawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor = ST7735_MAGENTA);
+  void screenDrawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor = ST7735_MAGENTA);
 
 // =============================================================================
 //                      Bluetooth Functions

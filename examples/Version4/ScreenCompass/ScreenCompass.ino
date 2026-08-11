@@ -10,37 +10,38 @@ void setup() {
   robot.init();
 
   // Initialize TFT display
-  robot.setTextSize(2);
-  robot.setTextColor(ST7735_WHITE);
-  robot.clearScreen();
+  
+  robot.screenClear();
 
   // Display title
-  robot.setScreen(0, 0, "Compass");
+  robot.screenSetTextSize(2);
+  robot.screenSetTextColor(ST7735_WHITE);
+  robot.screenPrintText(0, 0, "Compass");
 }
 
 // Global variable to store the previous heading for clearing the display
-uint16_t prevHeading = 0;
+int prevHeading = 0;
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.compassReadHeading();
+  int heading = robot.compassReadHeading();
 
   // Set text size for heading display
-  robot.setTextSize(3);
+  robot.screenSetTextSize(3);
 
   // Clear previous heading display
-  robot.setTextColor(ST7735_BLACK);
-  robot.setScreen(2, 2, (int16_t)prevHeading);
+  robot.screenSetTextColor(ST7735_BLACK);
+  robot.screenPrintNumber(2, 2, prevHeading);
 
   // Display current heading
-  robot.setTextColor(ST7735_YELLOW);
-  robot.setScreen(2, 2, (int16_t)heading);
+  robot.screenSetTextColor(ST7735_YELLOW);
+  robot.screenPrintNumber(2, 2, heading);
 
   // Update previous heading for next loop iteration
   prevHeading = heading;
 
   // Draw heading direction indicator
-  robot.drawAnglePointer(64, 120, 25, heading);
+  robot.screenDrawAnglePointer(64, 120, 25, heading);
 
   delay(50);
 }

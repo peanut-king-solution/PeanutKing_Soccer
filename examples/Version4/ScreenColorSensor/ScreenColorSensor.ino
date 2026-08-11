@@ -96,25 +96,45 @@ int determineColor(const HSL hsl)
   return ColorUnknown;
 }
 
+void displayStaticLabels()
+{
+  // Display title
+  robot.screenSetTextSize(2);
+  robot.screenSetTextColor(ST7735_WHITE);
+  robot.screenPrintText(0, 0, "Color"); // Title
+
+  // Column headers: Front, Right, Back, Left
+  robot.screenSetTextSize(1);
+  robot.screenSetTextColor(ST7735_CYAN);
+  robot.screenPrintText(dataCol[0] + 1, 2, "F");  // Front
+  robot.screenPrintText(dataCol[1] + 1, 2, "R");  // Right
+  robot.screenPrintText(dataCol[2] + 1, 2, "B");  // Back
+  robot.screenPrintText(dataCol[3] + 1, 2, "L");  // Left
+
+  // Row labels (left column)
+  robot.screenSetTextColor(ST7735_CYAN);
+  robot.screenPrintText(0, dataRow[0], "R");  // Red
+  robot.screenPrintText(0, dataRow[1], "G");  // Green
+  robot.screenPrintText(0, dataRow[2], "B");  // Blue
+  robot.screenPrintText(0, dataRow[3], "H");  // Hue
+  robot.screenPrintText(0, dataRow[4], "S");  // Saturation
+  robot.screenPrintText(0, dataRow[5], "L");  // Lightness
+  robot.screenPrintText(0, dataRow[6], "C");  // Color
+}
+
 void setup()
 {
+  // Initialize the robot's modules
   robot.init();
 
   // Initialize TFT display
-  robot.setTextColor(ST7735_WHITE);
-  robot.clearScreen();
+  robot.screenClear();
 
-  // Display title
-  robot.setTextSize(2);
-  robot.setScreen(0, 0, "Color");
-
-  robot.setTextSize(1);
-  // Column headers: Front, Right, Back, Left
-  robot.setTextColor(ST7735_CYAN);
-  robot.setScreen(dataCol[0] + 1, 2, "F");
-  robot.setScreen(dataCol[1] + 1, 2, "R");
-  robot.setScreen(dataCol[2] + 1, 2, "B");
-  robot.setScreen(dataCol[3] + 1, 2, "L");
+  // Display static labels for the table
+  displayStaticLabels();
+  
+  // All text will be printed in size 1 in loop
+  robot.screenSetTextSize(1);
 }
 
 void loop()
@@ -132,72 +152,62 @@ void loop()
   }
 
   // Display data: vertical table, one metric per row
-  robot.setTextSize(1);
-
-  // Row labels (left column)
-  robot.setTextColor(ST7735_CYAN);
-  robot.setScreen(0, dataRow[0], "R");
-  robot.setScreen(0, dataRow[1], "G");
-  robot.setScreen(0, dataRow[2], "B");
-  robot.setScreen(0, dataRow[3], "H");
-  robot.setScreen(0, dataRow[4], "S");
-  robot.setScreen(0, dataRow[5], "L");
-  robot.setScreen(0, dataRow[6], "C");
-
   for (int i = 0; i < 4; i++)
   {
-    // Column for each sensor
+    // Column for each sensor (Front, Right, Back, Left)
     int col = dataCol[i];
+    // Row index for each metric (R, G, B, H, S, L, Color)
     int rowIndex = 0;
 
     // R row - red value
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevR[i]);
-    robot.setTextColor(ST7735_RED);
-    robot.setScreen(col, dataRow[rowIndex], rgb[i].r);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevR[i]);
+    robot.screenSetTextColor(ST7735_RED); // Display new value in red
+    robot.screenPrintNumber(col, dataRow[rowIndex], rgb[i].r);
+    rowIndex++; // Next row
 
     // G row - green value
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevG[i]);
-    robot.setTextColor(ST7735_GREEN);
-    robot.setScreen(col, dataRow[rowIndex], rgb[i].g);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevG[i]);
+    robot.screenSetTextColor(ST7735_GREEN); // Display new value in green
+    robot.screenPrintNumber(col, dataRow[rowIndex], rgb[i].g);
+    rowIndex++; // Next row
 
     // B row - blue value
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevB[i]);
-    robot.setTextColor(ST7735_BLUE);
-    robot.setScreen(col, dataRow[rowIndex], rgb[i].b);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevB[i]);
+    robot.screenSetTextColor(ST7735_BLUE);  // Display new value in blue
+    robot.screenPrintNumber(col, dataRow[rowIndex], rgb[i].b);
+    rowIndex++; // Next row
 
     // H row
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevH[i]);
-    robot.setTextColor(ST7735_WHITE);
-    robot.setScreen(col, dataRow[rowIndex], hsl[i].h);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevH[i]);
+    robot.screenSetTextColor(ST7735_WHITE); // Display new value in white
+    robot.screenPrintNumber(col, dataRow[rowIndex], hsl[i].h);
+    rowIndex++; // Next row
 
     // S row
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevS[i]);
-    robot.setTextColor(ST7735_WHITE);
-    robot.setScreen(col, dataRow[rowIndex], hsl[i].s);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevS[i]);
+    robot.screenSetTextColor(ST7735_WHITE); // Display new value in white
+    robot.screenPrintNumber(col, dataRow[rowIndex], hsl[i].s);
+    rowIndex++; // Next row
 
     // L row
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], prevL[i]);
-    robot.setTextColor(ST7735_WHITE);
-    robot.setScreen(col, dataRow[rowIndex], hsl[i].l);
-    rowIndex++;
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous value
+    robot.screenPrintNumber(col, dataRow[rowIndex], prevL[i]);
+    robot.screenSetTextColor(ST7735_WHITE); // Display new value in white
+    robot.screenPrintNumber(col, dataRow[rowIndex], hsl[i].l);
+    rowIndex++; // Next row
 
     // Color name row, color follows detected color
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(col, dataRow[rowIndex], color_name[prevColorIdx[i]]);
-    robot.setTextColor(color_disp[colorIdx[i]]);
-    robot.setScreen(col, dataRow[rowIndex], color_name[colorIdx[i]]);
+    robot.screenSetTextColor(ST7735_BLACK); // Clear previous color name
+    robot.screenPrintText(col, dataRow[rowIndex], color_name[prevColorIdx[i]]);
+    robot.screenSetTextColor(color_disp[colorIdx[i]]);  // Set text color based on detected color
+    robot.screenPrintText(col, dataRow[rowIndex], color_name[colorIdx[i]]); // Display new color name
 
+    // Update previous values for next loop iteration
     prevColorIdx[i] = colorIdx[i];
     prevR[i] = rgb[i].r;
     prevG[i] = rgb[i].g;
@@ -207,5 +217,5 @@ void loop()
     prevL[i] = hsl[i].l;
   }
 
-  delay(100);
+  delay(10);
 }

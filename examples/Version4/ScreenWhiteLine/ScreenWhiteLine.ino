@@ -1,4 +1,4 @@
-/*
+/**
  * ScreenWhiteLine - TFT display of 4 color sensors + white line detection
  *
  * Layout:
@@ -14,13 +14,15 @@
  *   Row14: L-> H:128 S:48 L:46
  *
  * Calibration: runs at startup — ensure robot is on green field.
+ * Button1: recalibrate baseline (press)
  */
 
 #include <PeanutKingSoccerV4.h>
 static PeanutKingSoccerV4 robot;
 
 const char* sensorLabels[4] = {"F", "R", "B", "L"};
-const uint8_t sensorRows[4] = {2, 4, 6, 8};
+const int sensorRows[4] = {2, 4, 6, 8};
+const int baselineRows[4] = {11, 12, 13, 14};
 
 // Previous values for clearing only what changes
 char prevSensor[4][25];
@@ -28,16 +30,17 @@ char prevBase[4][25];
 
 void drawStaticLabels() {
   // Title
-  robot.setTextColor(ST7735_CYAN);
-  robot.setScreen(0, 0, "WhiteLine");
+  robot.screenSetTextColor(ST7735_CYAN);
+  robot.screenPrintText(0, 0, "WhiteLine");
 
   // baseline label
-  robot.setTextColor(ST7735_YELLOW);
-  robot.setScreen(0, 10, "baseline:");
+  robot.screenSetTextColor(ST7735_YELLOW);
+  robot.screenPrintText(0, 10, "baseline:");
 }
 
 // Display sensor HSL and white line checking data (Front, Right, Back, Left) — clear old, draw new
 void displayColorSensorData() {
+  // Loop through each sensor position (Front, Right, Back, Left)
   for (int pos = Front; pos < PositionCount; pos++) {
     // Read HSL values and white line detection status
     HSL hsl = robot.colorSensorReadHSL(pos);
@@ -49,12 +52,12 @@ void displayColorSensorData() {
              sensorLabels[pos], isWhite ? 'W' : 'G', hsl.h, hsl.s, hsl.l);
 
     // Clear previous
-    robot.setTextColor(ST7735_BLACK);
-    robot.setScreen(0, sensorRows[pos], prevSensor[pos]);
+    robot.screenSetTextColor(ST7735_BLACK);
+    robot.screenPrintText(0, sensorRows[pos], prevSensor[pos]);
 
-    // Draw new
-    robot.setTextColor(isWhite ? ST7735_WHITE : ST7735_GREEN);
-    robot.setScreen(0, sensorRows[pos], line);
+    // Draw new (if white line detected, use white text; otherwise, use green text)
+    robot.screenSetTextColor(isWhite ? ST7735_WHITE : ST7735_GREEN);
+    robot.screenPrintText(0, sensorRows[pos], line);
 
     // Store current line for next iteration
     strncpy(prevSensor[pos], line, sizeof(prevSensor[pos]));
@@ -66,24 +69,25 @@ void displayGreenBaselineInfo() {
   for (int pos = Front; pos < PositionCount; pos++) {
     // Get the baseline values for the current sensor position
     GreenBaseline baseline = robot.colorSensorGetBaseline(pos);
+    
     // Only display baseline if calibrated
-    if (baseline.calibrated) {
-      // Format baseline string
-      char base[25];
-      snprintf(base, sizeof(base), "%s-> H:%3d S:%3d L:%3d",
-               sensorLabels[pos], baseline.greenHue, baseline.greenSat, baseline.greenLight);
+    if (!baseline.calibrated) { continue; }
+    
+    // Format baseline string
+    char base[25];
+    snprintf(base, sizeof(base), "%s-> H:%3d S:%3d L:%3d",
+              sensorLabels[pos], baseline.greenHue, baseline.greenSat, baseline.greenLight);
 
-      // Clear previous baseline
-      robot.setTextColor(ST7735_BLACK);
-      robot.setScreen(0, 11 + pos, prevBase[pos]);
+    // Clear previous baseline
+    robot.screenSetTextColor(ST7735_BLACK);
+    robot.screenPrintText(0, baselineRows[pos], prevBase[pos]);
 
-      // Draw new baseline
-      robot.setTextColor(ST7735_GREEN);
-      robot.setScreen(0, 11 + pos, base);
+    // Draw new baseline
+    robot.screenSetTextColor(ST7735_GREEN);
+    robot.screenPrintText(0, baselineRows[pos], base);
 
-      // Store current baseline for next iteration
-      strncpy(prevBase[pos], base, sizeof(prevBase[pos]));
-    }
+    // Store current baseline for next iteration
+    strncpy(prevBase[pos], base, sizeof(prevBase[pos]));
   }
 }
 
@@ -106,23 +110,25 @@ void clearPrevData() {
 void ReCalibrateBaseline() {
   // Clear previous data and display "Calibrating..." message
   clearPrevData();
-  robot.clearScreen();
-  robot.setTextColor(ST7735_WHITE);
-  robot.setScreen(0, 0, "Calibrating...");
+  robot.screenClear();
+  robot.screenSetTextColor(ST7735_WHITE);
+  robot.screenPrintText(0, 0, "Calibrating...");
 
   // Recalibrate baseline for all 4 sensors
   for (int pos = Front; pos < PositionCount; pos++) {
     robot.colorSensorCalBaseline(pos);
   }
+  delay(100);
 
   // After calibration, clear previous data and redraw static labels
   clearPrevData();
-  robot.clearScreen();
-  robot.setTextColor(ST7735_GREEN);
-  robot.setScreen(0, 0, "Calibration Done!");
+  robot.screenClear();
+  robot.screenSetTextColor(ST7735_GREEN);
+  robot.screenPrintText(0, 0, "Calibration Done!");
   delay(200);
   
-  robot.clearScreen();
+  // Clear screen and redraw static labels for normal operation
+  robot.screenClear();
   clearPrevData();
   drawStaticLabels();
 }
@@ -133,11 +139,15 @@ void setup() {
   // Configure color sensor ports if needed (detail description see ColorSensor.ino example). 
   // Default mapping is CL1=Front, CL2=Right, CL3=Back, CL4=Left.
   // robot.colorSensorConfiguration(CL1, CL2, CL3, CL4);
-  
+
+  // init the screen
+  robot.screenClear();
+  robot.screenSetTextSize(1);
+
   // Clear previous data and draw static labels
-  robot.clearScreen();
   clearPrevData();
   drawStaticLabels();
+
   // Recalibrate baseline at startup
   ReCalibrateBaseline();
 }

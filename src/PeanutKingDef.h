@@ -28,11 +28,4 @@ enum SensorPos : uint8_t {
   PositionCount = 4
 };
 
-enum class Position : uint8_t {
-  Front = 0,
-  Right = 1,
-  Back = 2,
-  Left = 3,
-};
-
 #endif
