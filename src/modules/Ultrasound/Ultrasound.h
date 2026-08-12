@@ -34,19 +34,19 @@ private:
   UltrasoundId _ultrasoundMap[4];
 
   // Enabled sensors bitmask (bit 0=U1, bit 1=U2, bit 2=U3, bit 3=U4)
-  uint8_t _enabledMask;
+  volatile uint8_t _enabledMask;
 
   // Rising edge timestamps for each sensor (millis)
   uint32_t _lastTriggerTime = 0;
 
-   // Round-robin sensor index (0-3)
-  uint8_t   _currentSeq = 0;
+  // Round-robin sensor index (0-3)
+  volatile uint8_t _currentSeq = 0;
   
   // Rising edge timestamp (micros)
-  uint32_t _pulseStart[4] = {0, 0, 0, 0}; 
+  volatile uint32_t _pulseStart[4] = {0, 0, 0, 0}; 
   
   // Distance results (mm)
-  uint16_t _distance[4] = {0, 0, 0, 0};
+  volatile uint16_t _distance[4] = {0, 0, 0, 0};
 
   // ISR infrastructure
   void handleEcho(uint8_t n);       // Handle echo signal for sensor `n`
