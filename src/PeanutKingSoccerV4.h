@@ -368,7 +368,7 @@ public:
    *
    * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
-  uint16_t compassReadHeading(void);
+  uint16_t compassRead(void);
   /**
    * Read raw accelerometer data
    *

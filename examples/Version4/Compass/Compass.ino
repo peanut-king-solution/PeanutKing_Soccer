@@ -13,7 +13,7 @@ void setup() {
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.compassReadHeading();
+  uint16_t heading = robot.compassRead();
 
   // or use the public variable directly
   // robot.dataFetch(); // Update all sensor data

@@ -24,7 +24,7 @@ int prevHeading = 0;
 
 void loop() {
   // Read compass heading
-  int heading = robot.compassReadHeading();
+  int heading = robot.compassRead();
 
   // Set text size for heading display
   robot.screenSetTextSize(3);

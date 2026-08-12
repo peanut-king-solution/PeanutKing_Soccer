@@ -74,7 +74,7 @@ public:
    *
    * `Returns` - heading in degrees `(0~360°)`, clockwise
    */
-  uint16_t readHeading(void);
+  uint16_t read(void);
 
   /**
    * Read raw accelerometer data

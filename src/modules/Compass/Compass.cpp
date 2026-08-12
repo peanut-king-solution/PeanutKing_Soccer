@@ -24,7 +24,7 @@ bool Compass::init(void) {
   return true; // Return true if initialization is successful
 }
 
-uint16_t Compass::readHeading() {
+uint16_t Compass::read() {
   // Clear the receive buffer before reading
   // clearBuffer();
 
