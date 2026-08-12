@@ -212,34 +212,34 @@ public:
    *
    * `Returns` - RGBC raw structure (0-65535 each)
    */
-  RGBC   colorSensorReadRGBC(SensorPos pos);
+  RGBC colorSensorReadRGBC(SensorPos pos);
   /**
    * Read RGB values from a color sensor at the specified position
    * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
    * `Returns` - RGB structure (0-255 each)
    */
-  RGB    colorSensorReadRGB(SensorPos pos);
+  RGB colorSensorReadRGB(SensorPos pos);
   /**
    * Read HSL values from a color sensor at the specified position
    * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
    * `Returns` - HSL structure
    */
-  HSL    colorSensorReadHSL(SensorPos pos);
+  HSL colorSensorReadHSL(SensorPos pos);
   /**
    * Check if a color sensor at the specified position detects a white line
    * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    *
    * `Returns` - `true` if white line detected, `false` otherwise
    */
-  bool   isWhiteLine(SensorPos pos);
+  bool isWhiteLine(SensorPos pos);
   /**
    * Calibrate the baseline for a color sensor at the specified position
    * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
    * `samples` - Number of samples to take for calibration (default: 10)
    */
-  void   colorSensorCalBaseline(SensorPos pos, uint8_t samples = 10);
+  void colorSensorCalBaseline(SensorPos pos, uint8_t samples = 10);
   /**
    * Get the calibrated baseline for a color sensor
    * `pos` - Physical position (`Front`, `Right`, `Back`, `Left`)
@@ -263,20 +263,20 @@ public:
    *
    * `Returns` - `EyeId` of the eye with max value
    */
-  EyeId    compoundMaxEyeRead(void);
+  EyeId compoundMaxEyeRead(void);
   /**
    * Get the maximum IR sensor value
    *
    * `Returns` - Maximum value among all 12 sensors
    */
-  uint8_t  compoundMaxEyeValueRead(void);
+  uint8_t compoundMaxEyeValueRead(void);
   /**
    * Get the value of a specific eye
    * `eyeIndex` - Eye index ( `Eye0` - `Eye11` )
    *
    * `Returns` - IR sensor value
    */
-  uint8_t  compoundEyeValueRead(EyeId eyeIndex);
+  uint8_t compoundEyeValueRead(EyeId eyeIndex);
   /**
    * Get the angle of the detected object
    *
@@ -315,7 +315,7 @@ public:
   void onBoardLedSet(LEDColor color);
   /**
    * Set a single channel on-board LED `on`/`off`
-   * `LED`    - RGB Pin index (`0`=Red, `1`=Green, `2`=Blue)
+   * `LED`    - RGB Pin index (`0`=Blue, `1`=Green, `2`=Red)
    * `status` - `LOW` = off, `HIGH` = on
    */
   void onBoardLedSet(uint8_t LED, uint8_t status);

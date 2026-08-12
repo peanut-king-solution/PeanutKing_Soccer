@@ -41,7 +41,7 @@ public:
 
   /**
    * Set a single on-board LED `on`/`off`
-   * `LED`    - RGB Pin index (`0`=Red, `1`=Green, `2`=Blue)
+   * `LED`    - RGB Pin index (`0`=Blue, `1`=Green, `2`=Red)
    * `status` - `0` = off, `1` = on
    */
   void setLED(uint8_t LED, uint8_t status);
