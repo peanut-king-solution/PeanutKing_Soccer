@@ -285,6 +285,8 @@ bool ColorSensor::calBaseline(ColorSensorId n, uint8_t samples)
   // Return early if the sensor port is invalid or disabled
   if (!portValidCheck(n) || !isEnabled(n)) { return false; }
 
+  if (samples == 0) { samples = 10; } // Default to 10 samples if not specified
+
   uint32_t sumH = 0, sumS = 0, sumL = 0;
   uint8_t  count = 0;
 
@@ -328,7 +330,7 @@ bool ColorSensor::isWhiteLine(ColorSensorId n)
 
   // _isWhite[n] = (lightCheck + satCheck + hueCheck) >= 2;
 
-  uint16_t hueMargin = _baseline[n].greenHue / 3;
+  uint16_t hueMargin = _baseline[n].greenHue / 8;
   bool hueCheck = hsl.h > (_baseline[n].greenHue + hueMargin);
   _isWhite[n] = hueCheck;
 
