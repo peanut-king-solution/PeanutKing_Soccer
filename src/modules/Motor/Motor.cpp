@@ -22,6 +22,7 @@ bool Motor::portValidCheck(MotorId mi) {
 
 MotorId Motor::getPortFromPos(MotorPos pos)
 {
+  if (pos < LeftFront || pos > LeftBack) { return MotorMaxCount; } // Invalid position
   // Return the corresponding motor port based on the current mapping
   return _motorMap[pos];
 }

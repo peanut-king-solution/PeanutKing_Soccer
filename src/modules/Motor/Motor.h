@@ -25,6 +25,7 @@ enum MotorId : uint8_t
   M2 = 1, // default pos: Right Front
   M3 = 2, // default pos: Right Back
   M4 = 3, // default pos: Left Back
+  MotorMaxCount = 4 // Total number of motors
 };
 
 enum MotorPos : uint8_t
