@@ -14,6 +14,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
 - [Quick Start](#quick-start)
 - [Module Overview](#module-overview)
 - [Module Documentation](#module-documentation)
+- [API Reference](#api-reference)
   - [Motor — Motor Control](#motor--motor-control)
   - [Movement — Omnidirectional Movement](#movement--omnidirectional-movement)
   - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
@@ -79,29 +80,35 @@ This library includes the following dependencies (built-in, no additional instal
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
-  robot.init();          // Initialize all modules
+  robot.init(); // Initialize all modules
 }
 
 void loop() {
   // Read compass heading
-  uint16_t heading = robot.compass.read();
+  uint16_t heading = robot.compassRead();         // (or robot.compass.read())
   Serial.print("Heading: ");
   Serial.println(heading);
 
   // Read ultrasonic distance
-  uint16_t dist = robot.ultrasoundGetDist(Position::FRONT);
+  uint16_t dist = robot.ultrasoundGetDist(Front);
   Serial.print("Front distance: ");
   Serial.println(dist);
 
-  // Set LED color
-  robot.setOnBrdLED(LEDColor::CYAN);
+  // Set LED color (enum values: LEDOff, LEDRed, LEDGreen, ... — no `LEDColor::` prefix)
+  robot.onBoardLedSet(LEDCyan);
 
   delay(100);
 }
 ```
+
+> ⚠️ **Single-Robot Constraint**
+>
+> `PeanutKingSoccerV4` is designed for **one physical robot per Arduino board**. All hardware (motors, sensors, I2C bus, serial) is shared, so you **must not** create more than one `PeanutKingSoccerV4` instance in a sketch. Because every module pins/registers map to the same physical hardware, a second instance would cause pin conflicts, duplicated I2C registration, and unpredictable sensor readings.
+>
+> The module classes (`Motor`, `Button`, `LED`, `Ultrasound`, `ColorSensor`, `Compass`, `CompoundEye`, `Bluetooth`, `Movement`) have **private constructors** accessible only to `PeanutKingSoccerV4`. Users should **only** access them through the public instances exposed on the robot object, e.g. `robot.motor`, `robot.compass`.
 
 ---
 
@@ -130,27 +137,29 @@ void loop() {
 
 Controls 4 DC motors with speed setting, direction flipping, and physical position mapping.
 
-**Default motor ID mapping:**
+**Default motor port mapping:**
 
-| Name | Actual ID | Position |
-|------|-----------|----------|
-| `M1` | `0` | Left Front |
-| `M2` | `1` | Right Front |
-| `M3` | `2` | Right Back |
-| `M4` | `3` | Left Back |
+| Name | Value | Position |
+|------|-------|----------|
+| `M1` | `0`   | Left Front |
+| `M2` | `1`   | Right Front |
+| `M3` | `2`   | Right Back |
+| `M4` | `3`   | Left Back |
 
 > **Default direction rules:**
 > - Positive motor speed (`+`) → Counter-clockwise rotation (CCW)
 > - All motors positive (`+`) → Robot rotates clockwise (CW)
 
+**MotorId enum** — `getPortFromPos()` maps a `MotorPos` to the corresponding `MotorId` (`M1`–`M4`). Invalid positions are handled gracefully: the wrapper methods validate via `portValidCheck()` and return early for invalid ports.
+
 **MotorPos enum (physical position):**
 
-| Name         | Value |
-|--------------|-------|
-| `LeftFront`  | `0`   |
-| `RightFront` | `1`   |
-| `RightBack`  | `2`   |
-| `LeftBack`   | `3`   |
+| Name            | Value |
+|-----------------|-------|
+| `LeftFront`     | `0`   |
+| `RightFront`    | `1`   |
+| `RightBack`     | `2`   |
+| `LeftBack`      | `3`   |
 
 > V4 high-level API takes a **physical position** (`MotorPos`) as input, resolves it to the actual port (`M1`-`M4`) via `getPortFromPos()`, then drives the corresponding motor.
 
@@ -160,17 +169,17 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 |--------|-------------|
 | `motorConfiguration(MotorId LF, MotorId RF, MotorId RB, MotorId LB)` | Remap motor ports to physical positions |
 | `motorFlipDirection(MotorPos pos, bool flip = true)` | Flip rotation direction of the motor at a position |
-| `motorSetSpeed(MotorPos pos, int16_t speed)` | Set motor speed, range `-255` (CCW) ~ `+255` (CW), `0` = brake |
+| `motorSetSpeed(MotorPos pos, int16_t speed)` | Set motor speed, range `-255` ~ `+255`, `0` = brake (positive = CCW, negative = CW) |
 | `motorStop(MotorPos pos)` | Stop a single motor (brake mode) |
 | `motorStopAll()` | Stop all motors (brake mode) |
-| `motorTestAll(int16_t speed)` | Test all motors sequentially (LF→RF→RB→LB) |
+| `motorTestAll(int16_t speed, int duration = 1000)` | Test all motors sequentially (LF→RF→RB→LB), each held for `duration` ms |
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
@@ -179,15 +188,15 @@ void setup() {
   robot.motorConfiguration(M2, M1, M3, M4);
 
   // Flip motor rotation direction at a position
-  robot.motorFlipDirection(MotorPos::RightFront, true);
+  robot.motorFlipDirection(RightFront, true);
 }
 
 void loop() {
   // Set motor speed (positive = CCW, negative = CW)
-  robot.motorSetSpeed(MotorPos::LeftFront, 150);   // Left Front CCW
-  robot.motorSetSpeed(MotorPos::RightFront, 150);  // Right Front CW — direction flipped
-  robot.motorSetSpeed(MotorPos::RightBack, -100);  // Right Back CW
-  robot.motorSetSpeed(MotorPos::LeftBack, -100);   // Left Back CW
+  robot.motorSetSpeed(LeftFront, 150);   // Left Front CCW
+  robot.motorSetSpeed(RightFront, 150);  // Right Front CW — direction flipped
+  robot.motorSetSpeed(RightBack, -100);  // Right Back CW
+  robot.motorSetSpeed(LeftBack, -100);   // Left Back CW
   delay(2000);
   robot.motorStopAll(); // Stop all motors (brake mode)
   delay(1000);
@@ -209,7 +218,7 @@ For direct port-based control. Ports take `MotorId` (`M1`-`M4`), not positions.
 
 ```cpp
 // Low-level equivalent: drive port M1 directly
-MotorId mi = robot.motor.getPortFromPos(MotorPos::LeftFront);
+MotorId mi = robot.motor.getPortFromPos(LeftFront);
 robot.motor.flipDirection(mi, true);
 robot.motor.setSpeed(mi, 150);
 robot.motor.stop(mi);
@@ -227,60 +236,30 @@ Enables omnidirectional movement using 45° omni wheels, with angle control and 
 
 > **Architecture** — `Movement` is a **pure computation layer**: it computes the four wheel speeds and returns a `WheelSpeeds` struct, but does **not** drive motors directly. Mapping to physical positions and driving is handled by the V4 high-level `move()` wrapper.
 
-#### Data Structure
-
-| Type | Fields | Description |
-|------|--------|-------------|
-| `WheelSpeeds` | `lf, rf, rb, lb` (`int16_t`) | Speeds for LeftFront / RightFront / RightBack / LeftBack (position-based) |
-
-#### Methods
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
-| `byAngle(float mAngle, float mSpeed, float rotate)` | Compute wheel speeds at angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
-| `withCorr(float mAngle, float mSpeed, float compassReading)` | Compute wheel speeds with compass PID correction, maintains heading |
-| `outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4])` | Compute wheel speeds to prevent moving out of bounds — ⚠️ TODO (returns zeroed speeds) |
-| `correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4])` | Combined compass + out-of-bounds prevention — ⚠️ TODO (returns zeroed speeds) |
-| `coordinateShift(float amount)` | Shift the angle coordinate system by specified degrees |
-| `coordinateFlip()` | Flip the direction of the angle coordinate system |
+| `move(float mAngle, float mSpeed, float rotate = 0)` | Move and drive motors using the enabled correction mode |
+| `movementCoordinateReset()` | Reset the high-level movement coordinate system (→ `movement.converter.reset()`) |
+| `movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW)` | Rotate the high-level movement coordinate system by a non-negative angle. Direction is `CW` by default; use `CCW` for counter-clockwise rotation (→ `movement.converter.rotate()`) |
+| `movementCoordinateFlip()` | Flip the high-level movement coordinate direction (→ `movement.converter.flip()`) |
 
-#### Tuning Parameters
+> **Example**: After `movementCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
+> ```
+>     Before                                    After
+>        0°                                      90°
+>   315° ↑  45°                              45°  ↑  135°
+>      \ | /          rotate(90, CCW)           \ | /
+> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
+>      / | \      rotate counter-clockwise      / | \
+>   215° ↓  135°                            315°  ↓  225°
+>       180°                                     270°
+> ```
 
-| Member | Type | Default | Description |
-|--------|------|---------|-------------|
-| `compassDeadZone` | `float` | `0.05` | Compass rotation dead zone — errors below this are ignored to prevent oscillation |
-| `minRotateSpeed` | `float` | `60.0` | Minimum rotation speed — PID correction smaller than this is clamped up so the robot still turns |
-| `motorPID` | `PIDController` | `Kp=300.0, Ki=1.0, Kd=2.0` | Compass correction PID controller — tune via `motorPID.setKp()` etc. |
+#### Movement mode selection (`move()`)
 
-#### Example
-
-```cpp
-#include <PeanutKingSoccerV4.h>
-
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
-
-void setup() {
-  robot.init();
-
-  // Adjust coordinate system
-  robot.movement.coordinateReset();   // Reset to default coordinate system
-  robot.movement.coordinateShift(0);  // Offset 0 degrees
-  robot.movement.coordinateFlip();    // Flip 180 degrees (CW<->CCW)
-}
-
-void loop() {
-  // Basic movement (returns WheelSpeeds, caller drives)
-  WheelSpeeds ws = robot.movement.byAngle(0, 100, 0);  // Forward
-  // or use the high-level wrapper which reads sensors and drives motors:
-  robot.move(0, 100, 0);  // Forward
-  robot.move(90, 100, 0); // Right
-  robot.move(0, 0, 100);  // Rotate clockwise
-}
-```
-
-#### High-level `move()` Wrapper
-
-The V4 wrapper `robot.move()` reads compass + 4 white-line sensors, selects the movement method based on two enable flags, computes `WheelSpeeds`, maps physical positions to motor ports, and drives the motors.
+The V4 wrapper `robot.move()` reads compass + 4 white-line sensors, selects the movement method based on two enable flags, computes `WheelSpeeds`, maps physical positions to motor ports (`getPortFromPos()`), and drives the motors.
 
 | Enable Flag | Default | Description |
 |-------------|---------|-------------|
@@ -301,15 +280,99 @@ robot.move(45, 100);
 
 > **Note:** `outBoundPreventEnabled` defaults to `false` until `outBoundPrevent()`/`correctedMove()` logic is implemented. Enabling both flags currently calls the *zeroed* stub methods.
 
+#### Data Structure
+
+| Type |                 Fields                  |                                            Description                                            |
+|------|-----------------------------------------|---------------------------------------------------------------------------------------------------|
+| `WheelSpeeds` | `leftFront, rightFront, rightBack, leftBack` (`int16_t`) | Speeds for LeftFront / RightFront / RightBack / LeftBack (position-based) |
+
+#### Low-level Module Methods (`robot.movement.`)
+
+| Method | Description |
+|--------|-------------|
+| `byAngle(float mAngle, float mSpeed, float rotate)` | Compute wheel speeds at angle, `mAngle` = `0-360°`, `mSpeed` = `0-255`, `rotate` = `-255~+255` |
+| `withCorr(float mAngle, float mSpeed, float compassReading)` | Compute wheel speeds with compass PID correction, maintains heading |
+| `outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4])` | Compute wheel speeds to prevent moving out of bounds — ⚠️ TODO (returns zeroed speeds) |
+| `correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4])` | Combined compass + out-of-bounds prevention — ⚠️ TODO (returns zeroed speeds) |
+
+This class computes wheel speeds and returns a `WheelSpeeds` struct; it does **not** drive motors directly. You can use the `robot.move()` wrapper to read sensors and drive motors automatically. Or you can directly call the low-level methods to compute wheel speeds and then drive motors by the functions in Motor (see [Motor — Motor Control](#motor--motor-control)).
+
+The coordinate system is adjusted directly through the public `robot.movement.converter` (`reset()` / `rotate()` / `flip()`, see [Converter — Angle Conversion](#converter--angle-conversion)).
+
+```cpp
+// Compute wheel speeds without compass correction (rotate is optional)
+WheelSpeeds ws = robot.movement.byAngle(90, 100, 50);   // Move 90° at speed 100, rotate 50
+
+// Compute wheel speeds with compass heading correction (no rotate parameter)
+WheelSpeeds ws2 = robot.movement.withCorr(90, 100, 180);// Move 90° at speed 100, hold heading 180°
+
+// Adjust the coordinate system via the public converter member
+robot.movement.converter.reset();     // Reset to default
+robot.movement.converter.rotate(90);  // Rotate coordinate system 90° clockwise (default CW)
+robot.movement.converter.flip();      // Flip 180° (CW <-> CCW)
+
+// The result is applied to motors by the top-level move() wrapper
+robot.move(90, 100, 50);            // Move 90° at speed 100, rotate 50
+```
+
+> `outBoundPrevent()` and `correctedMove()` are **not yet implemented** — they return zeroed wheel speeds. Do not rely on out-of-bounds prevention.
+
+#### Tuning Parameters
+
+| Member | Type | Default | Description |
+|--------|------|---------|-------------|
+| `compassDeadZone` | `float` | `0.05` | Compass rotation dead zone — errors below this are ignored to prevent oscillation |
+| `minRotateSpeed` | `float` | `60.0` | Minimum rotation speed — PID correction smaller than this is clamped up so the robot still turns |
+| `motorPID` | `PIDController` | `Kp=300.0, Ki=1.0, Kd=2.0` | Compass correction PID controller — tune via `motorPID.setKp()` etc. |
+| `converter` | `Converter` | reset | Movement coordinate system — via `converter.rotate()`/`converter.flip()`/`converter.reset()` |
+
+#### Example
+
+```cpp
+#include <PeanutKingSoccerV4.h>
+
+static PeanutKingSoccerV4 robot;
+
+void setup() {
+  robot.init();
+
+  // movement configuration: enable compass correction and out-of-bounds prevention
+  robot.compassCorrectEnabled = true;
+  robot.outBoundPreventEnabled = false; // not yet implemented
+
+  // motor configuration: assign which motor port controls which wheel position
+  // robot.motorConfiguration(M1, M2, M3, M4);
+  
+  // Adjust coordinate system (high-level wrapper)
+  robot.movementCoordinateReset();        // Reset to default coordinate system
+  robot.movementCoordinateRotate(90);     // Rotate coordinate system 90° clockwise (default CW)
+  robot.movementCoordinateRotate(90, CCW);// Rotate coordinate system 90° counter-clockwise
+  robot.movementCoordinateFlip();         // Flip 180 degrees (CW<->CCW)
+}
+
+void loop() {
+  // or use the high-level wrapper which reads sensors and drives motors:
+  robot.move(0, 100, 0);  // Forward
+  robot.move(90, 100, 0); // Right
+
+  robot.compassCorrectEnabled = false; // Disable compass correction
+  robot.move(0, 0, 100);  // Rotate clockwise
+
+  robot.motorStopAll();   // Stop all motors
+}
+```
+
 #### Related Examples
 
 [examples/Version4/Movement/Movement.ino](examples/Version4/Movement/Movement.ino)
+
+[examples/Version4/MoveSquare/MoveSquare.ino](examples/Version4/MoveSquare/MoveSquare.ino)
 
 ---
 
 ### ColorSensor — Color Sensor
 
-Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C (address `0x11`, each sensor uses a dedicated software I2C Master). Reads color index, RGB, HSL, and raw RGBC values.
+Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C (address `0x11`, each sensor uses a dedicated software I2C Master). Reads RGB, HSL, and raw RGBC values, with white-line detection.
 
 **Default sensor ID mapping:**
 
@@ -321,48 +384,69 @@ Supports up to `8` color sensors (`CL1`–`CL8`), communicating via software I2C
 | `CL4` | `3` | Left (default) |
 | `CL5`–`CL8` | `4–7` | Extra sensors (disabled by default) |
 
-**Color index mapping (readColor register `0x01`):**
+> **Note**: The color-index reading (`readColor`, register `0x01`) and the `CLR_BLACK`…`CLR_CYAN` constants have been **removed** in V4. Data is read via the struct-returning methods (`readRGB` / `readHSL` / `readRGBRaw`) instead.
 
-| Name | Actual ID | Color |
-|------|-----------|-------|
-| `CLR_BLACK` | `0` | Black |
-| `CLR_WHITE` | `1` | White |
-| `CLR_GREY` | `2` | Grey |
-| `CLR_RED` | `3` | Red |
-| `CLR_GREEN` | `4` | Green |
-| `CLR_BLUE` | `5` | Blue |
-| `CLR_YELLOW` | `6` | Yellow |
-| `CLR_CYAN` | `7` | Cyan |
+#### Methods (V4 high-level wrapper)
 
-#### Data Structures
-
-| Structure | Fields | Description |
-|-----------|--------|-------------|
-| `rgbc_t` | `r, g, b, c` | RGBC raw values (each `0-65535`, `uint16_t`) |
-| `rgb_t` | `r, g, b` | RGB values (each `0-255`, `uint16_t`) |
-| `hsl_t` | `h, s, l` | HSL values (`h` → `uint16_t`, `s`&`l` → `uint8_t`) |
-| `GreenBaseLine` | `greenHue, greenLight, greenSat, done` | Calibrated green field baseline |
-
-#### Methods
+**V4 high-level API takes a physical position (`SensorPos`) as input**, e.g. `Front`/`Right`/`Back`/`Left`, resolves it to the actual sensor port (`CL1`–`CL8`) via `getPortFromPos()`, then reads / configures the corresponding sensor.
 
 | Method | Description |
 |--------|-------------|
-| `readColor(CLR_SENSOR_ID)` | Read color index (`0-7`) |
-| `readRGB(CLR_SENSOR_ID)` | Read RGB values |
-| `readHSL(CLR_SENSOR_ID)` | Read HSL values |
-| `readRGBRaw(CLR_SENSOR_ID)` | Read raw RGBC values |
-| `setEnabled(uint8_t mask)` | Set enable mask (default `0x0F` = `CL1`–`CL4` enabled) |
-| `enableSensor(CLR_SENSOR_ID, bool)` | Enable/disable a single sensor |
-| `isEnabled(CLR_SENSOR_ID)` | Check if sensor is enabled |
-| `whiteLedOn(CLR_SENSOR_ID)` | Turn on bottom white LED |
-| `whiteLedOff(CLR_SENSOR_ID)` | Turn off bottom white LED |
-| `rgbwLedOn(CLR_SENSOR_ID)` | Turn on top RGBW LED (which shows detected color) |
-| `rgbwLedOff(CLR_SENSOR_ID)` | Turn off top RGBW LED (which shows detected color) |
-| `configuration(CLR_SENSOR_ID F, R, B, L)` | Map sensors to front/right/back/left positions |
-| `calBaseline(CLR_SENSOR_ID, samples=10)` | Calibrate baseline of green field (HSL averaging) |
-| `isCalibrated(CLR_SENSOR_ID)` | Check if calibration is complete |
-| `getBaseline(CLR_SENSOR_ID)` | Get calibrated `GreenBaseLine` struct |
-| `isWhiteLine(CLR_SENSOR_ID)` | Check if sensor detects white line (3D HSL check: Light + Sat + Hue, 2/3 vote) |
+| `colorSensorConfiguration(F, R, B, L)` | Map sensors to positions |
+| `colorSensorReadRGBC(pos)` | Read raw RGBC by position |
+| `colorSensorReadRGB(pos)` | Read RGB by position |
+| `colorSensorReadHSL(pos)` | Read HSL by position |
+| `isWhiteLine(pos)` | White line detection by position |
+| `colorSensorCalBaseline(pos, samples=10)` | Calibrate baseline by position |
+| `colorSensorGetBaseline(pos)` | Get baseline by position |
+
+#### Data Structures
+
+##### RGBC
+
+| Name | Type | Description |
+|------|------|-------------|
+| `r` | `uint32_t` | Red raw value (0~65535) |
+| `g` | `uint32_t` | Green raw value (0~65535) |
+| `b` | `uint32_t` | Blue raw value (0~65535) |
+| `c` | `uint32_t` | Clear raw value (0~65535) |
+
+##### RGB
+
+| Name | Type | Description |
+|------|------|-------------|
+| `r` | `uint16_t` | Red value (0~255) |
+| `g` | `uint16_t` | Green value (0~255) |
+| `b` | `uint16_t` | Blue value (0~255) |
+
+##### HSL
+
+| Name | Type | Description |
+|------|------|-------------|
+| `h` | `uint16_t` | Hue value (0~360) |
+| `s` | `uint8_t` | Saturation value (0~100) |
+| `l` | `uint8_t` | Lightness value (0~100) |
+
+#### Low-level Module Methods (`robot.colorSensor.`)
+
+For direct port-based control. Ports take `ColorSensorId` (`CL1`–`CL8`), not positions.
+
+| Method | Description |
+|--------|-------------|
+| `readRGBRaw(ColorSensorId)` | Read raw RGBC values (returns `RGBC` with `uint32_t` fields) |
+| `readRGB(ColorSensorId)` | Read RGB values |
+| `readHSL(ColorSensorId)` | Read HSL values |
+| `setEnableMask(uint8_t mask)` | Set enable mask (default `0x0F` = `CL1`–`CL4` enabled) |
+| `enable(ColorSensorId, bool)` | Enable/disable a single color sensor |
+| `isEnabled(ColorSensorId)` | Check if sensor is enabled |
+| `whiteLedOn(ColorSensorId)` | Turn on bottom white LED |
+| `whiteLedOff(ColorSensorId)` | Turn off bottom white LED |
+| `rgbwLedOn(ColorSensorId)` | Turn on top RGBW LED (which shows detected color) |
+| `rgbwLedOff(ColorSensorId)` | Turn off top RGBW LED (which shows detected color) |
+| `mapPort(ColorSensorId F, R, B, L)` | Map sensors to front/right/back/left positions |
+| `calBaseline(ColorSensorId, samples=10)` | Calibrate baseline of green field (HSL averaging) |
+| `getBaseline(ColorSensorId)` | Get calibrated `GreenBaseline` struct |
+| `isWhiteLine(ColorSensorId)` | Check if sensor detects white line (hue deviation from green baseline) |
 
 #### White Line Detection (Plan A: Baseline)
 
@@ -370,73 +454,64 @@ The white line detection uses a **calibrated baseline** approach:
 
 1. **Calibration** (`calBaseline()`): Call once on green field. Averages 10 HSL samples to establish the green baseline (Hue, Saturation, Lightness).
 
-2. **Detection** (`isWhiteLine()`): Compares current reading against the baseline using three dimensions:
-   - `lightCheck`: 20%+ brighter than green baseline
-   - `satCheck`: saturation below 80% of green baseline
-   - `hueCheck`: hue differs by more than 30°
+2. **Detection** (`isWhiteLine()`): Compares the current hue reading against the calibrated green baseline hue:
+   - `hueThreshold = greenHue / 8` (dynamic, adapts to the green field hue)
+   - White is detected when the current hue is **more than one threshold above the baseline hue** (`hsl.h > greenHue + hueThreshold`)
 
-   White is detected when **2 out of 3** conditions are met, improving reliability in varying lighting conditions.
-
-3. **Thresholds**: Dynamic — computed from the calibrated baseline values:
-   - `lightThreshold = greenLight / 5` (adapts to ambient brightness)
-   - `satThreshold = greenSat * 80%` (adapts to sensor saturation range)
+   The comparison uses a single hue-deviation check against the calibrated baseline, keeping the threshold adaptive to lighting conditions.
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
 
-  // Calibrate all 4 sensors (ensure robot is on green field)
-  for (uint8_t i = 0; i < 4; i++) {
-    robot.colorSensor.calBaseline((CLR_SENSOR_ID)i);
-  }
-
-  // Enable/disable sensors
-  robot.colorSensor.setEnabled(0b00001111);   // Enable CL1-CL4
-  robot.colorSensor.enableSensor(CL5, false); // Disable CL5
+  // Configure color sensor ports to their default positions
+  //  - front color sensor is connected to CL1
+  //  - right color sensor is connected to CL2
+  //  - back color sensor is connected to CL3
+  //  - left color sensor is connected to CL4
+  // robot.colorSensorConfiguration(CL1, CL2, CL3, CL4);
 }
 
 void loop() {
-  // Read CL1 sensor color information
-  uint8_t colorIdx = robot.colorSensor.readColor(CL1);
-  rgb_t   rgb      = robot.colorSensor.readRGB(CL1);
-  hsl_t   hsl      = robot.colorSensor.readHSL(CL1);
-  rgbc_t  raw      = robot.colorSensor.readRGBRaw(CL1);
+  // Read RGBC raw values from the front color sensor
+  RGBC rgbc = robot.colorSensorReadRGBC(Front);
+  Serial.print("RGBC: R="); Serial.print(rgbc.r);
+  Serial.print(", G="); Serial.print(rgbc.g);
+  Serial.print(", B="); Serial.print(rgbc.b);
+  Serial.print(", C="); Serial.println(rgbc.c);
 
-  // White line detection (3D HSL check, 2/3 vote)
-  bool isFrontWhite = robot.colorSensor.isWhiteLine(CL1);
+  // Read RGB values from the front color sensor
+  RGB rgb = robot.colorSensorReadRGB(Front);
+  Serial.print("RGB: R="); Serial.print(rgb.r);
+  Serial.print(", G="); Serial.print(rgb.g);
+  Serial.print(", B="); Serial.println(rgb.b);
 
-  // Get calibrated baseline values
-  if (robot.colorSensor.isCalibrated(CL1)) {
-    GreenBaseLine bl = robot.colorSensor.getBaseline(CL1);
-    // bl.greenHue, bl.greenSat, bl.greenLight
+  // Read HSL values from the front color sensor
+  HSL hsl = robot.colorSensorReadHSL(Front);
+  Serial.print("HSL: H="); Serial.print(hsl.h);
+  Serial.print(", S="); Serial.print(hsl.s);
+  Serial.print(", L="); Serial.println(hsl.l);
+
+  // Check if the front color sensor detects a white line
+  if (robot.isWhiteLine(Front)) {
+    Serial.println("White line detected!");
   }
 
-  // Control CL1 sensor LEDs
-  robot.colorSensor.whiteLedOn(CL1);
-  robot.colorSensor.rgbwLedOff(CL1);
+  delay(100);
 }
-```
-
-#### Compatibility Wrappers
-
-```cpp
-uint8_t colorIdx = robot.getColorSensor(CL1);     // Same as readColor()
-rgb_t   rgb      = robot.getColorSensorRGB(CL1);  // Same as readRGB()
-hsl_t   hsl      = robot.getColorSensorHSL(CL1);  // Same as readHSL()
-bool isFrontWhite = robot.whiteLineCheck(CL1);    // Same as isWhiteLine()
 ```
 
 #### Related Examples
 
-[examples/Version4/Colour_Sensor/Colour_Sensor.ino](examples/Version4/Colour_Sensor/Colour_Sensor.ino)
+[examples/Version4/ColorSensor/ColorSensor.ino](examples/Version4/ColorSensor/ColorSensor.ino)
 
-[examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
+[examples/Version4/ScreenColorSensor/ScreenColorSensor.ino](examples/Version4/ScreenColorSensor/ScreenColorSensor.ino)
 
 [examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino)
 
@@ -454,27 +529,40 @@ bool isFrontWhite = robot.whiteLineCheck(CL1);    // Same as isWhiteLine()
 |----------|--------|-------------|
 | `0x00` | 12 bytes | `IR1–IR12` raw readings (`0-255`) |
 | `0x0C` | 1 byte | Maximum IR value |
-| `0x0D` | 1 byte | Maximum IR index (`1-12`) |
+| `0x0D` | 1 byte | Maximum IR index (`0-11`) |
 | `0x0E` | 1 byte | Angle (multiply by 2 for `0-360°`) |
 | `0x0F` | 1 byte | Mode (`0`=single IR, `1`=dual IR) |
 
-#### Methods
+#### Methods (V4 high-level wrapper)
+
+```cpp
+uint8_t* ir = robot.compoundEyeReadAll();      // Read all 12 values
+uint8_t val = robot.compoundEyeValueRead(Eye5);// Read one eye
+EyeId maxEye = robot.compoundMaxEyeRead();     // Get max eye
+uint8_t maxVal = robot.compoundMaxEyeValueRead(); // Get max value
+uint16_t angle = robot.compoundEyeAngleRead(); // Get angle
+```
+
+
+#### Low-level Module Methods (`robot.compoundEye.`)
+
+These are the **CompoundEye module methods** (low-level, access via `robot.compoundEye`):
 
 | Method | Description |
 |--------|-------------|
 | `readAll()` | Read all 12 IR sensor values, returns `uint8_t*` array |
-| `getMaxEye()` | Get the index of the sensor with maximum value (`0-11`) |
-| `getMaxEyeVal()` | Get the maximum sensor reading |
-| `getEyeVal(uint8_t n)` | Get the value of a specific sensor index (`0-11`) |
-| `getAngle()` | Calculate ball direction angle (`0-360°`) |
-| `getMode()` | Get detection mode (`0` = single IR, `1` = dual IR) |
+| `readMaxEye()` | Get the index of the sensor with maximum value (`0-11`) |
+| `readMaxEyeVal()` | Get the maximum sensor reading |
+| `readEyeVal(uint8_t n)` | Get the value of a specific sensor index (`0-11`) |
+| `readAngle()` | Calculate ball direction angle (`0-360°`) |
+| `readMode()` | Get detection mode (`0` = single IR, `1` = dual IR) |
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
@@ -489,103 +577,91 @@ void loop() {
   }
 
   // Read a single IR sensor value (index 0-11)
-  uint8_t val = robot.compoundEye.getEyeVal(5);
+  uint8_t val = robot.compoundEye.readEyeVal(5);
 
   // Get ball position
-  uint8_t maxEye = robot.compoundEye.getMaxEye();
-  uint8_t maxVal = robot.compoundEye.getMaxEyeVal();
-  uint16_t angle = robot.compoundEye.getAngle();
+  uint8_t maxEye = robot.compoundEye.readMaxEye();
+  uint8_t maxVal = robot.compoundEye.readMaxEyeVal();
+  uint16_t angle = robot.compoundEye.readAngle();
 }
-```
-
-#### Compatibility Wrappers
-
-```cpp
-uint8_t* ir = robot.compoundEyeRead();        // Same as readAll()
-uint8_t val = robot.compoundEyeVal(5);        // Same as getEyeVal()
-uint8_t maxEye = robot.compoundMaxEye();      // Same as getMaxEye()
-uint8_t maxVal = robot.compoundMaxEyeVal();   // Same as getMaxEyeVal()
-uint16_t angle = robot.compoundEyeAngle();    // Same as getAngle()
 ```
 
 #### Related Examples
 
 [examples/Version4/CompoundEye/CompoundEye.ino](examples/Version4/CompoundEye/CompoundEye.ino)
 
-[examples/Version4/ScreenIR/ScreenIR.ino](examples/Version4/ScreenIR/ScreenIR.ino)
+[examples/Version4/ScreenCompoundEye/ScreenCompoundEye.ino](examples/Version4/ScreenCompoundEye/ScreenCompoundEye.ino)
 
 ---
 
 ### Button — Button Control
 
-Controls 4 buttons (`BTN_1`–`BTN_4`) with basic read support. Advanced gesture detection (TAP, HOLD, double-tap) is declared but **not yet implemented** — `update()` is a placeholder.
+Controls 4 buttons (`Button1`–`Button4`) with a state machine that detects `ButtonPressed`, `ButtonHolding`, and `ButtonReleased`.
 
 **Button ID mapping:**
 
 | Name | Actual ID | Position |
 |------|-----------|----------|
-| `BTN_1` | `1` | Button 1 |
-| `BTN_2` | `2` | Button 2 |
-| `BTN_3` | `3` | Button 3 |
-| `BTN_4` | `4` | Button 4 |
+| `Button1` | `0` | Button 1 |
+| `Button2` | `1` | Button 2 |
+| `Button3` | `2` | Button 3 |
+| `Button4` | `3` | Button 4 |
 
-**Gesture state mapping:**
+**Button state mapping:**
 
 | Name | Actual ID | Description |
 |------|-----------|-------------|
-| `NONE` | `0` | No event |
-| `TAP` | `1` | Single tap |
-| `PRESS` | `2` | Press |
-| `HOLD` | `3` | Long press (1000ms) |
-| `TAP2` | `4` | Double tap |
-| `TAP3` | `5` | Triple tap |
-| `RELEASE` | `6` | Release |
-| `HOLD2` | `13` | Extra long press |
+| `ButtonIdle` | `0` | Button is idle |
+| `ButtonPressed` | `1` | Button just pressed |
+| `ButtonHolding` | `2` | Button is being held down |
+| `ButtonReleased` | `3` | Button just released |
 
-#### Methods
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
-| `read(ButtonId btn)` | Read whether button is physically pressed (`true`/`false`) |
-| `update()` | Update button state machine (**not yet implemented** — see [Known Issues](#known-issues)) |
-| `getStatus(ButtonId btn)` | Get current button gesture status |
+| `robot.buttonUpdate()` | Update button state machine; call once per loop before reading |
+| `robot.buttonStateRead(btn)` | Read current `ButtonState` after `buttonUpdate()` |
+
+#### Low-level Module Methods (`robot.button.`)
+
+| Method | Description |
+|--------|-------------|
+| `robot.button.init()` | Initialize button pins as `INPUT_PULLUP` |
+| `robot.button.update()` | Update button state machine |
+| `robot.button.readState(btn)` | Read current `ButtonState` |
+| `robot.button.setDebounceTime(ms)` | Set debounce time (default 50ms) |
+| `robot.button.setHoldTime(ms)` | Set hold time (default 1000ms) |
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
 }
 
 void loop() {
-  // Basic read (works)
-  if (robot.button.read(BTN_1)) {
-    Serial.println("Button 1 pressed");
+  // Update button state machine first
+  robot.buttonUpdate();
+
+  // Then read the state of each button
+  ButtonState state = robot.buttonStateRead(Button1);
+  switch (state) {
+    case ButtonIdle:    break;
+    case ButtonPressed: Serial.println("Button1 pressed");  break;
+    case ButtonHolding: Serial.println("Button1 holding");  break;
+    case ButtonReleased: Serial.println("Button1 released"); break;
   }
-
-  // Gesture detection (update() is a placeholder — see Known Issues)
-  // robot.button.update();
-  // ButtonStatus status = robot.button.getStatus(BTN_1);
 }
-```
-
-#### Compatibility Wrappers
-
-```cpp
-bool pressed = robot.buttonRead(BTN_1);          // Same as read()
-robot.buttonUpdate();                            // Same as update() — placeholder
-ButtonStatus s = robot.buttonGetStatus(BTN_1); // Same as getStatus()
 ```
 
 #### Related Examples
 
 [examples/Version4/Button/Button.ino](examples/Version4/Button/Button.ino)
-
-[examples/Version4/Button_StateMachine/Button_StateMachine.ino](examples/Version4/Button_StateMachine/Button_StateMachine.ino)
 
 ---
 
@@ -597,49 +673,50 @@ Controls the on-board RGB LED with 8 color modes.
 
 | Name | Color |
 |------|-------|
-| `LEDColor::OFF` | Off |
-| `LEDColor::BLUE` | Blue |
-| `LEDColor::GREEN` | Green |
-| `LEDColor::CYAN` | Cyan |
-| `LEDColor::RED` | Red |
-| `LEDColor::PURPLE` | Purple |
-| `LEDColor::YELLOW` | Yellow |
-| `LEDColor::WHITE` | White |
+| `LEDOff` | Off |
+| `LEDBlue` | Blue |
+| `LEDGreen` | Green |
+| `LEDCyan` | Cyan |
+| `LEDRed` | Red |
+| `LEDPurple` | Purple |
+| `LEDYellow` | Yellow |
+| `LEDWhite` | White |
 
-#### Methods
+> **Note**: `LEDColor` is a plain `enum`, so values are used **without** the `LEDColor::` prefix (e.g. `LEDRed`, not `LEDColor::RED`).
+
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
-| `setLED(LEDColor color)` | Set LED to a predefined color (`LEDColor`) |
-| `setLED(uint8_t LED, uint8_t status)` | Set individual LED channel (`0`=Red, `1`=Green, `2`=Blue), `0`=off, `1`=on |
+| `robot.onBoardLedSet(color)` | Set the on-board LED to a predefined `LEDColor` |
+
+#### Low-level Module Methods (`robot.led.`)
+
+| Method | Description |
+|--------|-------------|
+| `robot.led.setLED(LEDColor color)` | Set all channels to a predefined color |
+| `robot.led.setLED(uint8_t channel, uint8_t status)` | Set one channel; header order `0=Blue, 1=Green, 2=Red` |
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
 }
 
 void loop() {
-  // Set color
-  robot.led.setLED(LEDColor::RED);
-  robot.led.setLED(LEDColor::CYAN);
+  // Set color (high-level wrapper)
+  robot.onBoardLedSet(LEDRed);
+  robot.onBoardLedSet(LEDCyan);
 
-  // Individual control
-  robot.led.setLED(0, HIGH);  // Red LED on
+  // Individual control (low-level, via robot.led)
+  robot.led.setLED(0, HIGH);  // Channel 0 (header: Blue) on
   robot.led.setLED(1, LOW);   // Green LED off
 }
-```
-
-#### Compatibility Wrappers
-
-```cpp
-robot.setOnBrdLED(LEDColor::CYAN);
-robot.setOnBrdLED(0, HIGH);
 ```
 
 #### Related Examples
@@ -656,34 +733,48 @@ Manages 4 ultrasonic distance sensors (U1–U4), using Pin Change Interrupt for 
 
 | Name | Actual ID | Position | Trig Pin | Echo Pin |
 |------|-----------|----------|----------|----------|
-| `U1` | `0` | `Position::FRONT` | 49 | A15 |
-| `U2` | `1` | `Position::RIGHT` | 48 | A14 |
-| `U3` | `2` | `Position::BACK` | 47 | A13 |
-| `U4` | `3` | `Position::LEFT` | 46 | A12 |
+| `U1` | `0` | Front | 49 | A15 |
+| `U2` | `1` | Right | 48 | A14 |
+| `U3` | `2` | Back | 47 | A13 |
+| `U4` | `3` | Left | 46 | A12 |
 
-#### Methods
+#### Methods (V4 high-level wrapper)
+
+**V4 high-level API takes a physical position (`SensorPos`) as input**, e.g. `Front`/`Right`/`Back`/`Left`, resolves it to the actual sensor port (`U1`–`U4`) via `getPortFromPos()`, then reads / configures the corresponding sensor.
+
+```cpp
+uint16_t dist = robot.ultrasoundGetDist(Front);            // Read by position
+robot.ultrasoundConfiguration(U2, U1, U3, U4);             // Remap sensor ports
+robot.ultrasoundSetEnabled(true, false, true, false);      // Enable Front, Back only
+robot.ultrasoundEnableAll(true);                           // Enable all sensors
+```
+
+
+#### Low-level Module Methods (`robot.ultrasound.`)
+
+For direct port-based control. Ports take `UltrasoundId` (`U1`–`U4`), not positions.
 
 | Method | Description |
 |--------|-------------|
-| `read(UltrasoundId port)` | Read distance from a sensor port (`mm`, range `0–4500`mm) |
+| `read(UltrasoundId port)` | Read distance from a sensor port (`mm`); invalid/disabled returns `65535` |
 | `enable(UltrasoundId port, bool enabled)` | Enable/disable a single sensor port |
-| `enableAll(bool enabled)` | Enable/disable all sensors at once |
-| `setEnabledByPos(bool front, bool right, bool back, bool left)` | Enable/disable sensors by physical position |
-| `setMap(UltrasoundId front, right, back, left)` | Remap sensor ports to physical positions |
-| `getPortFromPos(Position pos)` | Convert position (`FRONT/RIGHT/BACK/LEFT`) to sensor port |
+| `setEnableMask(uint8_t mask)` | Enable/disable all sensors at once (bit0=U1 … bit3=U4) |
+| `isEnabled(UltrasoundId port)` | Check if a sensor port is enabled |
+| `mapPort(UltrasoundId Front, Right, Back, Left)` | Remap sensor ports to physical positions |
+| `getPortFromPos(SensorPos pos)` | Convert position (`Front/Right/Back/Left`) to sensor port |
 
 #### Example
 
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
 
   // If needed, remap sensor positions (swap U1 and U2)
-  robot.ultrasound.setMap(U2, U1, U3, U4);
+  robot.ultrasound.mapPort(U2, U1, U3, U4);
 
   // Enable/disable individual ports
   robot.ultrasound.enable(U1, true);
@@ -698,15 +789,6 @@ void loop() {
 }
 ```
 
-#### Compatibility Wrappers (high-level API)
-
-```cpp
-uint16_t dist = robot.ultrasoundGetDist(Position::FRONT); // Read by position
-robot.ultrasoundConfig(U2, U1, U3, U4);                   // Remap sensor ports
-robot.ultrasoundSetEnabled(true, false, true, false);     // Enable Front, Back only
-robot.ultrasoundEnableAll(true);                          // Enable all sensors
-```
-
 #### Related Examples
 
 [examples/Version4/Ultrasound/Ultrasound.ino](examples/Version4/Ultrasound/Ultrasound.ino)
@@ -719,15 +801,45 @@ robot.ultrasoundEnableAll(true);                          // Enable all sensors
 
 Reads compass heading (0–360°) and 9-axis IMU raw data (accelerometer, gyroscope, magnetometer) via hardware I2C (address `0x08`).
 
-#### Methods
+#### Methods (V4 high-level wrapper)
+
+```cpp
+uint16_t heading = robot.compassRead();
+int16_t* accel = robot.compassReadRawAccel();
+int16_t* gyro  = robot.compassReadRawGyro();
+int16_t* mag   = robot.compassReadRawMag();
+```
+
+High-level coordinate wrappers (act on `robot.compass.converter`):
+
+| Method | Description |
+|--------|-------------|
+| `compassCoordinateReset()` | Reset the compass coordinate system (→ `compass.converter.reset()`) |
+| `compassCoordinateRotate(uint16_t, RotationDir dir = CW)` | Rotate compass coordinate system by non-negative angle. Direction default `CW`; use `CCW` for counter-clockwise (→ `compass.converter.rotate()`) |
+| `compassCoordinateFlip()` | Flip compass coordinate direction (→ `compass.converter.flip()`) |
+
+> **Example**: After `compassCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
+> ```
+>     Before                                    After
+>        0°                                      90°
+>   315° ↑  45°                              45°  ↑  135°
+>      \ | /          rotate(90, CCW)           \ | /
+> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
+>      / | \      rotate counter-clockwise      / | \
+>   215° ↓  135°                            315°  ↓  225°
+>       180°                                     270°
+> ```
+
+#### Low-level Module Methods (`robot.compass.`)
+
+These are the **Compass module methods** (access via `robot.compass`):
 
 | Method | Description |
 |--------|-------------|
 | `read()` | Read compass heading (`0–360°`, clockwise) |
-| `getAccelerometerRaw()` | Get raw accelerometer data `int16_t[3]` (X, Y, Z) |
-| `getGyroscopeRaw()` | Get raw gyroscope data `int16_t[3]` (X, Y, Z) |
-| `getMagnetometerRaw()` | Get raw magnetometer data `int16_t[3]` (X, Y, Z) |
-| `clearBuffer()` | Clear receive buffer |
+| `readRawAccel()` | Get raw accelerometer data `int16_t[3]` (X, Y, Z) |
+| `readRawGyro()` | Get raw gyroscope data `int16_t[3]` (X, Y, Z) |
+| `readRawMag()` | Get raw magnetometer data `int16_t[3]` (X, Y, Z) |
 
 #### Subclasses
 
@@ -740,14 +852,16 @@ Reads compass heading (0–360°) and 9-axis IMU raw data (accelerometer, gyrosc
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
 
-  // Set coordinate system
-  robot.compass.converter.reset().shift(0);  // Reset, then offset 0 degrees
-  robot.compass.converter.flip();            // Flip 180 degrees (CW<->CCW)
+  // Set coordinate system (high-level wrappers on robot.compass.converter)
+  robot.compassCoordinateReset();       // Reset coordinate system
+  robot.compassCoordinateRotate(0);     // 0° rotate = identity (default CW, see Converter docs)
+  robot.compassCoordinateRotate(90, CCW); // Rotate 90° counter-clockwise
+  robot.compassCoordinateFlip();        // Flip 180 degrees (CW<->CCW)
 }
 
 void loop() {
@@ -757,19 +871,10 @@ void loop() {
   Serial.println(heading);
 
   // Read IMU raw data
-  int16_t* accel = robot.compass.getAccelerometerRaw();
-  int16_t* gyro  = robot.compass.getGyroscopeRaw();
-  int16_t* mag   = robot.compass.getMagnetometerRaw();
+  int16_t* accel = robot.compass.readRawAccel();
+  int16_t* gyro  = robot.compass.readRawGyro();
+  int16_t* mag   = robot.compass.readRawMag();
 }
-```
-
-#### Compatibility Wrappers
-
-```cpp
-uint16_t heading = robot.compassRead();
-int16_t* accel = robot.getAccelerometerRaw();
-int16_t* gyro  = robot.getGyroscopeRaw();
-int16_t* mag   = robot.getMagnetometerRaw();
 ```
 
 #### Related Examples
@@ -813,19 +918,20 @@ Manages 8 software I2C buses (`SW0`–`SW7`) and 1 hardware I2C bus (`HW`) using
 | Field | Description |
 |-------|-------------|
 | `busIndex` | Bus index (`BusIndex`) |
-| `deviceAddress` | I2C device address (`0x00`–`0x7F`) |
-| `speed` | I2C speed in `Hz` |
+| `deviceAddress` | I2C device address (`0x01`–`0x7F`; `0x00` is invalid) |
+| `speed` | Requested I2C speed; current backends do not apply per-handle speed |
 | `isValid()` | Check if the handle is valid |
 
-#### Methods
+#### Low-level Module Methods (`I2CManager`)
 
 | Method | Description |
 |--------|-------------|
 | `I2CManager::getInstance()` | Get singleton instance |
 | `init()` | Initialize all I2C buses (HW + SW) |
-| `RegisterDevice(BusIndex, address, speed)` | Register I2C device, returns `I2C_Handle` |
 | `SensorRead(handle, reg, buffer, length)` | Read I2C register data |
 | `SensorSend(handle, buffer, length)` | Send data to I2C device |
+
+Handles are value-constructed with `I2C_Handle(BusIndex, address, speed)`. The manager does not provide `RegisterDevice()` or duplicate-address registration.
 
 #### Wire.h Compatibility
 
@@ -845,14 +951,15 @@ To force Wire.h usage, define `USE_WIRE_H` before including the library:
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 I2CManager& i2c = I2CManager::getInstance();
 
 void setup() {
   robot.init();
 
-  // Register custom device on hardware I2C
-  I2C_Handle device = i2c.RegisterDevice(BusIndex::HW, 0x08, 400000);
+  // Construct a handle for a custom hardware-I2C device.
+  // Address 0x08 is already used by the compass in the standard robot setup.
+  I2C_Handle device(BusIndex::HW, 0x20, 100000);
 }
 
 void loop() {
@@ -864,7 +971,7 @@ void loop() {
 
 #### Related Tests
 
-[test/test_i2c_manager/test_i2c_manager.ino](test/test_i2c_manager/test_i2c_manager.ino)
+[tests/i2c_test/i2c_test.ino](tests/i2c_test/i2c_test.ino)
 
 ---
 
@@ -872,17 +979,17 @@ void loop() {
 
 ST7735 TFT display (128×160 pixels), communicates via SPI, inherits from the PDQ_GFX graphics library.
 
-#### Methods
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
-| `clearScreen()` | Clear screen (fill black) |
-| `setTextColor(uint16_t color)` | Set text foreground color |
-| `setTextColor(uint16_t fg, uint16_t bg)` | Set foreground and background color |
-| `setTextSize(uint8_t size)` | Set text size (1-3) |
-| `setScreen(uint8_t col, uint8_t row, char string[])` | Display text at grid position (col×6, row×10) |
-| `setScreen(uint8_t col, uint8_t row, int16_t number)` | Display number at grid position |
-| `drawAnglePointer(x, y, radius, angle, color)` | Draw angle pointer with N/S/E/W markers |
+| `screenClear()` | Clear screen (fill black) |
+| `screenSetTextColor(uint16_t color)` | Set text foreground color |
+| `screenSetTextColor(uint16_t fg, uint16_t bg)` | Set foreground and background color |
+| `screenSetTextSize(uint8_t size)` | Set text size (1-3) |
+| `screenPrintText(uint8_t col, uint8_t row, const char* string)` | Display text at grid position (col×6, row×10) |
+| `screenPrintNumber(uint8_t col, uint8_t row, int16_t number)` | Display number at grid position |
+| `screenDrawAnglePointer(x, y, radius, angle, arrowColor)` | Draw angle pointer with N/S/E/W markers |
 
 #### Color Constants
 
@@ -896,6 +1003,8 @@ ST7735 TFT display (128×160 pixels), communicates via SPI, inherits from the PD
 | `ST7735_YELLOW` | `0x07FF` | Yellow |
 | `ST7735_MAGENTA` | `0xF81F` | Magenta |
 | `ST7735_CYAN` | `0xFFE0` | Cyan |
+
+#### Low-level Module Methods (`robot.tft.`)
 
 #### Direct Drawing
 
@@ -914,25 +1023,25 @@ robot.tft.drawLine(x0, y0, x1, y1, color);
 ```cpp
 #include <PeanutKingSoccerV4.h>
 
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
-  robot.clearScreen();
-  robot.setTextSize(2);
-  robot.setTextColor(ST7735_YELLOW);
-  robot.setScreen(0, 0, "Hello");
+  robot.screenClear();
+  robot.screenSetTextSize(2);
+  robot.screenSetTextColor(ST7735_YELLOW);
+  robot.screenPrintText(0, 0, "Hello");
 }
 
 void loop() {
   // Clear old value, display new value
-  robot.setTextColor(ST7735_BLACK);
-  robot.setScreen(0, 1, (int16_t)oldValue);
-  robot.setTextColor(ST7735_WHITE);
-  robot.setScreen(0, 1, (int16_t)newValue);
+  robot.screenSetTextColor(ST7735_BLACK);
+  robot.screenPrintNumber(0, 1, (int16_t)oldValue);
+  robot.screenSetTextColor(ST7735_WHITE);
+  robot.screenPrintNumber(0, 1, (int16_t)newValue);
 
   // Draw angle pointer
-  robot.drawAnglePointer(64, 120, 25, heading);
+  robot.screenDrawAnglePointer(64, 120, 25, heading);
 }
 ```
 
@@ -940,9 +1049,9 @@ void loop() {
 
 [examples/Version4/LCDScreen/LCDScreen.ino](examples/Version4/LCDScreen/LCDScreen.ino)
 
-[examples/Version4/ScreenColor/ScreenColor.ino](examples/Version4/ScreenColor/ScreenColor.ino)
+[examples/Version4/ScreenColorSensor/ScreenColorSensor.ino](examples/Version4/ScreenColorSensor/ScreenColorSensor.ino)
 
-[examples/Version4/ScreenIR/ScreenIR.ino](examples/Version4/ScreenIR/ScreenIR.ino)
+[examples/Version4/ScreenCompoundEye/ScreenCompoundEye.ino](examples/Version4/ScreenCompoundEye/ScreenCompoundEye.ino)
 
 [examples/Version4/ScreenUltrasound/ScreenUltrasound.ino](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino)
 
@@ -959,8 +1068,8 @@ Only `CLK` and `DAT` pins need to be specified; `CMD` and `ATT` are automaticall
 
 | Pin | Role | Description |
 |-----|------|-------------|
-| `CLK` | Clock | Digital pin (`D0_P`–`D5_P`) |
-| `DAT` | Data | Digital pin (`D0_P`–`D5_P`) |
+| `CLK` | Clock | Digital pin (`D1_P`–`D6_P`) |
+| `DAT` | Data | Digital pin (`D1_P`–`D6_P`) |
 | `CMD` | Command | Auto-assigned (between CLK and DAT) |
 | `ATT` | Attention | Auto-assigned (between CLK and DAT) |
 
@@ -968,14 +1077,16 @@ Only `CLK` and `DAT` pins need to be specified; `CMD` and `ATT` are automaticall
 
 | Name | Description |
 |------|-------------|
-| `PS2Button::SELECT` | Select button |
-| `PS2Button::L3` | Left joystick button |
-| `PS2Button::R3` | Right joystick button |
-| `PS2Button::START` | Start button |
-| `PS2Button::UP` / `DOWN` / `LEFT` / `RIGHT` | D-pad directions |
-| `PS2Button::L1` / `L2` | Left shoulder buttons |
-| `PS2Button::R1` / `R2` | Right shoulder buttons |
-| `PS2Button::TRIANGLE` / `CIRCLE` / `CROSS` / `SQUARE` | Right side action buttons |
+| `PS2Select` | Select button |
+| `PS2L3` | Left joystick button |
+| `PS2R3` | Right joystick button |
+| `PS2Start` | Start button |
+| `PS2Up` / `PS2Down` / `PS2Left` / `PS2Right` | D-pad directions |
+| `PS2L1` / `PS2L2` | Left shoulder buttons |
+| `PS2R1` / `PS2R2` | Right shoulder buttons |
+| `PS2Triangle` / `PS2Circle` / `PS2Cross` / `PS2Square` | Right side action buttons |
+
+> **Note**: `PS2Button` is a plain `enum`, so values are used **without** the `PS2Button::` prefix (e.g. `PS2Cross`, not `PS2Button::CROSS`).
 
 **Joystick data structure (`PS2JoystickData`):**
 
@@ -984,17 +1095,14 @@ Only `CLK` and `DAT` pins need to be specified; `CMD` and `ATT` are automaticall
 | `angle` | `float` | Direction angle (0–360°) |
 | `strength` | `float` | Push strength (0–255) |
 
-#### Methods
+#### Methods (V4 high-level wrapper)
 
 | Method | Description |
 |--------|-------------|
 | `ps2Init(CLK, DAT, pressure, vibration)` | Initialize PS2 controller — auto-assigns CMD/ATT pins, returns `0` on success, error code otherwise |
 | `ps2Update()` | Read latest controller state (call once per loop) |
 | `ps2SetVibration(byte strength)` | Set vibration motor strength (0–255) |
-| `ps2ButtonPressed(PS2Button btn)` | Check if button was just pressed (edge-triggered) |
-| `ps2ButtonHolding(PS2Button btn)` | Check if button is being held down (level-triggered) |
-| `ps2ButtonReleased(PS2Button btn)` | Check if button was just released (edge-triggered) |
-| `ps2ButtonRead(PS2Button btn)` | Read button state struct (⚠️ **not yet implemented** — returns empty struct) |
+| `ps2ButtonStateRead(PS2Button btn)` | Read current button state (`PS2Idle`/`PS2Pressed`/`PS2Holding`/`PS2Released`) |
 | `ps2JoystickRead(PS2Joystick js)` | Read joystick angle + strength (square boundary scaling) |
 
 #### Example — Basic Reading
@@ -1008,7 +1116,7 @@ void setup() {
   robot.init();
   delay(300);
 
-  // CLK=D6_P(56), DAT=D3_P(59), middle pins CMD=57, ATT=58 auto assigned
+  // CLK=D6_P, DAT=D3_P, middle pins CMD, ATT auto assigned
   byte error = robot.ps2Init(D6_P, D3_P, false, true);
   if (error) {
     Serial.print("PS2 init error: ");
@@ -1021,25 +1129,31 @@ void setup() {
 void loop() {
   robot.ps2Update();
 
-  // Edge-triggered button detection
-  if (robot.ps2ButtonPressed(PS2Button::CROSS)) {
+  // Read button state (PS2Idle / PS2Pressed / PS2Holding / PS2Released)
+  PS2ButtonState crossState = robot.ps2ButtonStateRead(PS2Cross);
+  if (crossState == PS2Pressed) {
     Serial.println("CROSS pressed");
   }
-  if (robot.ps2ButtonReleased(PS2Button::L1)) {
-    Serial.println("L1 released");
+  if (crossState == PS2Released) {
+    Serial.println("CROSS released");
   }
 
-  // Level-triggered button detection
-  if (robot.ps2ButtonHolding(PS2Button::UP)) {
+  // Holding detection
+  PS2ButtonState upState = robot.ps2ButtonStateRead(PS2Up);
+  if (upState == PS2Holding) {
     Serial.println("UP holding");
   }
 
   // Joystick reading (angle + strength)
-  if (robot.ps2ButtonHolding(PS2Button::L1)) {
-    PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
+  PS2ButtonState l1State = robot.ps2ButtonStateRead(PS2L1);
+  if (l1State == PS2Holding) {
+    PS2JoystickData lj = robot.ps2JoystickRead(PS2LeftJoystick);
     Serial.print("L angle:"); Serial.print(lj.angle);
     Serial.print(" str:"); Serial.println(lj.strength);
     robot.ps2SetVibration(lj.strength);
+  }
+  if (l1State == PS2Released) {
+    robot.ps2SetVibration(0);
   }
 
   delay(50);
@@ -1064,22 +1178,23 @@ void loop() {
   robot.ps2Update();
 
   // Hold L1 + move left joystick to drive
-  if (robot.ps2ButtonHolding(PS2Button::L1)) {
-    PS2JoystickData lj = robot.ps2JoystickRead(PS2Joystick::LEFT);
+  PS2ButtonState l1State = robot.ps2ButtonStateRead(PS2L1);
+  if (l1State == PS2Holding) {
+    PS2JoystickData lj = robot.ps2JoystickRead(PS2LeftJoystick);
     int moveSpeed = lj.strength * 130 / 255;
     robot.move(lj.angle, moveSpeed);
     robot.ps2SetVibration(lj.strength);
   }
-  if (robot.ps2ButtonReleased(PS2Button::L1)) {
+  if (l1State == PS2Released) {
     robot.ps2SetVibration(0);
     robot.motorStopAll();
   }
 }
 ```
 
-#### Compatibility Wrappers
+#### Low-level Module Methods (`robot.ps2x.`)
 
-None
+The bundled `PS2X` driver is available as `robot.ps2x`; its methods are lower-level than the wrappers above. Use `ps2Update()` and the wrapper reads unless direct driver access is required.
 
 #### Related Examples
 
@@ -1093,27 +1208,33 @@ None
 
 #### Converter
 
-Angle conversion tool supporting flip, shift, and normalization. Used for compass calibration and movement coordinate adjustment.
+Angle conversion tool supporting flip, rotate, and normalization. Used for compass calibration and movement coordinate adjustment.
 
 ```cpp
+enum RotationDir { CW, CCW };           // Rotation direction for rotate()
+
 class Converter {
 public:
-  Converter& flip();            // Flip direction (+/- invert)
-  Converter& shift(float deg);  // Shift angle offset
-  float normalize(float angle); // Normalize to [0, 360)
-  float convert(float angle);   // Apply transformation
-  void reset();                 // Reset to defaults (multiplier=1, offset=0)
+  Converter& flip();                     // Flip direction (+/- invert)
+  Converter& rotate(uint16_t angle, RotationDir dir = CW); // Rotate coordinate by non-negative angle; direction default CW
+  float normalize(float angle);          // Normalize to [0, 360)
+  float convert(float angle);            // Apply transformation
+  void reset();                          // Reset to defaults (multiplier=1, offset=0)
 };
 ```
 
 Usage example:
 
 ```cpp
-// Chained method calls (reset then offset)
-robot.compass.converter.reset().shift(90).flip();
+// Chained method calls (reset then rotate: 90° CW rotates the coordinate 90° CW; flip inverts direction CW<->CCW)
+robot.compass.converter.reset();
+robot.compass.converter.rotate(90).flip();       // 90° clockwise (default), then flip
 
-// Movement coordinate adjustment
-robot.movement.coordinateShift(180);
+// Movement coordinate adjustment (rotate 180° CW by default)
+robot.movement.converter.rotate(180);            // 180° clockwise (default CW)
+
+// Counter-clockwise rotation via explicit direction
+robot.movement.converter.rotate(90, CCW);        // 90° counter-clockwise
 ```
 
 #### PIDController
@@ -1153,29 +1274,29 @@ robot.movement.motorPID.setKd(1.0);     // Tune derivative gain
 
 ## Examples
 
-### Version 4 (20 examples)
+### Version 4 examples
 
 | Example | Description |
 |---------|-------------|
-| [Button](examples/Version4/Button/Button.ino) | Basic button reading |
-| [Button_StateMachine](examples/Version4/Button_StateMachine/Button_StateMachine.ino) | Button state machine (TAP/HOLD — requires Button::update() implementation) |
-| [Colour_Sensor](examples/Version4/Colour_Sensor/Colour_Sensor.ino) | Color sensor reading (color index, RGB, HSL, RGBC raw, white line check) |
+| [Button](examples/Version4/Button/Button.ino) | Button state machine (PRESSED/HOLDING/RELEASED) |
+| [ColorSensor](examples/Version4/ColorSensor/ColorSensor.ino) | Color sensor reading (RGB, HSL, RGBC raw, white line check) |
 | [Compass](examples/Version4/Compass/Compass.ino) | Compass & IMU data (heading, accelerometer, gyroscope, magnetometer) |
 | [CompassCar](examples/Version4/CompassCar/CompassCar.ino) | Compass navigation (heading-based motor control) |
 | [CompoundEye](examples/Version4/CompoundEye/CompoundEye.ino) | IR compound eye (12 sensors, max eye, ball angle) |
-| [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O (uses S_PIN, D_PIN, A_PIN enums) |
+| [Digital_Analog](examples/Version4/Digital_Analog/Digital_Analog.ino) | GPIO digital/analog I/O (uses `S_PIN`, `DigitalPinId`, `AnalogPinId` enums) |
 | [LCDScreen](examples/Version4/LCDScreen/LCDScreen.ino) | TFT display basics (text, shapes, tick counter) |
 | [LED](examples/Version4/LED/LED.ino) | on-board RGB LED control (cycles through all 8 colors) |
 | [Motor](examples/Version4/Motor/Motor.ino) | Motor test & configuration (mapping, direction, speed) |
-| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, withCorr, rotation) |
+| [Movement](examples/Version4/Movement/Movement.ino) | Omnidirectional movement (byAngle, withCorr, rotation, coordinate calibration) |
+| [MoveSquare](examples/Version4/MoveSquare/MoveSquare.ino) | Square-path movement with compass correction on/off + rotation |
 | [OutOfBound](examples/Version4/OutOfBound/OutOfBound.ino) | Square movement with white line detection |
 | [PS2](examples/Version4/PS2/PS2.ino) | PS2 controller basic reading (button states, joystick angle + strength) |
 | [PS2Remote](examples/Version4/PS2Remote/PS2Remote.ino) | PS2 controller remote control (joystick-driven movement) |
-| [ScreenColor](examples/Version4/ScreenColor/ScreenColor.ino) | Screen + color sensor integration (color name, RGB display) |
+| [ScreenColorSensor](examples/Version4/ScreenColorSensor/ScreenColorSensor.ino) | Screen + color sensor integration (color name, RGB display) |
 | [ScreenCompass](examples/Version4/ScreenCompass/ScreenCompass.ino) | Screen + compass integration (heading display + pointer) |
-| [ScreenIR](examples/Version4/ScreenIR/ScreenIR.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
-| [ScreenWhiteLine](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino) | Screen + color sensor white line detection (HSL + baseline display) |
+| [ScreenCompoundEye](examples/Version4/ScreenCompoundEye/ScreenCompoundEye.ino) | Screen + compound eye integration (6×2 grid display + angle pointer) |
 | [ScreenUltrasound](examples/Version4/ScreenUltrasound/ScreenUltrasound.ino) | Screen + ultrasonic integration (4 distances with labels) |
+| [ScreenWhiteLine](examples/Version4/ScreenWhiteLine/ScreenWhiteLine.ino) | Screen + color sensor white line detection (HSL + baseline display) |
 | [Ultrasound](examples/Version4/Ultrasound/Ultrasound.ino) | Ultrasound sensor (configuration, enable/disable, distance reading) |
 
 ---
@@ -1189,19 +1310,18 @@ robot.movement.motorPID.setKd(1.0);     // Tune derivative gain
 | TFT CS | 0 | TFT chip select |
 | TFT DC | 53 | TFT data/command |
 | TFT RST | 50 | TFT reset |
-| TFT SCL | 52 | TFT SPI clock |
-| TFT SDA | 51 | TFT SPI data |
+| TFT SCK | 52 | TFT SPI clock |
+| TFT MOSI | 51 | TFT SPI data |
 | Motor IN1 | 9, 7, 5, 3 | Motor channel 1 (PWM) |
 | Motor IN2 | 8, 6, 4, 2 | Motor channel 2 (PWM) |
 | Ultrasound Trig | 49, 48, 47, 46 | U1–U4 trigger pins |
 | Ultrasound Echo | A15, A14, A13, A12 | U1–U4 echo pins (PCINT) |
-| Button | 22, 23, 24, 25 | BTN_1–BTN_4 (INPUT_PULLUP) |
-| LED RGB | 26, 28, 27 | Red, Green, Blue |
+| Button | 22, 23, 24, 25 | Button1–Button4 (INPUT_PULLUP) |
+| LED RGB | 26, 28, 27 | Implementation pins R/G/B; header channel order is 0=Blue, 1=Green, 2=Red |
 | SW I2C (×8) | 29–44 | SCL=30/32/34/36/38/40/42/44, SDA=29/31/33/35/37/39/41/43 |
 | Servo/PWM | 10–13 | S1–S4 |
-| Digital Input | 53–55 | D1–D3 |
-| Digital Output | 56–58 | D4–D6 |
-| Analog Input | 59–62 | A1–A4 |
+| Digital | 56–61 | D1_P–D6_P (`D6_P=A2(56)` … `D1_P=A7(61)`) |
+| Analog | 62–65 | A1_P–A4_P (`A1_P=A11(65)` … `A4_P=A8(62)`) |
 
 ### I2C Device Addresses
 
@@ -1230,19 +1350,13 @@ robot.movement.motorPID.setKd(1.0);     // Tune derivative gain
 
 | Feature | Location | Status |
 |---------|----------|--------|
-| `Button::update()` | `Button.cpp` | Placeholder — gesture detection (TAP, HOLD, TAP2) not implemented |
-| `bluetoothRemote()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
-| `bluetoothAttributes()` | `PeanutKingSoccerV4.cpp` | Empty function — Bluetooth not implemented |
-| `Chase()` / `Back()` | `PeanutKingSoccerV4.cpp` | Empty functions — strategy not implemented |
-| `ps2ButtonRead()` | `PeanutKingSoccerV4.cpp` | Returns empty struct — full button state reading not implemented |
+| `Movement::outBoundPrevent()` / `correctedMove()` | `Movement.cpp` | Stubs returning zeroed speeds — out-of-bounds prevention not implemented |
+| `bluetoothRemote()` | `PeanutKingSoccerV4.cpp` | Partial — connection check + handling only; full remote strategy not implemented |
 
 ### 🟢 Minor Issues
 
 - `pwmPin[4]` declared in `PeanutKingSoccerV4.h` but never used
-- `ButtonId` enum starts at 1, requiring `-1` conversion for array indexing
 - Private member naming is inconsistent across modules (`_` prefix vs no prefix)
-- `Compass::converter` and `Movement::converter` are private members (encapsulation is fine); `Movement::motorPID` is intentionally public for tuning
-
----
+- `Compass::converter` and `Movement::converter`/`motorPID` are intentionally public, so users can tune/rotate the coordinate system directly (no high-level wrapper)
 
 ## Version History
