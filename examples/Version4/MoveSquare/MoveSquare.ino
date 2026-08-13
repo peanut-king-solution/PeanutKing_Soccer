@@ -19,7 +19,7 @@ static PeanutKingSoccerV4 robot;
  */
 void testMoveSqure(int speed, int duration) {
   for (int i = 0; i < 4; i++) {
-    int timer = millis(); // Record the start time
+    uint32_t timer = millis(); // Record the start time
     while (millis() - timer < duration) {
       robot.move(i * 90, speed);
     }
@@ -30,9 +30,18 @@ void setup()
 {
   robot.init();
 
-  // You should ensure that the robot's motors are properly configured 
-  // and the movement coordinate system is set up correctly before running this example.
-  // Check the Motor.ino and Movement.ino examples for guidance.
+  // You should configure the motor mapping if needed (refer to Motor.ino example)
+  // robot.motorConfiguration(M1, M2, M3, M4);
+
+  // You should also configure the movement coordinate system if needed (refer to Movement.ino example)
+  // robot.movementCoordinateReset(); // Reset to default coordinate system
+  // robot.movementCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.movementCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW
+
+  // You can change the coordinate system of the compass if needed (refer to Compass.ino example)
+  // robot.compassCoordinateReset(); // Reset to default coordinate system
+  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
 
   // disable out-of-bounds prevention
   robot.outBoundPreventEnabled = false;

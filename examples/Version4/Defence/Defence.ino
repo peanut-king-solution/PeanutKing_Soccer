@@ -17,10 +17,20 @@ void setup() {
   robot.compassCorrectEnabled = true;
   robot.outBoundPreventEnabled = false;
 
-  // motor configuration: assign which motor port controls which wheel position
+  // You should configure motor mapping if needed (refer to Motor.ino example)
   // robot.motorConfiguration(M1, M2, M3, M4);
 
-  // ultasonic configuration: assign which ultrasound port is at each physical position
+  // You should also configure the movement coordinate system if needed (refer to Movement.ino example)
+  // robot.movementCoordinateReset(); // Reset to default coordinate system
+  // robot.movementCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.movementCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
+  
+  // You can also change the coordinate system of the compass if needed (refer to Compass.ino example)
+  // robot.compassCoordinateReset(); // Reset to default coordinate system
+  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
+
+  // You should also configure the ultrasonic sensor mapping if needed (refer to Ultrasound.ino example)
   // robot.ultrasoundConfiguration(U1, U2, U3, U4);
 }
 

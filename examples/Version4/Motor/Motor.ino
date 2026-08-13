@@ -25,7 +25,7 @@ void setup()
   then you should swap these two motors,
   configure by uncommenting the below line of code
   */
-  robot.motorConfiguration(M4, M3, M1, M2); // swap Left Front and Right Front
+  // robot.motorConfiguration(M2, M1, M3, M4); // e.g. swap Left Front and Right Front
 }
 
 int speed = 100;

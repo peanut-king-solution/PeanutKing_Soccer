@@ -16,6 +16,9 @@ void setup()
   robot.compassCorrectEnabled  = false;  // Disable compass correction for movement
   robot.outBoundPreventEnabled = false;  // Disable out-of-bounds prevention for movement
 
+  // Configure motor mapping if needed (refer to Motor.ino example)
+  // robot.motorConfiguration(M1, M2, M3, M4);
+
   /*
   You should check the movement direction of the robot without any configuration first,
   to check the coordinate system of the robot's movement,

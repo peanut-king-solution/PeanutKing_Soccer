@@ -22,6 +22,11 @@ void setup() {
 
   // You should configure the motor mapping if need (refer to Motor.ino example)
   // robot.motorConfiguration(M1, M2, M3, M4);
+
+  // And you can change the coordinate system of the compass if needed (refer to Compass.ino example)
+  // robot.compassCoordinateReset(); // Reset to default coordinate system
+  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
 }
 
 void loop() {
