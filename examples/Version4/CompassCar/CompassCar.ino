@@ -19,6 +19,9 @@ void motors(int LF_spd, int RF_spd, int RB_spd, int LB_spd) {
 
 void setup() {
   robot.init();
+
+  // You should configure the motor mapping if need (refer to Motor.ino example)
+  // robot.motorConfiguration(M1, M2, M3, M4);
 }
 
 void loop() {
