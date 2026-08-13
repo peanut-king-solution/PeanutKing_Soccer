@@ -100,15 +100,3 @@ WheelSpeeds Movement::correctedMove(float /*mAngle*/, float /*mSpeed*/, float /*
   WheelSpeeds ws = {0, 0, 0, 0};
   return ws;
 }
-
-void Movement::coordinateReset(void) {
-  converter.reset();
-}
-
-void Movement::coordinateShift(float shiftAngle) {
-  converter.shift(shiftAngle);
-}
-
-void Movement::coordinateFlip(void) {
-  converter.flip();
-}

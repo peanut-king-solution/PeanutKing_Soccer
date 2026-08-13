@@ -27,13 +27,13 @@ void setup()
     (Correct should be forward (0°) -> right front (45°) -> rightward (90°))
 
     -> means the robot's movement direction is wrong configured
-    (shifted by -90° and becomes counter-clockwise)
+    (rotated by -90° and becomes counter-clockwise)
 
   then you should adjust the movement direction,
   configure by uncommenting the below line of code
   */
   // robot.movementCoordinateReset();
-  // robot.movementCoordinateShift(90);
+  // robot.movementCoordinateRotate(90, CW);
   // robot.movementCoordinateFlip();
 }
 

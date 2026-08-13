@@ -59,7 +59,6 @@ public:
    * `mSpeed`     - Movement speed `(0-255)`
    * `isOutBound` - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
    *
-   * @note TODO: not yet implemented — returns zeroed speeds
    */
   WheelSpeeds outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4]);
 
@@ -70,28 +69,14 @@ public:
    * `compassReading`  - Current compass heading `(0-360°)`
    * `isOutBound`      - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
    *
-   * @note TODO: not yet implemented — returns zeroed speeds
    */
   WheelSpeeds correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4]);
 
-  // --- Converter calibration ---
-  
-  /** Reset the angle coordinate system to default */
-  void coordinateReset(void);
-
-  /** Shift the angle coordinate system by the specified degrees */
-  void coordinateShift(float shiftAngle);
-
-  /** Flip the direction of the angle coordinate system */
-  void coordinateFlip(void);
-
-  // --- PID controller (public) ---
-
-  /** Compass correction PID controller — tune directly via motorPID.setKp() etc. */
-  PIDController motorPID;
-
-private:
+  /** Movement coordinate system, adjustable via converter */
   Converter converter;
+
+  /** Compass correction PID controller */
+  PIDController motorPID;
 };
 
 #endif // MOVEMENT_H

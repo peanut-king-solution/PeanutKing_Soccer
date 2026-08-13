@@ -10,7 +10,6 @@ void setup() {
   robot.init();
 
   // Initialize TFT display
-  
   robot.screenClear();
 
   // Display title

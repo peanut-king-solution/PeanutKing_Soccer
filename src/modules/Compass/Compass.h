@@ -36,6 +36,8 @@ private:
   uint8_t rxBuff[COMPASS_RX_BUFFER_SIZE];  // Buffer for I2C read operations
   uint8_t txBuff[COMPASS_TX_BUFFER_SIZE];  // Buffer for I2C write operations
 
+  Converter _factoryConverter; // Factory offset (init / 655-reset only). User rotate/flip lives in `converter` and is untouched.
+
   // Raw sensor data arrays
   int16_t accelData[3] = {0};  // Accelerometer raw data (X, Y, Z)
   int16_t gyroData[3]  = {0};  // Gyroscope raw data (X, Y, Z)
@@ -97,7 +99,8 @@ public:
    */
   int16_t* readRawMag(void);
 
-  Converter converter; // Converter for compass readings
+  /** Compass coordinate system, adjustable via converter */
+  Converter converter;
 };
 
 #endif // COMPASS_H

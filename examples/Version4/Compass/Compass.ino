@@ -9,6 +9,11 @@ static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
+
+  // You cna change the coordinate system of the compass if needed
+  // robot.compassCoordinateReset(); // Reset to default coordinate system
+  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
 }
 
 void loop() {

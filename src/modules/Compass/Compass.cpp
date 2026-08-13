@@ -10,16 +10,24 @@ bool Compass::init(void) {
   if (!_handle.isValid()) { return false; }
 
   // Compass Reset Heading
-  // delay(10); // wait for compass calibration
-  // // Read multiple samples to calculate the average compass reading
-  // uint16_t sum = 0; int8_t sampleCount = 10;
-  // for (int i = 0; i < sampleCount; i++) {
-  //   sum += this->read();
-  //   delay(50); // wait for the next sample
-  // }
+  delay(10); // wait for compass calibration
+  // Read multiple samples to calculate the average compass reading
+  uint16_t sum = 0; int8_t sampleCount = 10;
+  for (int i = 0; i < sampleCount; i++) {
+    sum += this->read();
+    delay(50); // wait for the next sample
+  }
+  uint16_t averageHeading = sum / sampleCount;
 
-  // Set 0° as the direction of the robot facing at starting
-  // converter.reset().shift(-(int16_t)(sum / sampleCount));
+  // Set 0° as the direction of the robot facing at starting.
+  // Factory offset is kept in _factoryConverter so init() never touches the
+  // user's converter (rotate/flip), and is separate from the 655-reset event.
+  _factoryConverter.reset();
+  if (averageHeading <= 180) {
+    _factoryConverter.rotate(averageHeading, CW);
+  } else {
+    _factoryConverter.rotate(360 - averageHeading, CCW);
+  }
 
   return true; // Return true if initialization is successful
 }
@@ -34,8 +42,16 @@ uint16_t Compass::read() {
   compass = (uint16_t)rxBuff[0] | ((uint16_t)rxBuff[1] << 8);
   compass = compass / 100;
 
-  // Apply the conversion using the compassConverter
-  // compass = converter.convert(compass);
+  // compass received reset current heading as 0° (North)
+  if (compass == 655) {
+    _factoryConverter.reset(); // Reset factory offset only; user converter (rotate/flip) is preserved
+  }
+
+  // Apply factory offset first (on the raw heading), then the user rotate/flip.
+  // Factory only calibrates the start direction; user tuning applies after.
+  float v = _factoryConverter.convert((float)compass); // factory offset (init/655)
+  v = converter.convert(v); // user rotate/flip (public)
+  compass = (uint16_t)v;  // already normalized to [0, 360)
   return compass;
 }
 

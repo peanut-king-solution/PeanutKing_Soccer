@@ -75,7 +75,7 @@ public:
    * `back`  - Ultrasound `port` plugged at the back position
    * `left`  - Ultrasound `port` plugged at the left position
    */
-  void mapPort(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
+  void mapPort(UltrasoundId Front, UltrasoundId Right, UltrasoundId Back, UltrasoundId Left);
   // Check if a sensor port is valid (U1~U4)
   bool portValidCheck(UltrasoundId port);
   /**

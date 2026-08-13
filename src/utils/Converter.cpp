@@ -16,8 +16,14 @@ Converter& Converter::flip() {
   return *this;
 }
 
-Converter& Converter::shift(float amount) {
-  _offset += amount;
+Converter& Converter::rotate(uint16_t angle, RotationDir dir) {
+  // `_offset` is stored additively as a shift: a positive offset shifts the
+  // coordinate counter-clockwise (CCW). So:
+  //   rotate(90, CW)  -> offset -= 90  (coordinate rotates clockwise)
+  //   rotate(90, CCW) -> offset += 90
+  // The direction is decided purely by `dir`; `angle` is always non-negative.
+
+  _offset += (dir == CW ? -(int16_t)angle : (int16_t)angle);
   return *this;
 }
 

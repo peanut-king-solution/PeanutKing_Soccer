@@ -187,15 +187,15 @@ void PeanutKingSoccerV4::dataFetch(void) {
   }
 
   void PeanutKingSoccerV4::movementCoordinateReset(void) {
-    movement.coordinateReset();
+    movement.converter.reset();
   }
 
-  void PeanutKingSoccerV4::movementCoordinateShift(float shiftAngle) {
-    movement.coordinateShift(shiftAngle);
+  void PeanutKingSoccerV4::movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir) {
+    movement.converter.rotate(rotateAngle, dir);
   }
 
   void PeanutKingSoccerV4::movementCoordinateFlip(void) {
-    movement.coordinateFlip();
+    movement.converter.flip();
   }
 
 /* =============================================================================
@@ -294,8 +294,8 @@ uint16_t PeanutKingSoccerV4::ultrasoundGetDist(SensorPos pos) {
   return ultrasound.read(port);
 }
 
-void PeanutKingSoccerV4::ultrasoundConfiguration(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left) {
-  ultrasound.mapPort(front, right, back, left);
+void PeanutKingSoccerV4::ultrasoundConfiguration(UltrasoundId Front, UltrasoundId Right, UltrasoundId Back, UltrasoundId Left) {
+  ultrasound.mapPort(Front, Right, Back, Left);
 }
 
 void PeanutKingSoccerV4::ultrasoundSetEnabled(bool front, bool right, bool back, bool left) {
@@ -318,6 +318,13 @@ int16_t* PeanutKingSoccerV4::compassReadRawAccel(void) { return compass.readRawA
 int16_t* PeanutKingSoccerV4::compassReadRawGyro(void)  { return compass.readRawGyro(); }
 int16_t* PeanutKingSoccerV4::compassReadRawMag(void)   { return compass.readRawMag(); }
 
+void PeanutKingSoccerV4::compassCoordinateReset(void) { compass.converter.reset(); }
+void PeanutKingSoccerV4::compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir) 
+{
+  compass.converter.rotate(rotateAngle, dir); 
+}
+void PeanutKingSoccerV4::compassCoordinateFlip(void) { compass.converter.flip(); }
+
 /* =============================================================================
  *                              TFT Display
  * ============================================================================= */
@@ -339,9 +346,9 @@ void PeanutKingSoccerV4::screenPrintText(uint8_t col, uint8_t row, const char* s
   tft.print(string);
 }
 
-void PeanutKingSoccerV4::screenPrintNumber(uint8_t col, uint8_t row, int16_t numbers) {
+void PeanutKingSoccerV4::screenPrintNumber(uint8_t col, uint8_t row, int16_t number) {
   tft.setCursor(col*6, row*10);
-  tft.print(numbers);
+  tft.print(number);
 }
 
 void PeanutKingSoccerV4::screenClear(void) {

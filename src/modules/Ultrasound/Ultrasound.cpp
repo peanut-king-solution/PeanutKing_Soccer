@@ -52,13 +52,13 @@ void Ultrasound::init(void)
  *                              Sensor Mapping
  * ============================================================================= */
 
-void Ultrasound::mapPort(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left)
+void Ultrasound::mapPort(UltrasoundId Front, UltrasoundId Right, UltrasoundId Back, UltrasoundId Left)
 {
   // Map logical sensor IDs to physical positions
-  _ultrasoundMap[0] = (uint8_t)front;
-  _ultrasoundMap[1] = (uint8_t)right;
-  _ultrasoundMap[2] = (uint8_t)back;
-  _ultrasoundMap[3] = (uint8_t)left;
+  _ultrasoundMap[0] = (uint8_t)Front;
+  _ultrasoundMap[1] = (uint8_t)Right;
+  _ultrasoundMap[2] = (uint8_t)Back;
+  _ultrasoundMap[3] = (uint8_t)Left;
 }
 
 bool Ultrasound::portValidCheck(UltrasoundId port)

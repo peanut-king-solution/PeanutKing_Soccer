@@ -184,10 +184,11 @@ public:
   void movementCoordinateReset(void);
 
   /**
-   * Shift the movement coordinate system by the specified degrees
-   * `shiftAngle` - Offset in degrees
+   * Rotate the movement coordinate system by the specified angle (in degrees).
+   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
+   * `dir`         - rotation direction (`CW` by default)
    */
-  void movementCoordinateShift(float shiftAngle);
+  void movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
 
   /**
    * Flip the movement coordinate system direction (CW <-> CCW)
@@ -341,7 +342,7 @@ public:
    * `back`  - ultrasound port plugged at the back position
    * `left`  - ultrasound port plugged at the left position
    */
-  void ultrasoundConfiguration(UltrasoundId front, UltrasoundId right, UltrasoundId back, UltrasoundId left);
+  void ultrasoundConfiguration(UltrasoundId Front, UltrasoundId Right, UltrasoundId Back, UltrasoundId Left);
 
   /**
    * Enable or disable sensors by position
@@ -388,6 +389,23 @@ public:
    */
   int16_t* compassReadRawMag(void);
 
+  /**
+   * Reset the compass converter coordinate system to default
+   */
+  void compassCoordinateReset(void);
+
+  /**
+   * Rotate the compass coordinate system by the specified angle (in degrees).
+   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
+   * `dir`         - rotation direction (`CW` by default)
+   */
+  void compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
+
+  /**
+   * Flip the compass converter coordinate system direction (CW <-> CCW)
+   */
+  void compassCoordinateFlip(void);
+
 // =============================================================================
 //                     TFT Display Functions
 // =============================================================================
@@ -421,7 +439,7 @@ public:
    * `row` - Row position (`0-based`, each row is `10 pixels` high)
    * `numbers` - Number to display
    */
-  void screenPrintNumber(uint8_t col, uint8_t row, int16_t numbers);
+  void screenPrintNumber(uint8_t col, uint8_t row, int16_t number);
   /**
    * Clear the entire TFT screen (fill with `black`)
    */
