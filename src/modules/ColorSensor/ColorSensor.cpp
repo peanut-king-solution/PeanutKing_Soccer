@@ -330,7 +330,7 @@ bool ColorSensor::isWhiteLine(ColorSensorId n)
 
   // _isWhite[n] = (lightCheck + satCheck + hueCheck) >= 2;
 
-  uint16_t hueMargin = _baseline[n].greenHue / 8;
+  uint16_t hueMargin = _baseline[n].greenHue / 10;
   bool hueCheck = hsl.h > (_baseline[n].greenHue + hueMargin);
   _isWhite[n] = hueCheck;
 
