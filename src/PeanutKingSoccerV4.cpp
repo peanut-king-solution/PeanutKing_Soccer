@@ -139,8 +139,9 @@ void PeanutKingSoccerV4::dataFetch(void) {
 * ============================================================================= */
   
   void PeanutKingSoccerV4::move(float mAngle, float mSpeed, float rotate) {
-    // Read compass heading
-    uint16_t compassReading = compassRead();
+    uint16_t compassReading = 65535; // Default to invalid value
+    // If compass correction is enabled, read the compass heading
+    if (compassCorrectEnabled) { compassReading = compassRead(); }
     // Check out-of-bounds status using color sensors (only when prevention is enabled)
     bool isOutBound[4] = {false, false, false, false};
     if (outBoundPreventEnabled) {

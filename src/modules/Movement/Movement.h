@@ -42,6 +42,8 @@ public:
    * `mAngle`  - Movement angle `(0-360°)`
    * `mSpeed`  - Movement speed `(0-255)`
    * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
+   * 
+   * `Returns` - Wheel speeds for each wheel (position-based)
    */
   WheelSpeeds byAngle(float mAngle, float mSpeed, float rotate);
 
@@ -50,6 +52,8 @@ public:
    * `mAngle`          - Movement angle `(0-360°)`
    * `mSpeed`          - Movement speed `(0-255)`
    * `compassReading`  - Current compass heading `(0-360°)`
+   * 
+   * `Returns` - Wheel speeds for each wheel (position-based)
    */
   WheelSpeeds withCorr(float mAngle, float mSpeed, float compassReading);
 
@@ -59,6 +63,7 @@ public:
    * `mSpeed`     - Movement speed `(0-255)`
    * `isOutBound` - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
    *
+   * `Returns` - Wheel speeds that prevent out-of-bounds movement
    */
   WheelSpeeds outBoundPrevent(float mAngle, float mSpeed, bool isOutBound[4]);
 
@@ -69,6 +74,7 @@ public:
    * `compassReading`  - Current compass heading `(0-360°)`
    * `isOutBound`      - Array indicating if each direction is out of bounds (Front, Right, Back, Left)
    *
+   * `Returns` - Wheel speeds that combine compass correction and out-of-bounds prevention
    */
   WheelSpeeds correctedMove(float mAngle, float mSpeed, float compassReading, bool isOutBound[4]);
 

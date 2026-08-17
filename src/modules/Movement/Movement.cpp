@@ -21,7 +21,7 @@ WheelSpeeds Movement::byAngle(float mAngle, float mSpeed, float rotate)
   mc[2] = -mc[0];                                       // RB
   mc[3] = -mc[1];                                       // LB
 
-  WheelSpeeds ws;
+  WheelSpeeds ws = {0, 0, 0, 0};
   ws.leftFront  = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
   ws.rightFront = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
   ws.rightBack  = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
@@ -79,7 +79,7 @@ WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   // scale the motor speeds based on the desired speed and rotation
   float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
 
-  WheelSpeeds ws;
+  WheelSpeeds ws = {0, 0, 0, 0};
   ws.leftFront  = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
   ws.rightFront = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
   ws.rightBack  = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
