@@ -390,6 +390,12 @@ public:
   int16_t* compassReadRawMag(void);
 
   /**
+   * Sets the current heading as the new north (0°) reference.
+   * It adjusts the factory converter offset to account for the new north offset.
+   */
+  void compassUpdateNorth(void);
+
+  /**
    * Reset the compass converter coordinate system to default
    */
   void compassCoordinateReset(void);

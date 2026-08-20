@@ -319,6 +319,7 @@ int16_t* PeanutKingSoccerV4::compassReadRawAccel(void) { return compass.readRawA
 int16_t* PeanutKingSoccerV4::compassReadRawGyro(void)  { return compass.readRawGyro(); }
 int16_t* PeanutKingSoccerV4::compassReadRawMag(void)   { return compass.readRawMag(); }
 
+void PeanutKingSoccerV4::compassUpdateNorth(void) { compass.updateNorthOffset(); }
 void PeanutKingSoccerV4::compassCoordinateReset(void) { compass.converter.reset(); }
 void PeanutKingSoccerV4::compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir) 
 {

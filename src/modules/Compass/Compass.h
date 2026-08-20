@@ -44,6 +44,12 @@ private:
   int16_t magData[3]   = {0};  // Magnetometer raw data (X, Y, Z)
 
   /**
+   * Apply factory north offset so the given heading becomes 0° (north).
+   * Shared helper for init() and updateNorthOffset(); heading in [0, 360).
+   */
+  void _applyNorthOffset(uint16_t heading);
+
+  /**
    * Clear the receive buffer
    */
   void clearBuffer(void);
@@ -99,6 +105,12 @@ public:
    */
   int16_t* readRawMag(void);
 
+  /**
+   * Sets the current heading as the new north (0°) reference.
+   * It adjusts the factory converter offset to account for the new north offset.
+   */
+  void updateNorthOffset(void);
+  
   /** Compass coordinate system, adjustable via converter */
   Converter converter;
 };

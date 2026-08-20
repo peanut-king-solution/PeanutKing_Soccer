@@ -19,15 +19,9 @@ bool Compass::init(void) {
   }
   uint16_t averageHeading = sum / sampleCount;
 
-  // Set 0° as the direction of the robot facing at starting.
-  // Factory offset is kept in _factoryConverter so init() never touches the
-  // user's converter (rotate/flip), and is separate from the 655-reset event.
   _factoryConverter.reset();
-  if (averageHeading <= 180) {
-    _factoryConverter.rotate(averageHeading, CW);
-  } else {
-    _factoryConverter.rotate(360 - averageHeading, CCW);
-  }
+  // Set current facing direction as north (0°)
+  _applyNorthOffset(averageHeading);
 
   return true; // Return true if initialization is successful
 }
@@ -80,6 +74,18 @@ int16_t* Compass::readRawGyro(void) {
 
 int16_t* Compass::readRawMag(void) {
   return readRaw6(MAG_RAW, magData);
+}
+
+void Compass::updateNorthOffset(void) {
+  _applyNorthOffset(this->read());
+}
+
+void Compass::_applyNorthOffset(uint16_t heading) {
+  if (heading <= 180) {
+    _factoryConverter.rotate(heading, CW);
+  } else {
+    _factoryConverter.rotate(360 - heading, CCW);
+  }
 }
 
 void Compass::clearBuffer(void) {

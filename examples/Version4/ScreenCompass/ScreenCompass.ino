@@ -22,6 +22,11 @@ void setup() {
 int prevHeading = 0;
 
 void loop() {
+  robot.buttonUpdate(); // Update button states
+  if (robot.buttonStateRead(Button1) == ButtonPressed) {
+    robot.compassUpdateNorth(); // Set current heading as new north reference
+  }
+
   // Read compass heading
   int heading = robot.compassRead();
 
