@@ -869,11 +869,64 @@ uint8_t compoundMaxEyeValueRead(void);
 uint16_t compoundEyeAngleRead(void);
 ```
 
-**Description**: Reads the angle of the infrared light source detected by the compound eye sensor and returns the angle in degrees (0-360). The angle is calculated based on the position of the eyes and the strength of the infrared light detected by each eye.
+**Description**: Reads the angle of the infrared light source detected by the compound eye sensor and returns the angle in degrees (0-360). The angle is calculated based on the position of the eyes and the strength of the infrared light detected by each eye. The raw sensor angle is automatically converted via the coordinate system (see [compoundEyeCoordinateRotate](#compoundeyecoordinaterotate) for adjustment).
 
 | Return | Description |
 | ------ | ----------- |
 | `uint16_t` | The angle of the infrared light source in degrees (0-360). |
+
+#### compoundEyeModeRead
+
+```cpp
+uint8_t compoundEyeModeRead(void);
+```
+
+**Description**: Returns the detection mode of the compound eye sensor.
+
+| Return | Description |
+| ------ | ----------- |
+| `uint8_t` | `0` = single IR source detected, `1` = dual IR sources detected |
+
+#### compoundEyeCoordinateReset
+
+```cpp
+void compoundEyeCoordinateReset(void);
+```
+
+**Description**: Resets the compound eye coordinate system to its default state (no rotation, no flip). This is useful if you want to clear any previous coordinate adjustments.
+
+#### compoundEyeCoordinateRotate
+
+```cpp
+void compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
+```
+
+**Description**: Rotates the compound eye coordinate system by a specified non-negative angle. The rotation direction is `CW` (clockwise) by default; pass `dir = CCW` for counter-clockwise rotation. This adjusts the angle returned by `compoundEyeAngleRead()`.
+
+| Type | Parameter | Description |
+| ---- | --------- | ----------- |
+| `uint16_t` | `rotateAngle` | The non-negative rotation angle in degrees. |
+| `RotationDir` | `dir` | Rotation direction: `CW` (default) or `CCW` |
+
+> **Example**: After `compoundEyeCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
+> ```
+>     Before                                    After
+>        0°                                      90°
+>   315° ↑  45°                              45°  ↑  135°
+>      \ | /          rotate(90, CCW)           \ | /
+> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
+>      / | \      rotate counter-clockwise      / | \
+>   215° ↓  135°                            315°  ↓  225°
+>       180°                                     270°
+> ```
+
+#### compoundEyeCoordinateFlip
+
+```cpp
+void compoundEyeCoordinateFlip(void);
+```
+
+**Description**: Flips the direction of the compound eye coordinate system (`clockwise -> counter-clockwise or vice versa`). This reverses the angle direction returned by `compoundEyeAngleRead()`.
 
 ### Example Usage of CompoundEye
 

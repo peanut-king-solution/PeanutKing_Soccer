@@ -287,6 +287,23 @@ public:
 
   uint8_t compoundEyeModeRead(void);
 
+  /**
+   * Reset the compound eye coordinate system to default
+   */
+  void compoundEyeCoordinateReset(void);
+
+  /**
+   * Rotate the compound eye coordinate system by the specified angle (in degrees).
+   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
+   * `dir`         - rotation direction (`CW` by default)
+   */
+  void compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
+
+  /**
+   * Flip the compound eye coordinate system direction (CW <-> CCW)
+   */
+  void compoundEyeCoordinateFlip(void);
+
 // =============================================================================
 //                Button Functions (wrapper for compatibility)
 // =============================================================================

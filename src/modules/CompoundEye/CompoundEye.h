@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "modules/I2C/i2cManager.h"
+#include "utils/Converter.h"
 
 // IR Compound Eye Register Addresses
 // Command Map (in decimal):
@@ -47,6 +48,9 @@ private:
   CompoundEye();
 
 public:
+  /** Ball detection coordinate system, adjustable via converter */
+  Converter converter;
+
   /**
    * Initialize the compound eye module
    *

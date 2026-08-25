@@ -9,6 +9,9 @@ bool CompoundEye::init(void)
 {
   // Return false if the handle is invalid
   if (!_handle.isValid()) { return false; }
+
+  this->converter.reset();  // Reset the converter to default state
+
   return true;
 }
 
@@ -55,7 +58,9 @@ uint16_t CompoundEye::readAngle(void)
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
   i2cManager.SensorRead(_handle, IR_ANGLE, &val, 1);  // 1 byte from firmware
-  return (uint16_t)val * 2;  // Firmware /2, multiply back to 0-360
+  float angle = (float)((uint16_t)val * 2);  // Firmware /2, multiply back to 0-360
+  angle = converter.convert(angle);  // Apply coordinate conversion
+  return (uint16_t)angle;
 }
 
 uint8_t CompoundEye::readMode(void)

@@ -2,6 +2,20 @@
  * This example demonstrates how to read IR compound eye sensors and display
  * the individual IR readings, the ball angle indicator, and the maximum eye
  * value on the TFT screen.
+ *
+ * Before running this example, you should ensure you have checked the following:
+ *  - The compound eye module is properly connected via I2C.
+ *  - The TFT display is properly connected via SPI.
+ *
+ * The screen displays:
+ *  - 12 individual IR sensor readings (E0-E11) in a 6x2 grid
+ *  - Ball angle (0-360°) with coordinate conversion
+ *  - Maximum eye index and value
+ *  - Detection mode (single/dual compound eye mode)
+ *  - Angle pointer visualization
+ *
+ * If the ball angle seems incorrect for your setup, you can adjust
+ * the coordinate system using the coordinate converter functions.
  */
 
 #include <PeanutKingSoccerV4.h>
@@ -57,6 +71,20 @@ void displayStaticLabels() {
 
 void setup() {
   robot.init();
+
+  /*
+  The compound eye coordinate system can be adjusted if the sensor is
+  mounted at an angle or if you need to flip the direction.
+
+  For example, if the sensor is rotated 90° clockwise on the robot,
+  you should adjust the coordinate system by uncommenting the below line:
+
+  robot.compoundEyeCoordinateRotate(90, CW);
+
+  Or if the angle direction is reversed:
+
+  robot.compoundEyeCoordinateFlip();
+  */
 
   // Initialize TFT display
   robot.screenClear();

@@ -262,6 +262,18 @@ uint8_t PeanutKingSoccerV4::compoundEyeModeRead(void) {
   return compoundEye.readMode();
 }
 
+void PeanutKingSoccerV4::compoundEyeCoordinateReset(void) {
+  compoundEye.converter.reset();
+}
+
+void PeanutKingSoccerV4::compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir) {
+  compoundEye.converter.rotate(rotateAngle, dir);
+}
+
+void PeanutKingSoccerV4::compoundEyeCoordinateFlip(void) {
+  compoundEye.converter.flip();
+}
+
 /* =============================================================================
  *                       Button (wrapper for compatibility)
  * ============================================================================= */

@@ -535,14 +535,17 @@ void loop() {
 
 #### Methods (V4 high-level wrapper)
 
-```cpp
-uint8_t* ir = robot.compoundEyeReadAll();      // Read all 12 values
-uint8_t val = robot.compoundEyeValueRead(Eye5);// Read one eye
-EyeId maxEye = robot.compoundMaxEyeRead();     // Get max eye
-uint8_t maxVal = robot.compoundMaxEyeValueRead(); // Get max value
-uint16_t angle = robot.compoundEyeAngleRead(); // Get angle
-```
-
+| Method | Description |
+|--------|-------------|
+| `compoundEyeReadAll()` | Read all 12 IR sensor values |
+| `compoundMaxEyeRead()` | Get the index of the eye with maximum reading |
+| `compoundMaxEyeValueRead()` | Get the maximum IR sensor value |
+| `compoundEyeValueRead(EyeId eyeIndex)` | Get the value of a specific eye |
+| `compoundEyeAngleRead()` | Get the angle of the detected object (`0-360°`) |
+| `compoundEyeModeRead()` | Get detection mode (`0` = single IR, `1` = dual IR) |
+| `compoundEyeCoordinateReset()` | Reset the compound eye coordinate system to default |
+| `compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW)` | Rotate the compound eye coordinate system by a non-negative angle |
+| `compoundEyeCoordinateFlip()` | Flip the compound eye coordinate system direction (CW ↔ CCW) |
 
 #### Low-level Module Methods (`robot.compoundEye.`)
 
@@ -553,9 +556,10 @@ These are the **CompoundEye module methods** (low-level, access via `robot.compo
 | `readAll()` | Read all 12 IR sensor values, returns `uint8_t*` array |
 | `readMaxEye()` | Get the index of the sensor with maximum value (`0-11`) |
 | `readMaxEyeVal()` | Get the maximum sensor reading |
-| `readEyeVal(uint8_t n)` | Get the value of a specific sensor index (`0-11`) |
-| `readAngle()` | Calculate ball direction angle (`0-360°`) |
+| `readEyeVal(EyeId n)` | Get the value of a specific sensor index (`0-11`) |
+| `readAngle()` | Calculate ball direction angle (`0-360°`) — applies `converter.convert()` |
 | `readMode()` | Get detection mode (`0` = single IR, `1` = dual IR) |
+| `converter` | Coordinate system adjustment (see [Converter](#converter)) |
 
 #### Example
 
@@ -566,23 +570,25 @@ static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init();
+
+  // Adjust compound eye coordinate system (high-level wrapper)
+  robot.compoundEyeCoordinateReset();        // Reset to default
+  robot.compoundEyeCoordinateRotate(90);     // Rotate coordinate system 90° clockwise
+  robot.compoundEyeCoordinateFlip();         // Flip direction (CW ↔ CCW)
 }
 
 void loop() {
   // Read all IR values
-  uint8_t* ir = robot.compoundEye.readAll();
+  uint8_t* ir = robot.compoundEyeReadAll();
   for (int i = 0; i < 12; i++) {
     Serial.print(ir[i]);
     Serial.print(" ");
   }
 
-  // Read a single IR sensor value (index 0-11)
-  uint8_t val = robot.compoundEye.readEyeVal(5);
-
-  // Get ball position
-  uint8_t maxEye = robot.compoundEye.readMaxEye();
-  uint8_t maxVal = robot.compoundEye.readMaxEyeVal();
-  uint16_t angle = robot.compoundEye.readAngle();
+  // Get ball position (angle is converted via converter)
+  uint16_t angle = robot.compoundEyeAngleRead();
+  EyeId maxEye = robot.compoundMaxEyeRead();
+  uint8_t maxVal = robot.compoundMaxEyeValueRead();
 }
 ```
 
