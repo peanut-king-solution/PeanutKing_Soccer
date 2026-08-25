@@ -79,11 +79,11 @@ void setup() {
   For example, if the sensor is rotated 90° clockwise on the robot,
   you should adjust the coordinate system by uncommenting the below line:
 
-  robot.compoundEyeCoordinateRotate(90, CW);
+  robot.coordinateRotate(robot.compoundEye, 90, CW);
 
   Or if the angle direction is reversed:
 
-  robot.compoundEyeCoordinateFlip();
+  robot.coordinateFlip(robot.compoundEye);
   */
 
   // Initialize TFT display

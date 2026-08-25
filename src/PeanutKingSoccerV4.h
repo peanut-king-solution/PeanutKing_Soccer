@@ -104,6 +104,33 @@ public:
   PS2X          ps2x;         // PS2X instance for reading PS2 controller inputs
 
 // =============================================================================
+//                    Coordinate System (generic, template)
+// =============================================================================
+
+  /**
+   * Reset the coordinate system of any module with a `converter` member.
+   * `module` - reference to the module (e.g. `robot.movement`, `robot.compass`, `robot.compoundEye`)
+   */
+  template<typename T>
+  void coordinateReset(T& module) { module.converter.reset(); }
+
+  /**
+   * Rotate the coordinate system of any module with a `converter` member.
+   * `module` - reference to the module
+   * `angle`  - non-negative rotation angle in degrees [0, 360)
+   * `dir`    - rotation direction (`CW` by default)
+   */
+  template<typename T>
+  void coordinateRotate(T& module, uint16_t angle, RotationDir dir = CW) { module.converter.rotate(angle, dir); }
+
+  /**
+   * Flip the coordinate system direction (CW <-> CCW) of any module with a `converter` member.
+   * `module` - reference to the module
+   */
+  template<typename T>
+  void coordinateFlip(T& module) { module.converter.flip(); }
+
+// =============================================================================
 //                Motor Functions (Driven by Motor position)
 // =============================================================================
   
@@ -177,23 +204,6 @@ public:
    * `speed` - Test speed `(0-255)`
    */
   void moveTest(float speed);
-
-  /**
-   * Reset the movement coordinate system to default
-   */
-  void movementCoordinateReset(void);
-
-  /**
-   * Rotate the movement coordinate system by the specified angle (in degrees).
-   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
-   * `dir`         - rotation direction (`CW` by default)
-   */
-  void movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-
-  /**
-   * Flip the movement coordinate system direction (CW <-> CCW)
-   */
-  void movementCoordinateFlip(void);
 
 // =============================================================================
 //                     Color Sensor Functions (wrapper)
@@ -286,23 +296,6 @@ public:
   uint16_t compoundEyeAngleRead(void);
 
   uint8_t compoundEyeModeRead(void);
-
-  /**
-   * Reset the compound eye coordinate system to default
-   */
-  void compoundEyeCoordinateReset(void);
-
-  /**
-   * Rotate the compound eye coordinate system by the specified angle (in degrees).
-   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
-   * `dir`         - rotation direction (`CW` by default)
-   */
-  void compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-
-  /**
-   * Flip the compound eye coordinate system direction (CW <-> CCW)
-   */
-  void compoundEyeCoordinateFlip(void);
 
 // =============================================================================
 //                Button Functions (wrapper for compatibility)
@@ -411,23 +404,6 @@ public:
    * It adjusts the factory converter offset to account for the new north offset.
    */
   void compassUpdateNorth(void);
-
-  /**
-   * Reset the compass converter coordinate system to default
-   */
-  void compassCoordinateReset(void);
-
-  /**
-   * Rotate the compass coordinate system by the specified angle (in degrees).
-   * `rotateAngle` - non-negative rotation angle in degrees [0, 360)
-   * `dir`         - rotation direction (`CW` by default)
-   */
-  void compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-
-  /**
-   * Flip the compass converter coordinate system direction (CW <-> CCW)
-   */
-  void compassCoordinateFlip(void);
 
 // =============================================================================
 //                     TFT Display Functions

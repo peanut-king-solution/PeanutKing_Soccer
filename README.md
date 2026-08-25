@@ -26,6 +26,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
   - [I2C — I2C Bus Management](#i2c--i2c-bus-management)
   - [TFT Display](#tft-display)
   - [PS2 Controller — PS2 Remote](#ps2-controller--ps2-remote)
+  - [Coordinate System](#coordinate-system)
   - [Utility Classes](#utility-classes)
 - [Examples](#examples)
 - [Hardware Configuration](#hardware-configuration)
@@ -241,11 +242,10 @@ Enables omnidirectional movement using 45° omni wheels, with angle control and 
 | Method | Description |
 |--------|-------------|
 | `move(float mAngle, float mSpeed, float rotate = 0)` | Move and drive motors using the enabled correction mode |
-| `movementCoordinateReset()` | Reset the high-level movement coordinate system (→ `movement.converter.reset()`) |
-| `movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW)` | Rotate the high-level movement coordinate system by a non-negative angle. Direction is `CW` by default; use `CCW` for counter-clockwise rotation (→ `movement.converter.rotate()`) |
-| `movementCoordinateFlip()` | Flip the high-level movement coordinate direction (→ `movement.converter.flip()`) |
 
-> **Example**: After `movementCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
+
+> **Example**: After `coordinateRotate(robot.movement, 90, CCW)`, the angles will be rotated as follows:
 > ```
 >     Before                                    After
 >        0°                                      90°
@@ -343,11 +343,11 @@ void setup() {
   // motor configuration: assign which motor port controls which wheel position
   // robot.motorConfiguration(M1, M2, M3, M4);
   
-  // Adjust coordinate system (high-level wrapper)
-  robot.movementCoordinateReset();        // Reset to default coordinate system
-  robot.movementCoordinateRotate(90);     // Rotate coordinate system 90° clockwise (default CW)
-  robot.movementCoordinateRotate(90, CCW);// Rotate coordinate system 90° counter-clockwise
-  robot.movementCoordinateFlip();         // Flip 180 degrees (CW<->CCW)
+  // Adjust coordinate system (generic template wrappers)
+  robot.coordinateReset(robot.movement);              // Reset to default coordinate system
+  robot.coordinateRotate(robot.movement, 90);         // Rotate coordinate system 90° clockwise (default CW)
+  robot.coordinateRotate(robot.movement, 90, CCW);    // Rotate coordinate system 90° counter-clockwise
+  robot.coordinateFlip(robot.movement);               // Flip 180 degrees (CW<->CCW)
 }
 
 void loop() {
@@ -543,9 +543,8 @@ void loop() {
 | `compoundEyeValueRead(EyeId eyeIndex)` | Get the value of a specific eye |
 | `compoundEyeAngleRead()` | Get the angle of the detected object (`0-360°`) |
 | `compoundEyeModeRead()` | Get detection mode (`0` = single IR, `1` = dual IR) |
-| `compoundEyeCoordinateReset()` | Reset the compound eye coordinate system to default |
-| `compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW)` | Rotate the compound eye coordinate system by a non-negative angle |
-| `compoundEyeCoordinateFlip()` | Flip the compound eye coordinate system direction (CW ↔ CCW) |
+
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
 
 #### Low-level Module Methods (`robot.compoundEye.`)
 
@@ -571,10 +570,10 @@ static PeanutKingSoccerV4 robot;
 void setup() {
   robot.init();
 
-  // Adjust compound eye coordinate system (high-level wrapper)
-  robot.compoundEyeCoordinateReset();        // Reset to default
-  robot.compoundEyeCoordinateRotate(90);     // Rotate coordinate system 90° clockwise
-  robot.compoundEyeCoordinateFlip();         // Flip direction (CW ↔ CCW)
+  // Adjust compound eye coordinate system (generic template wrappers)
+  robot.coordinateReset(robot.compoundEye);              // Reset to default
+  robot.coordinateRotate(robot.compoundEye, 90);         // Rotate coordinate system 90° clockwise
+  robot.coordinateFlip(robot.compoundEye);               // Flip direction (CW ↔ CCW)
 }
 
 void loop() {
@@ -816,15 +815,9 @@ int16_t* gyro  = robot.compassReadRawGyro();
 int16_t* mag   = robot.compassReadRawMag();
 ```
 
-High-level coordinate wrappers (act on `robot.compass.converter`):
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
 
-| Method | Description |
-|--------|-------------|
-| `compassCoordinateReset()` | Reset the compass coordinate system (→ `compass.converter.reset()`) |
-| `compassCoordinateRotate(uint16_t, RotationDir dir = CW)` | Rotate compass coordinate system by non-negative angle. Direction default `CW`; use `CCW` for counter-clockwise (→ `compass.converter.rotate()`) |
-| `compassCoordinateFlip()` | Flip compass coordinate direction (→ `compass.converter.flip()`) |
-
-> **Example**: After `compassCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
+> **Example**: After `coordinateRotate(robot.compass, 90, CCW)`, the angles will be rotated as follows:
 > ```
 >     Before                                    After
 >        0°                                      90°
@@ -863,11 +856,11 @@ static PeanutKingSoccerV4 robot;
 void setup() {
   robot.init();
 
-  // Set coordinate system (high-level wrappers on robot.compass.converter)
-  robot.compassCoordinateReset();       // Reset coordinate system
-  robot.compassCoordinateRotate(0);     // 0° rotate = identity (default CW, see Converter docs)
-  robot.compassCoordinateRotate(90, CCW); // Rotate 90° counter-clockwise
-  robot.compassCoordinateFlip();        // Flip 180 degrees (CW<->CCW)
+  // Set coordinate system (generic template wrappers)
+  robot.coordinateReset(robot.compass);              // Reset coordinate system
+  robot.coordinateRotate(robot.compass, 0);          // 0° rotate = identity (default CW, see Converter docs)
+  robot.coordinateRotate(robot.compass, 90, CCW);    // Rotate 90° counter-clockwise
+  robot.coordinateFlip(robot.compass);               // Flip 180 degrees (CW<->CCW)
 }
 
 void loop() {
@@ -1207,6 +1200,41 @@ The bundled `PS2X` driver is available as `robot.ps2x`; its methods are lower-le
 [examples/Version4/PS2/PS2.ino](examples/Version4/PS2/PS2.ino)
 
 [examples/Version4/PS2Remote/PS2Remote.ino](examples/Version4/PS2Remote/PS2Remote.ino)
+
+---
+
+### Coordinate System
+
+Generic template functions for adjusting the coordinate system of any module that has a `Converter` member. Supported modules: `movement`, `compass`, `compoundEye`.
+
+| Method | Description |
+|--------|-------------|
+| `coordinateReset(T& module)` | Reset the coordinate system of the given module to default |
+| `coordinateRotate(T& module, uint16_t angle, RotationDir dir = CW)` | Rotate the coordinate system by a non-negative angle. Direction is `CW` by default; use `CCW` for counter-clockwise |
+| `coordinateFlip(T& module)` | Flip the coordinate system direction (CW ↔ CCW) |
+
+> **Example**: After `coordinateRotate(robot.movement, 90, CCW)`, the angles will be rotated as follows:
+> ```
+>     Before                                    After
+>        0°                                      90°
+>   315° ↑  45°                              45°  ↑  135°
+>      \ | /          rotate(90, CCW)           \ | /
+> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
+>      / | \      rotate counter-clockwise      / | \
+>   215° ↓  135°                            315°  ↓  225°
+>       180°                                     270°
+> ```
+
+```cpp
+// Usage examples
+robot.coordinateReset(robot.movement);              // Reset movement coordinate system
+robot.coordinateRotate(robot.movement, 90, CW);    // Rotate movement 90° clockwise
+robot.coordinateFlip(robot.movement);               // Flip movement direction
+
+robot.coordinateReset(robot.compass);               // Reset compass coordinate system
+robot.coordinateRotate(robot.compass, 90, CCW);     // Rotate compass 90° counter-clockwise
+robot.coordinateFlip(robot.compoundEye);            // Flip compound eye direction
+```
 
 ---
 

@@ -34,14 +34,14 @@ void setup()
   // robot.motorConfiguration(M1, M2, M3, M4);
 
   // You should also configure the movement coordinate system if needed (refer to Movement.ino example)
-  // robot.movementCoordinateReset(); // Reset to default coordinate system
-  // robot.movementCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
-  // robot.movementCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW
+  // robot.coordinateReset(robot.movement); // Reset to default coordinate system
+  // robot.coordinateRotate(robot.movement, 90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.coordinateFlip(robot.movement); // Flip coordinate system direction (CW <-> CCW
 
   // You can change the coordinate system of the compass if needed (refer to Compass.ino example)
-  // robot.compassCoordinateReset(); // Reset to default coordinate system
-  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
-  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
+  // robot.coordinateReset(robot.compass); // Reset to default coordinate system
+  // robot.coordinateRotate(robot.compass, 90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.coordinateFlip(robot.compass); // Flip coordinate system direction (CW <-> CCW)
 
   // disable out-of-bounds prevention
   robot.outBoundPreventEnabled = false;

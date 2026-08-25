@@ -9,6 +9,12 @@
     - [Public Sensor Data](#public-sensor-data)
     - [Data Fetch](#data-fetch)
     - [Common Positions Type (SensorPos)](#common-positions-type-sensorpos)
+  - [Coordinate System](#coordinate-system)
+    - [Functions of Coordinate System](#functions-of-coordinate-system)
+      - [coordinateReset](#coordinatereset)
+      - [coordinateRotate](#coordinaterotate)
+      - [coordinateFlip](#coordinateflip)
+    - [Example Usage of Coordinate System](#example-usage-of-coordinate-system)
   - [Motor - Single motor control](#motor---single-motor-control)
     - [Available Ports of Motor](#available-ports-of-motor)
     - [Physical Positions of Motor](#physical-positions-of-motor)
@@ -25,9 +31,6 @@
     - [Parameters of movement mode switch](#parameters-of-movement-mode-switch)
     - [Functions of Movement control](#functions-of-movement-control)
       - [move](#move)
-      - [movementCoordinateReset](#movementcoordinatereset)
-      - [movementCoordinateRotate](#movementcoordinaterotate)
-      - [movementCoordinateFlip](#movementcoordinateflip)
     - [Example Usage of Movement Control](#example-usage-of-movement-control)
     - [Movement Related Example ino](#movement-related-example-ino)
   - [Color Sensor - Color sensor data reading](#color-sensor---color-sensor-data-reading)
@@ -56,6 +59,7 @@
       - [compoundMaxEyeRead](#compoundmaxeyeread)
       - [compoundMaxEyeValueRead](#compoundmaxeyevalueread)
       - [compoundEyeAngleRead](#compoundeyeangleread)
+      - [compoundEyeModeRead](#compoundeyemoderead)
     - [Example Usage of CompoundEye](#example-usage-of-compoundeye)
     - [CompoundEye Related Example ino](#compoundeye-related-example-ino)
   - [Button — Button Control](#button--button-control)
@@ -88,9 +92,6 @@
       - [compassReadRawAccel](#compassreadrawaccel)
       - [compassReadRawGyro](#compassreadrawgyro)
       - [compassReadRawMag](#compassreadrawmag)
-      - [compassCoordinateReset](#compasscoordinatereset)
-      - [compassCoordinateRotate](#compasscoordinaterotate)
-      - [compassCoordinateFlip](#compasscoordinateflip)
     - [Example Usage of Compass](#example-usage-of-compass)
     - [Compass Related Example ino](#compass-related-example-ino)
   - [LCD Screen - TFT module](#lcd-screen---tft-module)
@@ -217,6 +218,90 @@ Now the `SensorPos` type is used in the following modules:
 2. Ultrasound Sensor (see [Physical Positions of Ultrasound Sensor](#physical-positions-of-ultrasound-sensor))
 
 > **Note**: The `SensorPos` type is not used for motor control. For motor control, use the `MotorPos` type instead. (see [Physical Positions of Motor](#physical-positions-of-motor))
+
+
+## Coordinate System
+
+Generic template functions for adjusting the coordinate system of any module that has a `Converter` member. Supported modules: `movement`, `compass`, `compoundEye`.
+
+### Functions of Coordinate System
+
+#### coordinateReset
+
+```cpp
+template<typename T>
+void coordinateReset(T& module);
+```
+
+**Description**: Resets the coordinate system of the given module to its default state.
+
+| Type | Parameter | Description |
+| ---- | --------- | ----------- |
+| `T&` | `module` | Reference to a module with a `converter` member (e.g. `robot.movement`, `robot.compass`, `robot.compoundEye`) |
+
+#### coordinateRotate
+
+```cpp
+template<typename T>
+void coordinateRotate(T& module, uint16_t angle, RotationDir dir = CW);
+```
+
+**Description**: Rotates the coordinate system of the given module by a specified non-negative angle. The rotation direction is `CW` (clockwise) by default; pass `dir = CCW` for counter-clockwise rotation.
+
+| Type | Parameter | Description |
+| ---- | --------- | ----------- |
+| `T&` | `module` | Reference to a module with a `converter` member |
+| `uint16_t` | `angle` | The non-negative rotation angle in degrees. |
+| `RotationDir` | `dir` | Rotation direction: `CW` (default) or `CCW` |
+
+> **Example**: After `coordinateRotate(robot.movement, 90, CCW)`, the angles will be rotated as follows:
+> ```
+>     Before                                    After
+>        0°                                      90°
+>   315° ↑  45°                              45°  ↑  135°
+>      \ | /          rotate(90, CCW)           \ | /
+> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
+>      / | \      rotate counter-clockwise      / | \
+>   215° ↓  135°                            315°  ↓  225°
+>       180°                                     270°
+> ```
+
+#### coordinateFlip
+
+```cpp
+template<typename T>
+void coordinateFlip(T& module);
+```
+
+**Description**: Flips the direction of the coordinate system of the given module (`clockwise -> counter-clockwise or vice versa`).
+
+| Type | Parameter | Description |
+| ---- | --------- | ----------- |
+| `T&` | `module` | Reference to a module with a `converter` member |
+
+### Example Usage of Coordinate System
+
+```cpp
+#include <PeanutKingSoccerV4.h>
+static PeanutKingSoccerV4 robot;
+
+void setup() {
+  robot.init();
+
+  // Movement coordinate system
+  robot.coordinateReset(robot.movement);
+  robot.coordinateRotate(robot.movement, 90, CW);
+  robot.coordinateFlip(robot.movement);
+
+  // Compass coordinate system
+  robot.coordinateReset(robot.compass);
+  robot.coordinateRotate(robot.compass, 90, CCW);
+
+  // Compound eye coordinate system
+  robot.coordinateReset(robot.compoundEye);
+  robot.coordinateFlip(robot.compoundEye);
+}
+```
 
 ## Motor - Single motor control
 
@@ -385,7 +470,7 @@ void loop() {
 
 > **Note**: The movement coordinate system is based on the robot's front direction, which is defined as 0 degrees. The angles increase clockwise, with 90 degrees to the right, 180 degrees backward, and 270 degrees to the left.
 >
-> **Note**: If you find any of the motors is not working as expected, please check the motor configuration, flip direction setting in motor part (see function described in [motorConfiguration](#motorconfiguration) and [motorFlipDirection](#motorflipdirection)), or adjust the movement coordinates via the high-level wrappers (see [Movement Default Coordinate System](#movement-default-coordinate-system) and [movementCoordinateReset](#movementcoordinatereset)).
+> **Note**: If you find any of the motors is not working as expected, please check the motor configuration, flip direction setting in motor part (see function described in [motorConfiguration](#motorconfiguration) and [motorFlipDirection](#motorflipdirection)), or adjust the movement coordinates via the generic coordinate system wrappers (see [Coordinate System](#coordinate-system)).
 
 ### Parameters of movement mode switch
 
@@ -423,46 +508,7 @@ There are different movement behaviors based on the parameters:
 | `float` | `mSpeed` | The speed of movement (0-255). |
 | `float` | `rotate` | The rotation speed (-255 to +255). Positive values rotate clockwise, negative values rotate counter-clockwise. Default is 0 (no rotation). `rotate` is applied only when both correction features are disabled. When compass correction is enabled, rotation is automatically controlled by the compass-correction algorithm and the supplied `rotate` value is ignored. |
 
-#### movementCoordinateReset
-
-```cpp
-void movementCoordinateReset(void);
-```
-
-**Description**: Resets the movement coordinate system to its default state. This is useful if the robot's orientation has changed and you want to reset its movement coordinates to the default.
-
-#### movementCoordinateRotate
-
-```cpp
-void movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-```
-
-**Description**: Rotates the movement coordinate system by a specified non-negative angle. The rotation direction is `CW` (clockwise) by default; pass `dir = CCW` for counter-clockwise rotation. This allows you to adjust the robot's movement direction based on its current orientation.
-
-| Type | Parameter | Description |
-| ---- | --------- | ----------- |
-| `uint16_t` | `rotateAngle` | The non-negative rotation angle in degrees. |
-| `RotationDir` | `dir` | Rotation direction: `CW` (default) or `CCW` |
-
-> **Example**: After `movementCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
-> ```
->     Before                                    After
->        0°                                      90°
->   315° ↑  45°                              45°  ↑  135°
->      \ | /          rotate(90, CCW)           \ | /
-> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
->      / | \      rotate counter-clockwise      / | \
->   215° ↓  135°                            315°  ↓  225°
->       180°                                     270°
-> ```
-
-#### movementCoordinateFlip
-
-```cpp
-void movementCoordinateFlip(void);
-```
-
-**Description**: Flips the direction of the movement coordinate system (`clockwise -> counter-clockwise or vice versa`). This allows you to reverse the robot's movement direction.
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 ### Example Usage of Movement Control
 
@@ -474,11 +520,11 @@ void setup() {
   robot.init();
   robot.outBoundPreventEnabled = false; // Disable out-of-bounds prevention
 
-  // Adjust coordinate system (high-level wrappers)
-  robot.movementCoordinateReset();       // Reset to default coordinate system
-  robot.movementCoordinateRotate(90);    // Rotate coordinate system 90° clockwise (default CW)
-  robot.movementCoordinateRotate(90, CCW); // Rotate coordinate system 90° counter-clockwise
-  robot.movementCoordinateFlip();     // Flip 180 degrees (CW<->CCW)
+  // Adjust coordinate system (generic template wrappers)
+  robot.coordinateReset(robot.movement);              // Reset to default coordinate system
+  robot.coordinateRotate(robot.movement, 90);         // Rotate coordinate system 90° clockwise (default CW)
+  robot.coordinateRotate(robot.movement, 90, CCW);    // Rotate coordinate system 90° counter-clockwise
+  robot.coordinateFlip(robot.movement);               // Flip 180 degrees (CW<->CCW)
 }
 
 void loop() {
@@ -869,7 +915,7 @@ uint8_t compoundMaxEyeValueRead(void);
 uint16_t compoundEyeAngleRead(void);
 ```
 
-**Description**: Reads the angle of the infrared light source detected by the compound eye sensor and returns the angle in degrees (0-360). The angle is calculated based on the position of the eyes and the strength of the infrared light detected by each eye. The raw sensor angle is automatically converted via the coordinate system (see [compoundEyeCoordinateRotate](#compoundeyecoordinaterotate) for adjustment).
+**Description**: Reads the angle of the infrared light source detected by the compound eye sensor and returns the angle in degrees (0-360). The angle is calculated based on the position of the eyes and the strength of the infrared light detected by each eye. The raw sensor angle is automatically converted via the coordinate system (see [Coordinate System](#coordinate-system) for adjustment).
 
 | Return | Description |
 | ------ | ----------- |
@@ -887,46 +933,7 @@ uint8_t compoundEyeModeRead(void);
 | ------ | ----------- |
 | `uint8_t` | `0` = single IR source detected, `1` = dual IR sources detected |
 
-#### compoundEyeCoordinateReset
-
-```cpp
-void compoundEyeCoordinateReset(void);
-```
-
-**Description**: Resets the compound eye coordinate system to its default state (no rotation, no flip). This is useful if you want to clear any previous coordinate adjustments.
-
-#### compoundEyeCoordinateRotate
-
-```cpp
-void compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-```
-
-**Description**: Rotates the compound eye coordinate system by a specified non-negative angle. The rotation direction is `CW` (clockwise) by default; pass `dir = CCW` for counter-clockwise rotation. This adjusts the angle returned by `compoundEyeAngleRead()`.
-
-| Type | Parameter | Description |
-| ---- | --------- | ----------- |
-| `uint16_t` | `rotateAngle` | The non-negative rotation angle in degrees. |
-| `RotationDir` | `dir` | Rotation direction: `CW` (default) or `CCW` |
-
-> **Example**: After `compoundEyeCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
-> ```
->     Before                                    After
->        0°                                      90°
->   315° ↑  45°                              45°  ↑  135°
->      \ | /          rotate(90, CCW)           \ | /
-> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
->      / | \      rotate counter-clockwise      / | \
->   215° ↓  135°                            315°  ↓  225°
->       180°                                     270°
-> ```
-
-#### compoundEyeCoordinateFlip
-
-```cpp
-void compoundEyeCoordinateFlip(void);
-```
-
-**Description**: Flips the direction of the compound eye coordinate system (`clockwise -> counter-clockwise or vice versa`). This reverses the angle direction returned by `compoundEyeAngleRead()`.
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 ### Example Usage of CompoundEye
 
@@ -1315,46 +1322,7 @@ int16_t z = magData[2]; // Z-axis magnetic field
 
 **Description**: Reads the raw magnetometer data from the IMU sensor and returns a pointer to an array of three `int16_t` values representing the magnetic field in the X, Y, and Z axes.
 
-#### compassCoordinateReset
-
-```cpp
-void compassCoordinateReset(void);
-```
-
-**Description**: Resets the compass converter coordinate system to its default state.
-
-#### compassCoordinateRotate
-
-```cpp
-void compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir = CW);
-```
-
-**Description**: Rotates the compass coordinate system by a specified non-negative angle. The rotation direction is `CW` (clockwise) by default; pass `dir = CCW` for counter-clockwise rotation. This adjusts the robot's heading reading.
-
-| Type | Parameter | Description |
-| ---- | --------- | ----------- |
-| `uint16_t` | `rotateAngle` | The non-negative rotation angle in degrees. |
-| `RotationDir` | `dir` | Rotation direction: `CW` (default) or `CCW` |
-
-> **Example**: After `compassCoordinateRotate(90, CCW)`, the angles will be rotated as follows:
-> ```
->     Before                                    After
->        0°                                      90°
->   315° ↑  45°                              45°  ↑  135°
->      \ | /          rotate(90, CCW)           \ | /
-> 270°←-   -→ 90°           ->              0° ←-   -→ 180°
->      / | \      rotate counter-clockwise      / | \
->   215° ↓  135°                            315°  ↓  225°
->       180°                                     270°
-> ```
-
-#### compassCoordinateFlip
-
-```cpp
-void compassCoordinateFlip(void);
-```
-
-**Description**: Flips the direction of the compass coordinate system (`clockwise -> counter-clockwise or vice versa`).
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 ### Example Usage of Compass
 

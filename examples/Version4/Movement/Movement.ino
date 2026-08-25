@@ -35,9 +35,9 @@ void setup()
   then you should adjust the movement direction,
   configure by uncommenting the below line of code
   */
-  // robot.movementCoordinateReset();
-  // robot.movementCoordinateRotate(90, CW);
-  // robot.movementCoordinateFlip();
+  // robot.coordinateReset(robot.movement);
+  // robot.coordinateRotate(robot.movement, 90, CW);
+  // robot.coordinateFlip(robot.movement);
 }
 
 int speed = 80;       // Movement speed (0-255)

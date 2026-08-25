@@ -187,18 +187,6 @@ void PeanutKingSoccerV4::dataFetch(void) {
     delay(500);
   }
 
-  void PeanutKingSoccerV4::movementCoordinateReset(void) {
-    movement.converter.reset();
-  }
-
-  void PeanutKingSoccerV4::movementCoordinateRotate(uint16_t rotateAngle, RotationDir dir) {
-    movement.converter.rotate(rotateAngle, dir);
-  }
-
-  void PeanutKingSoccerV4::movementCoordinateFlip(void) {
-    movement.converter.flip();
-  }
-
 /* =============================================================================
  *                              Color Sensor (soft I2C)
  * ============================================================================= */
@@ -262,18 +250,6 @@ uint8_t PeanutKingSoccerV4::compoundEyeModeRead(void) {
   return compoundEye.readMode();
 }
 
-void PeanutKingSoccerV4::compoundEyeCoordinateReset(void) {
-  compoundEye.converter.reset();
-}
-
-void PeanutKingSoccerV4::compoundEyeCoordinateRotate(uint16_t rotateAngle, RotationDir dir) {
-  compoundEye.converter.rotate(rotateAngle, dir);
-}
-
-void PeanutKingSoccerV4::compoundEyeCoordinateFlip(void) {
-  compoundEye.converter.flip();
-}
-
 /* =============================================================================
  *                       Button (wrapper for compatibility)
  * ============================================================================= */
@@ -332,12 +308,6 @@ int16_t* PeanutKingSoccerV4::compassReadRawGyro(void)  { return compass.readRawG
 int16_t* PeanutKingSoccerV4::compassReadRawMag(void)   { return compass.readRawMag(); }
 
 void PeanutKingSoccerV4::compassUpdateNorth(void) { compass.updateNorthOffset(); }
-void PeanutKingSoccerV4::compassCoordinateReset(void) { compass.converter.reset(); }
-void PeanutKingSoccerV4::compassCoordinateRotate(uint16_t rotateAngle, RotationDir dir) 
-{
-  compass.converter.rotate(rotateAngle, dir); 
-}
-void PeanutKingSoccerV4::compassCoordinateFlip(void) { compass.converter.flip(); }
 
 /* =============================================================================
  *                              TFT Display
