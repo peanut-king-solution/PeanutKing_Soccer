@@ -14,7 +14,6 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
 - [Quick Start](#quick-start)
 - [Module Overview](#module-overview)
 - [Module Documentation](#module-documentation)
-- [API Reference](#api-reference)
   - [Motor — Motor Control](#motor--motor-control)
   - [Movement — Omnidirectional Movement](#movement--omnidirectional-movement)
   - [ColorSensor — Color Sensor](#colorsensor--color-sensor)
@@ -40,6 +39,7 @@ Arduino library for controlling **PeanutKing Soccer Robots** (V2 / V3 / V4 compa
 **PeanutKing Soccer** is a complete Arduino library supporting sensor reading, motor control, omnidirectional movement, and wireless remote control for PeanutKing series soccer robots.
 
 ### Supported Versions
+
 - V2 (legacy compatibility)
 - V3 (legacy compatibility)
 - **V4** (main development version)
@@ -142,10 +142,10 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 
 | Name | Value | Position |
 |------|-------|----------|
-| `M1` | `0`   | Left Front |
-| `M2` | `1`   | Right Front |
-| `M3` | `2`   | Right Back |
-| `M4` | `3`   | Left Back |
+| `M1` | `0`   | Right Front |
+| `M2` | `1`   | Right Back |
+| `M3` | `2`   | Left Back |
+| `M4` | `3`   | Left Front |
 
 > **Default direction rules:**
 > - Positive motor speed (`+`) → Counter-clockwise rotation (CCW)
@@ -157,10 +157,10 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 
 | Name            | Value |
 |-----------------|-------|
-| `LeftFront`     | `0`   |
-| `RightFront`    | `1`   |
-| `RightBack`     | `2`   |
-| `LeftBack`      | `3`   |
+| `RightFront`    | `0`   |
+| `RightBack`     | `1`   |
+| `LeftBack`      | `2`   |
+| `LeftFront`     | `3`   |
 
 > V4 high-level API takes a **physical position** (`MotorPos`) as input, resolves it to the actual port (`M1`-`M4`) via `getPortFromPos()`, then drives the corresponding motor.
 
@@ -168,12 +168,12 @@ Controls 4 DC motors with speed setting, direction flipping, and physical positi
 
 | Method | Description |
 |--------|-------------|
-| `motorConfiguration(MotorId LF, MotorId RF, MotorId RB, MotorId LB)` | Remap motor ports to physical positions |
+| `motorConfiguration(MotorId RF, MotorId RB, MotorId LB, MotorId LF)` | Remap motor ports to physical positions (default: M1, M2, M3, M4) |
 | `motorFlipDirection(MotorPos pos, bool flip = true)` | Flip rotation direction of the motor at a position |
 | `motorSetSpeed(MotorPos pos, int16_t speed)` | Set motor speed, range `-255` ~ `+255`, `0` = brake (positive = CCW, negative = CW) |
 | `motorStop(MotorPos pos)` | Stop a single motor (brake mode) |
 | `motorStopAll()` | Stop all motors (brake mode) |
-| `motorTestAll(int16_t speed, int duration = 1000)` | Test all motors sequentially (LF→RF→RB→LB), each held for `duration` ms |
+| `motorTestAll(int16_t speed, int duration = 1000)` | Test all motors sequentially (RF→RB→LB→LF), each held for `duration` ms |
 
 #### Example
 
@@ -185,8 +185,9 @@ static PeanutKingSoccerV4 robot;
 void setup() {
   robot.init();
 
-  // If needed, remap motor positions (swap Left Front and Right Front)
-  robot.motorConfiguration(M2, M1, M3, M4);
+  // Default mapping: RF=M1, RB=M2, LB=M3, LF=M4 (no configuration needed)
+  // If needed, remap motor positions, e.g.:
+  // robot.motorConfiguration(M2, M1, M3, M4); // swap RF and LF ports
 
   // Flip motor rotation direction at a position
   robot.motorFlipDirection(RightFront, true);
@@ -194,10 +195,10 @@ void setup() {
 
 void loop() {
   // Set motor speed (positive = CCW, negative = CW)
-  robot.motorSetSpeed(LeftFront, 150);   // Left Front CCW
-  robot.motorSetSpeed(RightFront, 150);  // Right Front CW — direction flipped
+  robot.motorSetSpeed(RightFront, 150);  // Right Front CCW
   robot.motorSetSpeed(RightBack, -100);  // Right Back CW
   robot.motorSetSpeed(LeftBack, -100);   // Left Back CW
+  robot.motorSetSpeed(LeftFront, 150);   // Left Front CCW
   delay(2000);
   robot.motorStopAll(); // Stop all motors (brake mode)
   delay(1000);
@@ -212,14 +213,14 @@ For direct port-based control. Ports take `MotorId` (`M1`-`M4`), not positions.
 |--------|-------------|
 | `init()` | Initialize all motor pins as OUTPUT |
 | `getPortFromPos(MotorPos pos)` | Convert a physical position to the mapped motor port (`M1`-`M4`) |
-| `mapPort(MotorId LF, MotorId RF, MotorId RB, MotorId LB)` | Remap motor ports to physical positions |
+| `mapPort(MotorId RF, MotorId RB, MotorId LB, MotorId LF)` | Remap motor ports to physical positions |
 | `flipDirection(MotorId mi, bool flip = true)` | Flip rotation direction of a single motor port |
 | `setSpeed(MotorId mi, int16_t speed)` | Set a single motor speed by port, range `-255` ~ `+255`, `0` = brake |
 | `stop(MotorId mi)` | Brake a single motor port |
 
 ```cpp
 // Low-level equivalent: drive port M1 directly
-MotorId mi = robot.motor.getPortFromPos(LeftFront);
+MotorId mi = robot.motor.getPortFromPos(RightFront);
 robot.motor.flipDirection(mi, true);
 robot.motor.setSpeed(mi, 150);
 robot.motor.stop(mi);
@@ -243,7 +244,7 @@ Enables omnidirectional movement using 45° omni wheels, with angle control and 
 |--------|-------------|
 | `move(float mAngle, float mSpeed, float rotate = 0)` | Move and drive motors using the enabled correction mode |
 
-> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 > **Example**: After `coordinateRotate(robot.movement, 90, CCW)`, the angles will be rotated as follows:
 > ```
@@ -284,7 +285,7 @@ robot.move(45, 100);
 
 | Type |                 Fields                  |                                            Description                                            |
 |------|-----------------------------------------|---------------------------------------------------------------------------------------------------|
-| `WheelSpeeds` | `leftFront, rightFront, rightBack, leftBack` (`int16_t`) | Speeds for LeftFront / RightFront / RightBack / LeftBack (position-based) |
+| `WheelSpeeds` | `rightFront, rightBack, leftBack, leftFront` (`int16_t`) | Speeds for RightFront / RightBack / LeftBack / LeftFront (position-based) |
 
 #### Low-level Module Methods (`robot.movement.`)
 
@@ -297,7 +298,7 @@ robot.move(45, 100);
 
 This class computes wheel speeds and returns a `WheelSpeeds` struct; it does **not** drive motors directly. You can use the `robot.move()` wrapper to read sensors and drive motors automatically. Or you can directly call the low-level methods to compute wheel speeds and then drive motors by the functions in Motor (see [Motor — Motor Control](#motor--motor-control)).
 
-The coordinate system is adjusted directly through the public `robot.movement.converter` (`reset()` / `rotate()` / `flip()`, see [Converter — Angle Conversion](#converter--angle-conversion)).
+The coordinate system is adjusted directly through the public `robot.movement.converter` (`reset()` / `rotate()` / `flip()`, see [Converter](#converter)).
 
 ```cpp
 // Compute wheel speeds without compass correction (rotate is optional)
@@ -341,6 +342,7 @@ void setup() {
   robot.outBoundPreventEnabled = false; // not yet implemented
 
   // motor configuration: assign which motor port controls which wheel position
+  // Default: RF=M1, RB=M2, LB=M3, LF=M4 (no configuration needed)
   // robot.motorConfiguration(M1, M2, M3, M4);
   
   // Adjust coordinate system (generic template wrappers)
@@ -544,7 +546,7 @@ void loop() {
 | `compoundEyeAngleRead()` | Get the angle of the detected object (`0-360°`) |
 | `compoundEyeModeRead()` | Get detection mode (`0` = single IR, `1` = dual IR) |
 
-> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 #### Low-level Module Methods (`robot.compoundEye.`)
 
@@ -815,7 +817,7 @@ int16_t* gyro  = robot.compassReadRawGyro();
 int16_t* mag   = robot.compassReadRawMag();
 ```
 
-> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system-generic-template) below.
+> **Coordinate system wrappers** — see [Coordinate System](#coordinate-system) below.
 
 > **Example**: After `coordinateRotate(robot.compass, 90, CCW)`, the angles will be rotated as follows:
 > ```

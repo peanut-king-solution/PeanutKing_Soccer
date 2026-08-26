@@ -1,9 +1,9 @@
 #include "Motor.h"
 
 Motor::Motor() :
-  _in1Pin{9, 7, 5, 3},       // initialize all motors' ch1 pins
-  _in2Pin{8, 6, 4, 2},       // initialize all motors' ch2 pins
-  _motorMap{M1, M2, M3, M4}, // default motor mapping (no mapping applied)
+  _in1Pin{9, 7, 5, 3},       // initialize all motors' ch1 pins (M1, M2, M3, M4)
+  _in2Pin{8, 6, 4, 2},       // initialize all motors' ch2 pins (M1, M2, M3, M4)
+  _motorMap{M1, M2, M3, M4}, // default motor mapping (RF=M1, RB=M2, LB=M3, LF=M4)
   _motorflip{false, false, false, false} // default motor flip state (no flipping)
 {
 }
@@ -22,22 +22,22 @@ bool Motor::portValidCheck(MotorId mi) {
 
 MotorId Motor::getPortFromPos(MotorPos pos)
 {
-  if (pos < LeftFront || pos > LeftBack) { return MotorMaxCount; } // Invalid position
+  if (pos < RightFront || pos > LeftFront) { return MotorMaxCount; } // Invalid position
   // Return the corresponding motor port based on the current mapping
   return _motorMap[pos];
 }
 
-void Motor::mapPort(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack)
+void Motor::mapPort(MotorId RightFront, MotorId RightBack, MotorId LeftBack, MotorId LeftFront)
 {
   // Check if all motor ports are valid
-  if (!portValidCheck(LeftFront) || !portValidCheck(RightFront) || !portValidCheck(RightBack) || !portValidCheck(LeftBack)) {
+  if (!portValidCheck(RightFront) || !portValidCheck(RightBack) || !portValidCheck(LeftBack) || !portValidCheck(LeftFront)) {
     return; // Invalid motor port, do nothing
   }
-  // Remap motor ports to physical positions
-  _motorMap[0] = LeftFront;
-  _motorMap[1] = RightFront;
-  _motorMap[2] = RightBack;
-  _motorMap[3] = LeftBack;
+  // Remap motor ports to physical positions (MotorPos order: RF, RB, LB, LF)
+  _motorMap[0] = RightFront;
+  _motorMap[1] = RightBack;
+  _motorMap[2] = LeftBack;
+  _motorMap[3] = LeftFront;
 }
 
 void Motor::flipDirection(MotorId mi, bool flip)

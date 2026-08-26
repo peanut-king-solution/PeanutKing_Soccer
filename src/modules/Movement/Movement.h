@@ -10,10 +10,10 @@
  * Mapping to actual motor ports is handled by the caller (V4 wrapper).
  */
 struct WheelSpeeds {
-  int16_t leftFront;   // LeftFront
   int16_t rightFront;  // RightFront
   int16_t rightBack;   // RightBack
   int16_t leftBack;    // LeftBack
+  int16_t leftFront;   // LeftFront
 };
 
 class Movement
@@ -30,7 +30,7 @@ public:
   // --- Tuning parameters (public) ---
 
   /** Compass dead zone for rotation correction. Small errors below this are ignored. */
-  float compassDeadZone = 0.05f;
+  float compassDeadZone = 0.02f;
 
   /** Minimum rotation speed. When PID correction is smaller than this, clamp to it. */
   float minRotateSpeed = 60.0f;
@@ -42,8 +42,8 @@ public:
    * `mAngle`  - Movement angle `(0-360°)`
    * `mSpeed`  - Movement speed `(0-255)`
    * `rotate`  - Rotation speed `(-255 to +255)`, positive=`CW`, negative=`CCW`
-   * 
-   * `Returns` - Wheel speeds for each wheel (position-based)
+   *
+   * `Returns` - Wheel speeds for each wheel
    */
   WheelSpeeds byAngle(float mAngle, float mSpeed, float rotate);
 
@@ -53,7 +53,7 @@ public:
    * `mSpeed`          - Movement speed `(0-255)`
    * `compassReading`  - Current compass heading `(0-360°)`
    * 
-   * `Returns` - Wheel speeds for each wheel (position-based)
+   * `Returns` - Wheel speeds for each wheel
    */
   WheelSpeeds withCorr(float mAngle, float mSpeed, float compassReading);
 

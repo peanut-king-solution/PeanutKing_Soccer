@@ -2,7 +2,7 @@
 
 Movement::Movement() :
   converter(),              // initialize the converter instance
-  motorPID(300.0, 1.0, 2.0) // initialize the PID controller
+  motorPID(150.0, 0.0, 1.0) // initialize the PID controller
 {
 }
 
@@ -14,18 +14,18 @@ WheelSpeeds Movement::byAngle(float mAngle, float mSpeed, float rotate)
   // convert the angle to the robot's coordinate system
   mAngle = converter.convert(mAngle);
 
-  // vector decomposition for omni wheels
+  // vector decomposition for omni wheels (MotorId order: M1=RF, M2=RB, M3=LB, M4=LF)
   float mc[4];  // motor speeds for each wheel
-  mc[0] =  mSpeed * sin((mAngle + 45.0) * pi / 180.0);  // LF
-  mc[1] = -mSpeed * cos((mAngle + 45.0) * pi / 180.0);  // RF
-  mc[2] = -mc[0];                                       // RB
-  mc[3] = -mc[1];                                       // LB
+  mc[0] = -mSpeed * cos((mAngle + 45.0) * pi / 180.0);  // RF
+  mc[1] = -mSpeed * sin((mAngle + 45.0) * pi / 180.0);  // RB = -LF
+  mc[2] = -mc[0];                                       // LB = -RF
+  mc[3] = -mc[1];                                       // LF = -RB
 
-  WheelSpeeds ws = {0, 0, 0, 0};
-  ws.leftFront  = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
-  ws.rightFront = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
-  ws.rightBack  = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
-  ws.leftBack   = (int16_t)constrain(mc[3] + rotate, -255.0f, 255.0f);
+  WheelSpeeds ws = {0, 0, 0, 0}; // (RF, RB, LB, LF)
+  ws.rightFront = (int16_t)constrain(mc[0] + rotate, -255.0f, 255.0f);
+  ws.rightBack  = (int16_t)constrain(mc[1] + rotate, -255.0f, 255.0f);
+  ws.leftBack   = (int16_t)constrain(mc[2] + rotate, -255.0f, 255.0f);
+  ws.leftFront  = (int16_t)constrain(mc[3] + rotate, -255.0f, 255.0f);
   return ws;
 }
 
@@ -42,11 +42,11 @@ WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   float a = cos(rad), b = sin(rad);
   float scaleFactor = max(fabsf(a), fabsf(b));
 
-  float m[4]; // motor speeds for each wheel
-  m[0] =  b / scaleFactor; // LF
-  m[1] = -a / scaleFactor; // RF
-  m[2] = -m[0];            // RB
-  m[3] = -m[1];            // LB
+  float m[4]; // motor speeds for each wheel (MotorId order: RF, RB, LB, LF)
+  m[0] = -a / scaleFactor; // RF = -cos(rad)
+  m[1] = -b / scaleFactor; // RB = -sin(rad)
+  m[2] = -m[0];            // LB = -RF = cos(rad)
+  m[3] = -m[1];            // LF = -RB = sin(rad)
 
   // normalize the compass reading to -180 to 180
   compassReading = converter.normalize(compassReading + 180.0f) - 180.0f;
@@ -79,11 +79,11 @@ WheelSpeeds Movement::withCorr(float mAngle, float mSpeed, float compassReading)
   // scale the motor speeds based on the desired speed and rotation
   float factor = (mSpeed / 255.0f) * (255.0f - fabsf(rotation));
 
-  WheelSpeeds ws = {0, 0, 0, 0};
-  ws.leftFront  = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
-  ws.rightFront = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
-  ws.rightBack  = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
-  ws.leftBack   = (int16_t)constrain(m[3] * factor + rotation, -255.0f, 255.0f);
+  WheelSpeeds ws = {0, 0, 0, 0}; // (RF, RB, LB, LF)
+  ws.rightFront = (int16_t)constrain(m[0] * factor + rotation, -255.0f, 255.0f);
+  ws.rightBack  = (int16_t)constrain(m[1] * factor + rotation, -255.0f, 255.0f);
+  ws.leftBack   = (int16_t)constrain(m[2] * factor + rotation, -255.0f, 255.0f);
+  ws.leftFront  = (int16_t)constrain(m[3] * factor + rotation, -255.0f, 255.0f);
   return ws;
 }
 

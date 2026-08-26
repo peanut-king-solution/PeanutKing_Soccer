@@ -136,30 +136,30 @@ public:
   
   /**
    * Configure which motor port ( `M1` - `M4` ) controls which wheel position
-   * `LeftFront`  - Motor port
-   * `RightFront` - Motor port
-   * `RightBack`  - Motor port
-   * `LeftBack`   - Motor port
+   * `RightFront` - Motor port for right front wheel (default: `M1`)
+   * `RightBack`  - Motor port for right back wheel (default: `M2`)
+   * `LeftBack`   - Motor port for left back wheel (default: `M3`)
+   * `LeftFront`  - Motor port for left front wheel (default: `M4`)
    */
-  void motorConfiguration(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack);
+  void motorConfiguration(MotorId RightFront, MotorId RightBack, MotorId LeftBack, MotorId LeftFront);
 
   /**
    * Flip the rotation direction of a single motor
-   * `pos`    - Motor position ( `LeftFront` - `LeftBack` )
+   * `pos`    - Motor position ( `RightFront` - `LeftFront` )
    * `flip`   - `true`=flip, `false`=normal (default: `true`)
    */
   void motorFlipDirection(MotorPos pos, bool flip = true);
 
   /**
    * Set the speed of a single motor
-   * `pos`    - Motor position ( `LeftFront` - `LeftBack` )
+   * `pos`    - Motor position ( `RightFront` - `LeftFront` )
    * `speed`  - Speed `(0~255)`, positive=`CCW,` negative=`CW`, `0`=`brake`
    */
   void motorSetSpeed(MotorPos pos, int16_t speed);
 
   /**
    * Stop a single motor
-   * `pos`  - Motor position ( `LeftFront` - `LeftBack` )
+   * `pos`  - Motor position ( `RightFront` - `LeftFront` )
    */
   void motorStop(MotorPos pos);
 
@@ -169,7 +169,7 @@ public:
   void motorStopAll(void);
 
   /**
-   * Test all motors sequentially ( `LeftFront` -> `RightFront` -> `RightBack` -> `LeftBack` )
+   * Test all motors sequentially ( `RightFront` -> `RightBack` -> `LeftBack` -> `LeftFront` )
    * `speed` - Test speed `(0~255)`
    * `duration` - Duration for each motor test in milliseconds
    */

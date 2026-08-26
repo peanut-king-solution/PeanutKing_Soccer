@@ -96,8 +96,8 @@ void PeanutKingSoccerV4::dataFetch(void) {
  *                              Motor (wrapper)
  * ============================================================================= */
 
-  void PeanutKingSoccerV4::motorConfiguration(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack) {
-    motor.mapPort(LeftFront, RightFront, RightBack, LeftBack);
+  void PeanutKingSoccerV4::motorConfiguration(MotorId RightFront, MotorId RightBack, MotorId LeftBack, MotorId LeftFront) {
+    motor.mapPort(RightFront, RightBack, LeftBack, LeftFront);
   }
 
   void PeanutKingSoccerV4::motorFlipDirection(MotorPos pos, bool flip) {
@@ -152,7 +152,7 @@ void PeanutKingSoccerV4::dataFetch(void) {
     }
 
     // Determine movement method based on enabled features
-    WheelSpeeds ws = {0, 0, 0, 0}; // Initialize wheel speeds
+    WheelSpeeds ws = {0, 0, 0, 0}; // Initialize wheel speeds (RF, RB, LB, LF)
     // If both compass correction and out-of-bounds prevention are enabled, use correctedMove
     if (compassCorrectEnabled && outBoundPreventEnabled) {
       ws = movement.correctedMove(mAngle, mSpeed, compassReading, isOutBound);
@@ -170,10 +170,10 @@ void PeanutKingSoccerV4::dataFetch(void) {
       ws = movement.byAngle(mAngle, mSpeed, rotate);
     }
     // Apply the computed speeds by mapping physical position to motor port
-    motorSetSpeed(LeftFront,  ws.leftFront);
     motorSetSpeed(RightFront, ws.rightFront);
     motorSetSpeed(RightBack,  ws.rightBack);
     motorSetSpeed(LeftBack,   ws.leftBack);
+    motorSetSpeed(LeftFront,  ws.leftFront);
   }
 
   void PeanutKingSoccerV4::moveTest(float speed) {

@@ -311,26 +311,26 @@ void setup() {
 
 | Type | Port | Default position |
 | ---- | ---- | ----------- |
-| `MotorId` | `M1` | Left front wheel |
-| `MotorId` | `M2` | Right front wheel |
-| `MotorId` | `M3` | Right back wheel |
-| `MotorId` | `M4` | Left back wheel |
+| `MotorId` | `M1` | Right front wheel |
+| `MotorId` | `M2` | Right back wheel |
+| `MotorId` | `M3` | Left back wheel |
+| `MotorId` | `M4` | Left front wheel |
 
 ### Physical Positions of Motor
 
 | Type | Position | Description | Default port |
 | ---- | -------- | ----------- | ------------ |
-| `MotorPos` | `LeftFront` | Left front wheel | `M1` |
-| `MotorPos` | `RightFront` | Right front wheel | `M2` |
-| `MotorPos` | `RightBack` | Right back wheel | `M3` |
-| `MotorPos` | `LeftBack` | Left back wheel | `M4` |
+| `MotorPos` | `RightFront` | Right front wheel | `M1` |
+| `MotorPos` | `RightBack` | Right back wheel | `M2` |
+| `MotorPos` | `LeftBack` | Left back wheel | `M3` |
+| `MotorPos` | `LeftFront` | Left front wheel | `M4` |
 
 ```
-LeftFront (M1)  RightFront (M2)
+LeftFront (M4)  RightFront (M1)
         \           /
        center of robot
         /           \
-LeftBack (M4)   RightBack (M3)
+LeftBack (M3)   RightBack (M2)
 ```
 
 > **Note**: The motors are not using the `SensorPos` type (see [Common Positions Type](#common-positions-type-sensorpos)), because the motors are not sensors. The `MotorPos` type is used instead to represent the physical positions of the motors.
@@ -342,17 +342,17 @@ LeftBack (M4)   RightBack (M3)
 #### motorConfiguration
 
 ```cpp
-void motorConfiguration(MotorId LeftFront, MotorId RightFront, MotorId RightBack, MotorId LeftBack);
+void motorConfiguration(MotorId RightFront, MotorId RightBack, MotorId LeftBack, MotorId LeftFront);
 ```
 
 **Description**: Assigns which motor port (`M1`–`M4`) controls which wheel position.
 
 | Type | Parameter | Description |
 | ---- | --------- | ----------- |
-| `MotorId` | `LeftFront` | Port for left front wheel |
-| `MotorId` | `RightFront` | Port for right front wheel |
-| `MotorId` | `RightBack` | Port for right back wheel |
-| `MotorId` | `LeftBack` | Port for left back wheel |
+| `MotorId` | `RightFront` | Port for right front wheel (default: `M1`) |
+| `MotorId` | `RightBack` | Port for right back wheel (default: `M2`) |
+| `MotorId` | `LeftBack` | Port for left back wheel (default: `M3`) |
+| `MotorId` | `LeftFront` | Port for left front wheel (default: `M4`) |
 
 #### motorFlipDirection
 
@@ -415,26 +415,25 @@ static PeanutKingSoccerV4 robot;
 void setup() {
   // Initialize all modules
   robot.init();
-  // In this example, we configure the motors to their default positions
-  //  - left front wheel is connnected to M1
-  //  - right front wheel is connnected to M2
-  //  - right back wheel is connnected to M3
-  //  - left back wheel is connnected to M4
-  robot.motorConfiguration(M1, M2, M3, M4);
+  // Default mapping: RF=M1, RB=M2, LB=M3, LF=M4 (no configuration needed)
+  //  - right front wheel is connected to M1
+  //  - right back wheel is connected to M2
+  //  - left back wheel is connected to M3
+  //  - left front wheel is connected to M4
   // Optionally, flip the rotational direction of the right front motor
   robot.motorFlipDirection(RightFront, true);
 }
 
 void loop() {
   // Set motor speed (positive = CCW, negative = CW)
-  robot.motorSetSpeed(LeftFront, 150);   // Left Front CCW
-  robot.motorSetSpeed(RightFront, 150);  // Right Front CW — direction flipped
+  robot.motorSetSpeed(RightFront, 150);  // Right Front CCW
   robot.motorSetSpeed(RightBack, -100);  // Right Back CW
   robot.motorSetSpeed(LeftBack, -100);   // Left Back CW
+  robot.motorSetSpeed(LeftFront, 150);   // Left Front CCW
   delay(2000);
 
-  // Stop Left Front motor (brake mode)
-  robot.motorStop(LeftFront); 
+  // Stop Right Front motor (brake mode)
+  robot.motorStop(RightFront); 
   delay(1000);
   
   // Stop all motors (brake mode)
@@ -459,13 +458,13 @@ void loop() {
 
 ```
   robot's front
-(M1)   0°   (M2)
+(M4)   0°   (M1)
   315° ↑  45°
      \ | /
 270°←-    -→90°
      / | \
   215° ↓  135°
-(M4)  180°  (M3)
+(M3)  180°  (M2)
 ```
 
 > **Note**: The movement coordinate system is based on the robot's front direction, which is defined as 0 degrees. The angles increase clockwise, with 90 degrees to the right, 180 degrees backward, and 270 degrees to the left.

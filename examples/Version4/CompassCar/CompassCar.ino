@@ -10,17 +10,18 @@
 static PeanutKingSoccerV4 robot;
 
 // Set the speed of each motor
-void motors(int LF_spd, int RF_spd, int RB_spd, int LB_spd) {
-  robot.motorSetSpeed(LeftFront,  LF_spd);
+void motors(int RF_spd, int RB_spd, int LB_spd, int LF_spd) {
   robot.motorSetSpeed(RightFront, RF_spd);
   robot.motorSetSpeed(RightBack,  RB_spd);
   robot.motorSetSpeed(LeftBack,   LB_spd);
+  robot.motorSetSpeed(LeftFront,  LF_spd);
 }
 
 void setup() {
   robot.init();
 
   // You should configure the motor mapping if need (refer to Motor.ino example)
+  // Default: RF=M1, RB=M2, LB=M3, LF=M4
   // robot.motorConfiguration(M1, M2, M3, M4);
 
   // And you can change the coordinate system of the compass if needed (refer to Compass.ino example)
