@@ -32,7 +32,7 @@ EyeId CompoundEye::readMaxEye(void)
   uint8_t val = 0;
   I2CManager &i2cManager = I2CManager::getInstance();
   i2cManager.SensorRead(_handle, IR_MAX_IDX, &val, 1);  // Register 13
-  return val;
+  return (EyeId)val;
 }
 
 uint8_t CompoundEye::readMaxEyeVal(void)
