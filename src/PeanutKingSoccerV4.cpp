@@ -18,7 +18,7 @@
  *                              Constructor
  * ============================================================================= */
 
-PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
+  PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
   pwmPin{10, 11, 12, 13}
 {
 }
@@ -27,7 +27,7 @@ PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
  *                              Initialization
  * ============================================================================= */
 
-void PeanutKingSoccerV4::init(uint8_t mode) {
+  void PeanutKingSoccerV4::init(uint8_t mode) {
   Serial.begin(115200);
 
   // Initialize motor pins
@@ -70,7 +70,7 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
  *                              Data Fetch
  * ============================================================================= */
 
-void PeanutKingSoccerV4::dataFetch(void) {
+  void PeanutKingSoccerV4::dataFetch(void) {
   for (uint8_t pos = Front; pos < PositionCount; pos++) {
     // Color sensor - RGBC/RGB/HSL/white line by physical position
     colorRGBC[pos] = colorSensorReadRGBC(pos);
@@ -384,53 +384,61 @@ void PeanutKingSoccerV4::screenDrawAnglePointer(int x, int y, int radius, uint16
  *                              Bluetooth
  * ============================================================================= */
 
-bool PeanutKingSoccerV4::_sendPILAData(void) {
-  char buf[64];
-  // Format: "soccer,<compass>,<ultrasoundFront>,<ultrasoundBack>,<ultrasoundLeft>,<ultrasoundRight>,<maxEye>,<maxEyeValue>"
-  snprintf(buf, sizeof(buf), "soccer,%d,%d,%d,%d,%d,%d,%d",
-    heading, 
-    distances[0], distances[2], distances[3], distances[1], 
-    maxEye, maxEyeVal
-  );
-  return bluetooth.sendData(String(buf));
-}
-void PeanutKingSoccerV4::_PILAUpdate(void)
-{
-  dataFetch();  // Fetch all sensor data
-  // Send data to Peanut Queen every 100ms
-  if (millis() - _lastSendTime > 100) {
-    _sendPILAData();
-    _lastSendTime = millis();
-  }
-  // Not yet implemented (parsing of incoming data from Peanut Queen)
-}
+bool PeanutKingSoccerV4::bluetoothInit(HardwareSerial* port, RemoteMode mode) { return bluetooth.init(port, mode); }
+bool PeanutKingSoccerV4::bluetoothRename(const char* name) { return bluetooth.rename(name); }
+void PeanutKingSoccerV4::bluetoothSetConfig(const String& configMessage) { bluetooth.setConfig(configMessage); }
+bool PeanutKingSoccerV4::bluetoothReset(void) { return bluetooth.reset(); }
 
-void PeanutKingSoccerV4::_DASHBOARDUpdate(void)
-{
-  dataFetch();  // Fetch all sensor data
-  // Send data to Peanut Dashboard every 100ms
-  if (millis() - _lastSendTime > 100) {
-    _lastSendTime = millis();
-  }
-  // Not yet implemented (parsing of incoming data from Peanut Dashboard)
+bool PeanutKingSoccerV4::bluetoothIsConnected(void) {
+  return bluetooth.isConnected();
 }
-
 void PeanutKingSoccerV4::bluetoothRemote(void) {
-  // Check for connection status changes
-  if (bluetooth.checkConnection()) {
-    // Handle the connection status change
-    bluetooth.handleConnection();
-  }
+  // process Bluetooth serial data and commands
+  bluetooth.processSerial();
 
-  // If disconnected, skip parsing data
-  if (!bluetooth.isConnected()) { return; }
+  // check connection status to app and handle disconnection
+  // if (!bluetooth.isConnected()) {
+    
+  // }
 
-  // If connected, parse incoming data based on the current remote mode
-  if (bluetooth.getMode() == RemoteMode::PILA) {
-    _PILAUpdate();
-  } else if (bluetooth.getMode() == RemoteMode::DASHBOARD) {
-    _DASHBOARDUpdate();
-  }
+  // Process all pending commands from the queue
+  RemoteMode mode = bluetooth.getMode();
+  // TODO:
+  // while (bluetooth.hasCommand()) {
+  //   RxCommand cmd = bluetooth.getCommand();
+  //   // Handle commands of PILA mode
+  //   if (mode == PILA_LEGACY || mode == PILA_CONFIG) {
+  //     // _handlePILACommand(cmd);
+  //   } 
+  //   // Handle commands of DASHBOARD mode
+  //   else {
+  //     // _handleDashboardCommand(cmd);
+  //   }
+  // }
+
+  // Sending telemetry data of legacy mode
+  // format: Soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>, <max_eye>,<max_eye_value>>
+}
+
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, int value) {}
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, float value) {}
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, bool value) {}
+
+bool PeanutKingSoccerV4::bluetoothGetToggle(const String& name) {
+  return bluetooth.getToggleState(name);
+}
+int PeanutKingSoccerV4::bluetoothGetSlider(const String& name) {
+  return bluetooth.getSliderValue(name);
+}
+String PeanutKingSoccerV4::bluetoothGetTextField(const String& name) {
+  return bluetooth.getTextFieldValue(name);
+}
+JoystickState PeanutKingSoccerV4::bluetoothGetJoystick(const String& name) {
+  return bluetooth.getJoystick(name);
+}
+
+void PeanutKingSoccerV4::bluetoothOnButton(const String& name, ButtonCallback callback) {
+  bluetooth.onButton(name, callback);
 }
 
 /* =============================================================================

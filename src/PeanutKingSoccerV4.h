@@ -460,17 +460,29 @@ public:
 //                      Bluetooth Functions
 // =============================================================================
 
-private:
-  bool _sendPILAData(void);
-  void _PILAUpdate(void);
-  void _DASHBOARDUpdate(void);
-public:
-  /**
-   * Handle Bluetooth remote control commands (PILA mode / Dashboard mode)
-   * 
-   */
+  bool bluetoothInit(HardwareSerial* port = &Serial1, RemoteMode mode = RemoteMode::PILA_LEGACY);
+  bool bluetoothRename(const char* name);
+  bool bluetoothReset(void);
+  void bluetoothSetConfig(const String& configMessage);
+
+  bool bluetoothIsConnected(void);
   void bluetoothRemote(void);
 
+  void bluetoothSetOutput(const String& name, int value);
+  void bluetoothSetOutput(const String& name, float value);
+  void bluetoothSetOutput(const String& name, bool value);
+
+  bool bluetoothGetToggle(const String& name);
+  int bluetoothGetSlider(const String& name);
+  String bluetoothGetTextField(const String& name);
+  JoystickState bluetoothGetJoystick(const String& name);
+
+  void bluetoothOnButton(const String& name, ButtonCallback callback);
+
+private:
+  void _handleLegacyCommand(const RxCommand& cmd);
+
+public:
 // =============================================================================
 //                     PS2 Controller Functions
 // =============================================================================
@@ -536,6 +548,9 @@ public:
   // Bluetooth data
 private:
   uint32_t _lastSendTime = 0; // Timestamp of the last data sent via Bluetooth
+  uint32_t _lastControlTime = 0; // Timestamp of the last received control command
+  bool _bleWasConnected = false; // Edge-detector: last poll() was connected
+  PILA_RX_Cmd _lastCommandType = CMD_PAUSE; // Last legacy command type
 
   // PS2 controller data
   byte vibrationStr = 0;  // Vibration strength (0-255)

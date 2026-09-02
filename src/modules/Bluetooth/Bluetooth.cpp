@@ -1,224 +1,219 @@
 #include "Bluetooth.h"
 
 Bluetooth::Bluetooth() :
-  _mode(RemoteMode::PILA),        // Default mode: PILA
-  _status(BLEStatus::DISCONNECTED), // Default status: DISCONNECTED
-  _serial(&Serial1)              // Default: use Serial1
+  _mode(PILA_LEGACY),
+  _status(BLE_DISCONNECTED),
+  _serial(&Serial1),
+  _isConfigured(false)
 {
+  _rxBuffer.reserve(128); // Reserve space for the incoming data parser to avoid dynamic allocations
 }
-
-// ============================================================================
-//                              Configuration
-// ============================================================================
-
-bool Bluetooth::setSerial(HardwareSerial* port)
+bool Bluetooth::init(HardwareSerial* port, RemoteMode mode)
 {
-  if (_serial == port) { return true; }      // No change
-  else if (port == nullptr) { return false; } // Invalid port
-  else {  // If a different port is set, end the previous one
-    _serial->end();
-  }
-  _serial = port; // Set the new serial port
+  // Check if the provided serial port is valid
+  if (port == nullptr) return false;
+
+  _mode = mode; // Set the current mode of operation
+  _status = BLE_DISCONNECTED;  // Set the current connection status
+  _isConfigured = false;  // Set the configuration status to false
+
+  // Initialize the serial port for communication with the Bluetooth module
+  _serial = port; _serial->begin(BAUD_RATE); delay(100);
+
+  // Flush any buffered data
+  while (_serial->available()) _serial->read();
+  // Test communication with the module
+  if (!ping()) return false;
+  // Enable notifications for connection events
+  if (!setNotifications(true)) return false;
+
+  // Keep any buffered OK+CONN for the first poll() instead of flushing it.
   return true;
 }
-
-bool Bluetooth::init(uint32_t baudRate, RemoteMode mode)
-{
-  // Set the remote mode (PILA or DASHBOARD)
-  _mode = mode;
-  // Begin serial communication with the BLE module
-  _serial->begin(baudRate);
-  delay(100);
-
-  // Ping the BLE module to check if it's responsive
-  if (!ping()) {
-    Serial.println("[BLE] Ping failed");
-    return false;
-  }
-
-  // Enable notifications for connection status changes
-  if (!setNotifications(true)) {
-    Serial.println("[BLE] Failed to enable notifications");
-    return false;
-  }
-
-  // Flush any leftover data
-  while (_serial->available()) { _serial->read(); }
-  return true;
-}
-
-// =============================================================================
-//                              AT Commands
-// =============================================================================
 
 String Bluetooth::sendATCommand(const char* cmd, uint32_t timeout)
 {
-  // Send command to BLE module
-  _serial->println(cmd);
-  Serial.print("[TX] ");
-  Serial.println(cmd);
+  // Check if the serial port is initialized
+  if (_serial == nullptr) return String();
 
-  // Wait for response with timeout
+  // Send the AT command to the Bluetooth module
+  _serial->println(cmd);
+
+  // Wait for a response from the module within the specified timeout
   String response;
   uint32_t start = millis();
   while (millis() - start < timeout) {
-    // Check if data is available to read
     if (_serial->available()) {
-      // Read a single character and append to response
       char c = _serial->read();
-      response += c;
+      if (c != '\r') response += c;
     }
-    // Small delay to let more data arrive
-    delay(1);
   }
-
-  // Trim whitespace and return the response
+  // Trim any leading or trailing whitespace from the response
   response.trim();
-  if (response.length() > 0) {
-    Serial.print("[RX] ");
-    Serial.println(response);
-  }
+  // Return the response received from the Bluetooth module
   return response;
 }
-
-bool Bluetooth::getBasicInfo(void)
-{
-  Serial.println("--- Module Info ---");
-
-  // Query module information: NAME, UUID, CHAR, BAUD, ROLE, VERSION, ADDR
-  String nameResp    = sendATCommand("AT+NAME?");
-  String uuidResp    = sendATCommand("AT+UUID?");
-  String charResp    = sendATCommand("AT+CHAR?");
-  String baudResp    = sendATCommand("AT+BAUD?");
-  String roleResp    = sendATCommand("AT+ROLE?");
-  String versionResp = sendATCommand("AT+VERS?");
-  String addrResp    = sendATCommand("AT+ADDR?");
-
-  Serial.println("-------------------");
-
-  // Return true if at least one query got a response
-  return (nameResp.length() > 0);
-}
-
 bool Bluetooth::setNotifications(bool enable)
 {
-  // Enable or disable notifications for connection status changes
-  String cmd = enable ? "AT+NOTI1" : "AT+NOTI0";
-  String resp = sendATCommand(cmd.c_str(), 500);
-  return (resp.indexOf(enable ? "OK+Set:1" : "OK+Set:0") >= 0);
+  String resp = sendATCommand(enable ? "AT+NOTI1" : "AT+NOTI0", 500);
+  return resp.indexOf(enable ? "OK+Set:1" : "OK+Set:0") >= 0;
 }
-
 bool Bluetooth::rename(const char* name)
 {
-  // Validate input name
+  // Check if the provided name is valid
   if (name == nullptr || strlen(name) == 0) return false;
+  
+  // Construct the AT command to rename the Bluetooth module
+  char cmd[32]; snprintf(cmd, sizeof(cmd), "AT+NAME%s", name);
 
-  Serial.println("-------------------");
-  Serial.print("Renaming BLE module to: ");
-  Serial.println(name);
-
-  // Build rename command: AT+NAME{name}
-  char cmd[32];
-  snprintf(cmd, sizeof(cmd), "AT+NAME%s", name);
-
-  // Send the rename command and check for "OK+Set:" response
+  // Send the rename command and check for a successful response
   String resp = sendATCommand(cmd);
-  if (resp.indexOf("OK+Set:") < 0) {
-    return false;
-  }
+  if (resp.indexOf("OK+Set:") < 0) return false;
 
-  // Verify the name was set
+  // Verify the new name by querying the module
   resp = sendATCommand("AT+NAME?");
-  Serial.print("Current BLE name: ");
-  Serial.println(resp);
-  Serial.println("-------------------");
-  return (resp.indexOf("OK+Get:") >= 0);
+  return resp.indexOf("OK+Get:") >= 0;
 }
-
 bool Bluetooth::reset(void)
 {
-  Serial.println("-------------------");
-  Serial.println("Resetting BLE module...");
-
-  // Send AT+RESET command and wait for OK+RESET response
   String resp = sendATCommand("AT+RESET", 2000);
-
-  Serial.println("-------------------");
-  return (resp.indexOf("OK+RESET") >= 0);
+  return resp.indexOf("OK+RESET") >= 0;
 }
-
 bool Bluetooth::ping(void)
 {
-  Serial.println("-------------------");
-  Serial.println("Pinging BLE module...");
-
-  // Send AT command and wait for OK response
   String resp = sendATCommand("AT", 500);
-
-  Serial.println("-------------------");
-  return (resp.indexOf("OK") >= 0);
+  return resp.indexOf("OK") >= 0;
 }
-
-// ============================================================================
-//                             Connection
-// ============================================================================
 
 void Bluetooth::setMode(RemoteMode mode) { _mode = mode; }
+RemoteMode Bluetooth::getMode(void) const { return _mode; }
 
-RemoteMode Bluetooth::getMode(void) { return _mode; }
+bool Bluetooth::isConnected(void) const { return _status == BLE_CONNECTED; }
+void Bluetooth::reconnect(void) { /* Soft reconnect - let the next OK+CONN elevate status. */ }
 
-bool Bluetooth::isConnected(void) { return (_status == BLEStatus::CONNECTED); }
 
-bool Bluetooth::checkConnection(void)
+bool Bluetooth::isConfigured(void) {
+  if (_mode == PILA_LEGACY) { 
+    _isConfigured = true;
+    return true;
+  }
+  return _isConfigured;
+}
+void Bluetooth::setConfig(const String& config) { 
+  // _config = config; 
+  _isConfigured = false; 
+}
+
+void Bluetooth::processFrame(const String& frame)
 {
-  // Check for connection status notifications from the BLE module
-  if (_serial->available()) {
-    // Peek at the first character to see if it's 'O' (start of "OK+...")
-    if (_serial->peek() == 'O') {
-      // Read the line from the serial buffer
-      String line = _serial->readStringUntil('\n');
-      line.trim();  // Remove whitespace and newline characters
-      
-      // Check for connection status notifications
-      if (line.indexOf("OK+CONN") >= 0) {
-        _status = BLEStatus::CONNECTED;
-      } else if (line.indexOf("OK+LOST") >= 0) {
-        _status = BLEStatus::DISCONNECTED;
+  // Check for configuration acknowledgment frame
+  if (_rxParser.isConfigAck(frame)) {
+    _isConfigured = true;
+    return;
+  }
+  
+  // Check for telemetry frame (T,<name>,<value>,<name>,<value>,...) to update input states
+  if (frame.startsWith("T,")) {
+    String input = frame.substring(2); // remove the "T," prefix
+    int pairCount = 0, pos = 0;        // Count the number of <name>,<value> pairs in the input
+    // Count the number of commas to determine the number of pairs
+    while (pos < input.length()) {
+      int commaPos = input.indexOf(',', pos); // Find the next comma in the input
+      if (commaPos < 0) break;  // No more commas, exit loop
+      pairCount++;  // Increment the pair count for each comma found
+      pos = commaPos + 1; // Move past the comma for the next iteration
+    }
+    // Valid message: must have an even number of tokens (name,value pairs), "T," is not counted in pairCount.
+    // Check if the number of pairs is valid (even number of tokens)
+    if (pairCount > 0 && pairCount % 2 == 0) {
+      pos = 0;
+      // Process each <name>,<value> pair
+      while (pos < input.length()) {
+        // Find the next comma to extract the name
+        int nameEnd = input.indexOf(',', pos);
+        if (nameEnd < 0) break; // No more names, exit loop
+        String name = input.substring(pos, nameEnd);
+        pos = nameEnd + 1; // Move past the comma
+
+        // Find the next comma to extract the value
+        int valueEnd = input.indexOf(',', pos);
+        String value;
+        if (valueEnd < 0) {
+          value = input.substring(pos); // Last value
+          pos = input.length(); // Move to end
+        } else {
+          value = input.substring(pos, valueEnd);
+          value.trim();
+          pos = valueEnd + 1; // Move past the comma
+        }
+
+        // Update the state with the parsed name and value
+        // setState(name, value); // not implemented, need to define how to handle the parsed name and value pairs
       }
-      return true; // Notification handled, done for this loop
+    } else {
+      // Invalid message format: log or handle the error as needed
+      // Serial.println("Invalid T frame format: " + frame);
     }
   }
-  return false; // No notification received
 }
-
-void Bluetooth::handleConnection(void)
+void Bluetooth::processSerial(void)
 {
-  // no action needed; just log the connection
-  if (_status == BLEStatus::CONNECTED) {
-    Serial.println("[BLE] Connected");
-  }
-  // If disconnected, try to reconnect
-  else if (_status == BLEStatus::DISCONNECTED) {
-    Serial.println("[BLE] Disconnected");
-    reconnect();
+  // check if the serial port is valid
+  if (_serial == nullptr) return;
+
+  // Read all available characters from the serial port
+  while (_serial->available()) {
+    char c = _serial->read(); // Read a character from the serial 
+    if (c != '\r') continue;  // Ignore carriage return characters
+    _rxBuffer += c;           // Append character to buffer
+  
+    // Check for connection notifications (OK+CONN or OK+LOST)
+    bool isNotification = false;
+    if (_rxParser.isConnectionNotification(_rxBuffer)) {
+      _status = BLE_CONNECTED;
+      isNotification = true;
+    } 
+    else if (_rxParser.isDisconnectNotification(_rxBuffer)) {
+      _status = BLE_DISCONNECTED;
+      isNotification = true;
+    }
+    // handle connection notifications by resetting configuration status and clearing the buffer
+    if (isNotification) {
+      _isConfigured = false; // Reset configuration status on connection change
+      _rxBuffer = ""; // Clear the buffer after processing the notification
+      continue;       // Skip further processing for this frame
+    }
+
+    // Frame delimiter: process the frame if it's valid, then reset the buffer.
+    if (c == '\n') {
+      processFrame(_rxBuffer);  // Process the received frame
+      _rxBuffer = ""; // Clear the buffer after processing the frame
+      continue;       // Skip further processing for this frame
+    }
   }
 }
 
-void Bluetooth::reconnect(void)
+int Bluetooth::getSliderValue(const String& name) const
 {
-  // TODO: Implement reconnection logic
+  return 0;
 }
-
-bool Bluetooth::sendData(const String& data)
+bool Bluetooth::getToggleState(const String& name) const
 {
-  if (!isConnected()) {
-    Serial.println("[BLE] Not connected, cannot send data");
-    return false;
-  }
-  _serial->println(data);
-
-  // Log the sent data for debugging
-  // Serial.print("[BLE TX] ");
-  // Serial.println(data);
-  return true;
+  return false;
 }
+void Bluetooth::onButton(const String& name, ButtonCallback callback)
+{
+  // Register a callback for button events (not implemented)
+}
+String Bluetooth::getTextFieldValue(const String& name) const
+{
+  return String();
+}
+JoystickState Bluetooth::getJoystick(const String& name) const
+{
+  return JoystickState();
+}
+
+void Bluetooth::setOutput(const String& name, int value) {}
+void Bluetooth::setOutput(const String& name, float value) {}
+void Bluetooth::setOutput(const String& name, bool value) {}
