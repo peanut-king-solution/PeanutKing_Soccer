@@ -16,19 +16,17 @@ void setup() {
   // movement configuration: enable compass correction and disable out-of-bounds prevention
   robot.compassCorrectEnabled = true;
   robot.outBoundPreventEnabled = false;
-
-  // You should configure motor mapping if needed (refer to Motor.ino example)
   // robot.motorConfiguration(M1, M2, M3, M4);
 
   // You should also configure the movement coordinate system if needed (refer to Movement.ino example)
-  // robot.movementCoordinateReset(); // Reset to default coordinate system
-  // robot.movementCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
-  // robot.movementCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
-  
+  // robot.coordinateReset(robot.movement); // Reset to default coordinate system
+  // robot.coordinateRotate(robot.movement, 90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.coordinateFlip(robot.movement); // Flip coordinate system direction (CW <-> CCW)
+
   // You can also change the coordinate system of the compass if needed (refer to Compass.ino example)
-  // robot.compassCoordinateReset(); // Reset to default coordinate system
-  // robot.compassCoordinateRotate(90, CW); // Rotate coordinate system by 90 degrees clockwise
-  // robot.compassCoordinateFlip(); // Flip coordinate system direction (CW <-> CCW)
+  // robot.coordinateReset(robot.compass); // Reset to default coordinate system
+  // robot.coordinateRotate(robot.compass, 90, CW); // Rotate coordinate system by 90 degrees clockwise
+  // robot.coordinateFlip(robot.compass); // Flip coordinate system direction (CW <-> CCW)
 
   // You should also configure the ultrasonic sensor mapping if needed (refer to Ultrasound.ino example)
   // robot.ultrasoundConfiguration(U1, U2, U3, U4);
@@ -36,8 +34,8 @@ void setup() {
 
 int defenseSpeed = 100;  // Speed for defensive movements
 
-int backDistMax  = 300;  // Maximum distance from own goal
-int backDistMin  = 100;  // Minimum distance from own goal
+int backDistMax  = 330;  // Maximum distance from own goal
+int backDistMin  = 300;  // Minimum distance from own goal
 
 /*
 You should get the data from the left and right ultrasonic sensors
@@ -49,8 +47,8 @@ then you can set the leftDistMax and rightDistMax to 600 mm
 to give some buffer to avoid the robot moving left and right 
 and cannot stay in the middle of the field.
 */
-int rightDistMax = 600;  // Maximum distance from right side
-int leftDistMax  = 600;  // Maximum distance from left side
+int rightDistMax = 750;  // Maximum distance from right side
+int leftDistMax  = 750;  // Maximum distance from left side
 
 void loop() {
   // Read ultrasonic distances
@@ -58,9 +56,26 @@ void loop() {
   int rightDist = robot.ultrasoundGetDist(Right);  // Right distance
   int backDist  = robot.ultrasoundGetDist(Back);    // Back distance
   int leftDist  = robot.ultrasoundGetDist(Left);    // Left distance
-  
+
+  // one side has some oject block the robot, trust one side which is larger than the other side
+  if (leftDist + rightDist < 1300) {
+    if (leftDist > rightDist) {
+      rightDist = leftDist;  // Trust left distance
+    } else {
+      leftDist = rightDist;   // Trust right distance
+    }
+  }
+
   // Too far from the own goal, move to middle of the field first and then move back to defend
   if (backDist > backDistMax) {
+    robot.move(180, defenseSpeed);  // Move back
+  }
+  // Too close to the own goal, move forward to avoid own goal
+  else if (backDist < backDistMin) {
+    robot.move(0, defenseSpeed);   // Move forward
+  }
+  // Already in the back of the field, check left and right distances to stay in the middle
+  else {
     // Too close to the left side, move right
     if (leftDist < leftDistMax) {  // left distance need to be larger than leftDistMax to be in the middle of the field
       robot.move(90, defenseSpeed);  // Move right
@@ -69,17 +84,9 @@ void loop() {
     else if (rightDist < rightDistMax) {  // right distance need to be larger than rightDistMax to be in the middle of the field
       robot.move(270, defenseSpeed); // Move left
     }
-    // Already in the middle, move back to defend
+    // Already in the middle and safe distance from the own goal, stay in place
     else {
-      robot.move(180, defenseSpeed); // Move back
+      robot.move(0, 0);  // Stay in place
     }
-  }
-  // Too close to the own goal, move forward to avoid own goal
-  else if (backDist < backDistMin) {
-    robot.move(0, defenseSpeed);   // Move forward
-  }
-  // Safe distance from the own goal, stay in place and defend
-  else {
-    robot.motorStopAll();  // Stop all motors
   }
 }
