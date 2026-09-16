@@ -4,9 +4,13 @@ Bluetooth::Bluetooth() :
   _mode(PILA_LEGACY),
   _status(BLE_DISCONNECTED),
   _serial(&Serial1),
-  _isConfigured(false)
+  _isConfigured(false),
+  _stateCount(0),
+  _cmdQueue(),
+  _buttonHandlerCount(0)
 {
   _rxBuffer.reserve(128); // Reserve space for the incoming data parser to avoid dynamic allocations
+  _cmdQueue.Clear();
 }
 bool Bluetooth::init(HardwareSerial* port, RemoteMode mode)
 {
@@ -99,9 +103,33 @@ bool Bluetooth::isConfigured(void) {
   }
   return _isConfigured;
 }
-void Bluetooth::setConfig(const String& config) { 
-  // _config = config; 
-  _isConfigured = false; 
+void Bluetooth::setConfig(const String& config) {
+  // _config = config;
+  _isConfigured = false;
+}
+
+// ============================================================================
+//                           State helpers
+// ============================================================================
+
+void Bluetooth::_setState(const String& name, const String& value) {
+  // Update existing
+  for (uint8_t i = 0; i < _stateCount; i++) {
+    if (_states[i].name == name) { _states[i].value = value; return; }
+  }
+  // Add new
+  if (_stateCount < STATE_MAX) {
+    _states[_stateCount].name = name;
+    _states[_stateCount].value = value;
+    _stateCount++;
+  }
+}
+
+String Bluetooth::_getState(const String& name) const {
+  for (uint8_t i = 0; i < _stateCount; i++) {
+    if (_states[i].name == name) return _states[i].value;
+  }
+  return String();
 }
 
 void Bluetooth::processFrame(const String& frame)
@@ -148,12 +176,26 @@ void Bluetooth::processFrame(const String& frame)
         }
 
         // Update the state with the parsed name and value
-        // setState(name, value); // not implemented, need to define how to handle the parsed name and value pairs
+        _setState(name, value);
+
+        // Fire matching button callbacks (Config/Dashboard mode)
+        for (uint8_t i = 0; i < _buttonHandlerCount; i++) {
+          if (_buttonHandlers[i].name == name) {
+            _buttonHandlers[i].callback(value == "1");
+          }
+        }
       }
     } else {
       // Invalid message format: log or handle the error as needed
       // Serial.println("Invalid T frame format: " + frame);
     }
+    return;
+  }
+
+  // Legacy commands: parse and push to queue
+  RxCommand cmd;
+  if (_rxParser.parseCommand(frame, cmd)) {
+    _cmdQueue.Push(cmd);
   }
 }
 void Bluetooth::processSerial(void)
@@ -163,8 +205,8 @@ void Bluetooth::processSerial(void)
 
   // Read all available characters from the serial port
   while (_serial->available()) {
-    char c = _serial->read(); // Read a character from the serial 
-    if (c != '\r') continue;  // Ignore carriage return characters
+    char c = _serial->read(); // Read a character from the serial
+    if (c == '\r') continue;  // Ignore carriage return characters
     _rxBuffer += c;           // Append character to buffer
   
     // Check for connection notifications (OK+CONN or OK+LOST)
@@ -195,25 +237,71 @@ void Bluetooth::processSerial(void)
 
 int Bluetooth::getSliderValue(const String& name) const
 {
-  return 0;
+  String v = _getState(name);
+  return v.length() ? v.toInt() : 0;
 }
 bool Bluetooth::getToggleState(const String& name) const
 {
-  return false;
+  return _getState(name) == "1";
 }
 void Bluetooth::onButton(const String& name, ButtonCallback callback)
 {
-  // Register a callback for button events (not implemented)
+  // Legacy mode: only store the first callback, ignore name
+  if (_mode == PILA_LEGACY) {
+    if (_buttonHandlerCount == 0) {
+      _buttonHandlers[0].name = name;
+      _buttonHandlers[0].callback = callback;
+      _buttonHandlerCount = 1;
+    }
+    return;
+  }
+  // Config/Dashboard mode: multiple named callbacks
+  if (_buttonHandlerCount < BTN_MAX) {
+    _buttonHandlers[_buttonHandlerCount].name = name;
+    _buttonHandlers[_buttonHandlerCount].callback = callback;
+    _buttonHandlerCount++;
+  }
 }
 String Bluetooth::getTextFieldValue(const String& name) const
 {
-  return String();
+  return _getState(name);
 }
 JoystickState Bluetooth::getJoystick(const String& name) const
 {
-  return JoystickState();
+  JoystickState js;
+  // Use name-based lookup: stores "<name>_angle" and "<name>_strength"
+  js.angle = _getState(name + "_angle").toInt();
+  js.strength = _getState(name + "_strength").toInt();
+  return js;
 }
 
-void Bluetooth::setOutput(const String& name, int value) {}
-void Bluetooth::setOutput(const String& name, float value) {}
-void Bluetooth::setOutput(const String& name, bool value) {}
+// ============================================================================
+//                            Command queue
+// ============================================================================
+
+bool Bluetooth::hasCommand(void) const { return !_cmdQueue.IsEmpty(); }
+
+RxCommand Bluetooth::getCommand(void)
+{
+  RxCommand cmd = *_cmdQueue.Front();
+  _cmdQueue.Pop();
+  return cmd;
+}
+
+// ============================================================================
+//                            Output setters
+// ============================================================================
+
+void Bluetooth::setOutput(const String& name, int value)
+{
+  // _serial->print(_txPacker.buildSendMessage(name.c_str(), (uint16_t)value));
+  _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
+}
+void Bluetooth::setOutput(const String& name, float value)
+{
+  _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
+}
+void Bluetooth::setOutput(const String& name, bool value)
+{
+  _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
+}

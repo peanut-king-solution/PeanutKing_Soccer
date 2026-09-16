@@ -403,26 +403,25 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
 
   // Process all pending commands from the queue
   RemoteMode mode = bluetooth.getMode();
-  // TODO:
-  // while (bluetooth.hasCommand()) {
-  //   RxCommand cmd = bluetooth.getCommand();
-  //   // Handle commands of PILA mode
-  //   if (mode == PILA_LEGACY || mode == PILA_CONFIG) {
-  //     // _handlePILACommand(cmd);
-  //   } 
-  //   // Handle commands of DASHBOARD mode
-  //   else {
-  //     // _handleDashboardCommand(cmd);
-  //   }
-  // }
+  while (bluetooth.hasCommand()) {
+    RxCommand cmd = bluetooth.getCommand();
+    // Handle commands of PILA mode
+    if (mode == PILA_LEGACY || mode == PILA_CONFIG) {
+      // _handlePILACommand(cmd);
+    }
+    // Handle commands of DASHBOARD mode
+    else {
+      // _handleDashboardCommand(cmd);
+    }
+  }
 
   // Sending telemetry data of legacy mode
   // format: Soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>, <max_eye>,<max_eye_value>>
 }
 
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, int value) {}
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, float value) {}
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, bool value) {}
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, int value) { bluetooth.setOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, float value) { bluetooth.setOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, bool value) { bluetooth.setOutput(name, value); }
 
 bool PeanutKingSoccerV4::bluetoothGetToggle(const String& name) {
   return bluetooth.getToggleState(name);

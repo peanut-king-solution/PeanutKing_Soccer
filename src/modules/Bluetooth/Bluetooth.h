@@ -7,6 +7,7 @@
 
 #include "txDataPacker.h"
 #include "rxDataParser.h"
+#include "../../modules/I2C/hardware/queue.h"
 
 enum BLEStatus : uint8_t
 {
@@ -24,6 +25,13 @@ enum RemoteMode : uint8_t
 typedef void (*ButtonCallback)(bool pressed);
 
 struct JoystickState { int angle; int strength; };
+
+// State storage for T,<name>,<value> pairs (Config/Dashboard mode)
+struct StatePair { String name; String value; };
+
+// Button callback handler
+struct ButtonHandler { String name; ButtonCallback callback; };
+
 class Bluetooth
 {
 private:
@@ -43,6 +51,23 @@ private:
 
 // Configuration
   bool _isConfigured;  // Whether the module has been configured
+
+// State storage (T,<name>,<value> pairs)
+  static const uint8_t STATE_MAX = 128;
+  StatePair _states[STATE_MAX];
+  uint8_t _stateCount = 0;
+
+// Command queue (reuses existing CQueue)
+  CQueue<RxCommand> _cmdQueue;
+
+// Button callbacks
+  static const uint8_t BTN_MAX = 32;
+  ButtonHandler _buttonHandlers[BTN_MAX];
+  uint8_t _buttonHandlerCount = 0;
+
+// State helpers
+  void _setState(const String& name, const String& value);
+  String _getState(const String& name) const;
 
 // Processing
   void processFrame(const String& frame);
