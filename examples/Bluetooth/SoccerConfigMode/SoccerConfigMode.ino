@@ -8,7 +8,7 @@ static PeanutKingSoccerV4 robot;
 static txDataPacker txPacker;
 
 // ── Button callbacks (no name param needed) ─────────────────
-void onKick(bool pressed) {
+void onClick1(bool pressed) {
   if (pressed) {
     robot.motorSetSpeed(RightFront, 200);
     robot.motorSetSpeed(LeftFront, 200);
@@ -17,15 +17,13 @@ void onKick(bool pressed) {
   }
 }
 
-void onShoot(bool pressed) {
+void onClick2(bool pressed) {
   if (pressed) robot.onBoardLedSet(LEDRed);
   else robot.onBoardLedSet(LEDOff);
 }
 
 void setup() {
   robot.init();
-  robot.motorConfiguration(M4, M3, M1, M2);
-  robot.compassCorrectEnabled = true;
 
   robot.bluetoothInit(&Serial1, PILA_CONFIG);
 
@@ -48,8 +46,8 @@ void setup() {
   robot.bluetoothSetConfig(txPacker.buildConfigMessage(inputConfig, outputConfig));
 
   // Route commands by name - pass function directly
-  robot.bluetoothOnButton("Kick", onKick);
-  robot.bluetoothOnButton("Shoot", onShoot);
+  robot.bluetoothOnButton("Motor", onClick1);
+  robot.bluetoothOnButton("LED", onClick2);
 }
 
 void loop() {

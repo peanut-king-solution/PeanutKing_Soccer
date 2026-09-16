@@ -21,9 +21,9 @@ struct RxCommand
 {
   PILA_RX_Cmd type;
   char name[16];
-  String value;
   int16_t first;
   int16_t second;
+  int16_t third;
 };
 
 class rxDataParser

@@ -407,7 +407,7 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
     RxCommand cmd = bluetooth.getCommand();
     // Handle commands of PILA mode
     if (mode == PILA_LEGACY || mode == PILA_CONFIG) {
-      // _handlePILACommand(cmd);
+      _handlePILACommand(cmd);
     }
     // Handle commands of DASHBOARD mode
     else {
@@ -415,8 +415,26 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
     }
   }
 
+  // Auto-stop: if last command was not movement, re-enable compass correction and stop
+  if (_lastRxCmdType != CMD_CIRCLE && _lastRxCmdType != CMD_JOYSTICK) {
+    compassCorrectEnabled = true;
+    move(0, 0);
+  }
+
   // Sending telemetry data of legacy mode
-  // format: Soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>, <max_eye>,<max_eye_value>>
+  // format: soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>,<max_eye>,<max_eye_value>
+  if (mode == PILA_LEGACY && bluetooth.isConnected()) {
+    String telemetry = "soccer";
+    telemetry += "," + String(compassRead());
+    telemetry += "," + String(ultrasoundGetDist(Front));
+    telemetry += "," + String(ultrasoundGetDist(Back));
+    telemetry += "," + String(ultrasoundGetDist(Left));
+    telemetry += "," + String(ultrasoundGetDist(Right));
+    telemetry += "," + String(compoundMaxEyeRead());
+    telemetry += "," + String(compoundMaxEyeValueRead());
+    telemetry += "\n";
+    bluetooth.sendRaw(telemetry);
+  }
 }
 
 void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, int value) { bluetooth.setOutput(name, value); }
@@ -438,6 +456,56 @@ JoystickState PeanutKingSoccerV4::bluetoothGetJoystick(const String& name) {
 
 void PeanutKingSoccerV4::bluetoothOnButton(const String& name, ButtonCallback callback) {
   bluetooth.onButton(name, callback);
+}
+
+/* =============================================================================
+ *                         PILA Command Handler
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::_handlePILACommand(const RxCommand& cmd) {
+  switch (cmd.type) {
+    case CMD_JOYSTICK:
+      compassCorrectEnabled = true;
+      move((float)cmd.first, (float)cmd.second);
+      break;
+
+    case CMD_PAUSE:
+      motorStopAll();
+      break;
+
+    case CMD_CIRCLE:
+      compassCorrectEnabled = false;
+      move(0, 0, (float)cmd.first);
+      break;
+
+    case CMD_LIGHT:
+      // Binary: >0 = HIGH, 0 = LOW
+      led.setLED(0, cmd.third > 0 ? 1 : 0);   // B
+      led.setLED(1, cmd.second > 0 ? 1 : 0);  // G
+      led.setLED(2, cmd.first > 0 ? 1 : 0);   // R
+      break;
+
+    case CMD_COMPASS:
+      compassUpdateNorth();
+      break;
+
+    case CMD_SET_PID:
+      movement.motorPID.setPID(
+        (double)cmd.first,
+        (double)cmd.second,
+        (double)cmd.third
+      );
+      break;
+
+    case CMD_BUTTON:
+      // Already handled in Bluetooth::processFrame()
+      break;
+
+    case CMD_TOGGLE:
+      // Already handled in Bluetooth::processFrame()
+      break;
+  }
+  _lastRxCmdType = cmd.type;
 }
 
 /* =============================================================================

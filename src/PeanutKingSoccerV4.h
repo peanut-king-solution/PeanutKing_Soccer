@@ -180,7 +180,13 @@ public:
 // =============================================================================
 
   bool compassCorrectEnabled = true;   // Enable/disable compass correction for movement
-  bool outBoundPreventEnabled = false;  // Enable/disable out-of-bounds prevention for movement
+  bool outBoundPreventEnabled = false;
+
+// ============================================================================
+//                     Bluetooth PILA Command Tracking
+// ============================================================================
+
+  PILA_RX_Cmd _lastRxCmdType = CMD_PAUSE;  // Enable/disable out-of-bounds prevention for movement
 
   /**
    * Move the robot in a specified direction with optional rotation
@@ -480,7 +486,7 @@ public:
   void bluetoothOnButton(const String& name, ButtonCallback callback);
 
 private:
-  void _handleLegacyCommand(const RxCommand& cmd);
+  void _handlePILACommand(const RxCommand& cmd);
 
 public:
 // =============================================================================

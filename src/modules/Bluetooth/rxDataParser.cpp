@@ -47,9 +47,9 @@ bool rxDataParser::parseCommand(const String& frame, RxCommand& command)
   input.trim();
   command.type = parseCommandType(input);
   command.name[0] = '\0';
-  command.value = "";
   command.first = 0;
   command.second = 0;
+  command.third = 0;
 
   switch (command.type) {
     case CMD_JOYSTICK: {
@@ -79,7 +79,7 @@ bool rxDataParser::parseCommand(const String& frame, RxCommand& command)
       if (!parseDecimal(input.substring(7, 10), 0, 255, b)) return false;
       command.first = r;
       command.second = g;
-      command.value = input.substring(7, 10);
+      command.third = b;
       return true;
     }
     case CMD_PAUSE:
@@ -87,18 +87,21 @@ bool rxDataParser::parseCommand(const String& frame, RxCommand& command)
     case CMD_COMPASS:
       return input == "H0";
     case CMD_BUTTON:
-      return input == "B1" || input == "B0";
+      if (input == "B1") { command.first = 1; return true; }
+      if (input == "B0") { command.first = 0; return true; }
+      return false;
     case CMD_SET_PID: {
       int firstComma = input.indexOf(',');
       int secondComma = input.indexOf(',', firstComma + 1);
       if (firstComma <= 1 || secondComma <= firstComma + 1) return false;
-      int16_t kp, ki;
+      int16_t kp, ki, kd;
       if (!parseDecimal(input.substring(1, firstComma), -32768, 32767, kp)) return false;
       if (!parseDecimal(input.substring(firstComma + 1, secondComma), -32768, 32767, ki)) return false;
+      if (!parseDecimal(input.substring(secondComma + 1), -32768, 32767, kd)) return false;
       command.first = kp;
       command.second = ki;
-      command.value = input.substring(secondComma + 1);
-      return command.value.length() > 0;
+      command.third = kd;
+      return true;
     }
     case CMD_TOGGLE: {
       // Multi-pair T frames are handled by Bluetooth::processFrame() before
@@ -110,8 +113,10 @@ bool rxDataParser::parseCommand(const String& frame, RxCommand& command)
       if (secondComma < 0) secondComma = input.length();
       if (secondComma <= firstComma + 1) return false;
       copyName(command.name, input.substring(2, firstComma));
-      command.value = input.substring(firstComma + 1, secondComma);
-      return command.value.length() > 0;
+      int16_t value;
+      if (!parseDecimal(input.substring(firstComma + 1, secondComma), -32768, 32767, value)) return false;
+      command.third = value;
+      return true;
     }
     default:
       return false;

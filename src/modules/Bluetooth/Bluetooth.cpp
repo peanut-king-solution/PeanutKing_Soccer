@@ -6,7 +6,7 @@ Bluetooth::Bluetooth() :
   _serial(&Serial1),
   _isConfigured(false),
   _stateCount(0),
-  _cmdQueue(),
+  _cmdQueue(CMD_QUEUE_MAX),
   _buttonHandlerCount(0)
 {
   _rxBuffer.reserve(128); // Reserve space for the incoming data parser to avoid dynamic allocations
@@ -195,6 +195,13 @@ void Bluetooth::processFrame(const String& frame)
   // Legacy commands: parse and push to queue
   RxCommand cmd;
   if (_rxParser.parseCommand(frame, cmd)) {
+    // Fire button callbacks immediately (before queue)
+    if (cmd.type == CMD_BUTTON) {
+      bool pressed = (cmd.first == 1);
+      for (uint8_t i = 0; i < _buttonHandlerCount; i++) {
+        _buttonHandlers[i].callback(pressed);
+      }
+    }
     _cmdQueue.Push(cmd);
   }
 }
@@ -294,8 +301,7 @@ RxCommand Bluetooth::getCommand(void)
 
 void Bluetooth::setOutput(const String& name, int value)
 {
-  // _serial->print(_txPacker.buildSendMessage(name.c_str(), (uint16_t)value));
-  _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
+  _serial->print(_txPacker.buildSendMessage(name.c_str(), (float)value));
 }
 void Bluetooth::setOutput(const String& name, float value)
 {
@@ -304,4 +310,12 @@ void Bluetooth::setOutput(const String& name, float value)
 void Bluetooth::setOutput(const String& name, bool value)
 {
   _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
+}
+
+// ============================================================================
+//                            Raw send
+// ============================================================================
+
+void Bluetooth::sendRaw(const String& data) {
+  _serial->print(data);
 }

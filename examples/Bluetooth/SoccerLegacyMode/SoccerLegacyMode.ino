@@ -7,7 +7,7 @@
 static PeanutKingSoccerV4 robot;
 
 // ── Button callback ───
-void onKick(bool pressed) {
+void onClick(bool pressed) {
   if (pressed) {
     robot.onBoardLedSet(LEDWhite);
   } else {
@@ -17,11 +17,9 @@ void onKick(bool pressed) {
 
 void setup() {
   robot.init();
-  robot.motorConfiguration(M4, M3, M1, M2);
-  robot.compassCorrectEnabled = true;
 
   robot.bluetoothInit(&Serial1, PILA_LEGACY);
-  robot.bluetoothOnButton("LED", onKick);  // directly pass the function
+  robot.bluetoothOnButton("LED", onClick);  // directly pass the function
 }
 
 void loop() {

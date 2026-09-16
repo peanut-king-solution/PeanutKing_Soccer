@@ -58,6 +58,7 @@ private:
   uint8_t _stateCount = 0;
 
 // Command queue (reuses existing CQueue)
+  static const uint8_t CMD_QUEUE_MAX = 64;
   CQueue<RxCommand> _cmdQueue;
 
 // Button callbacks
@@ -134,6 +135,12 @@ public:
   void setOutput(const String& name, int value);
   void setOutput(const String& name, float value);
   void setOutput(const String& name, bool value);
+
+// ============================================================================
+//                            Raw send
+// ============================================================================
+
+  void sendRaw(const String& data);
 };
 
 #endif // BLUETOOTH_H

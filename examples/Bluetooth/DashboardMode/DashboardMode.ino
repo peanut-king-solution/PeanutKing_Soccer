@@ -7,12 +7,12 @@ static PeanutKingSoccerV4 robot;
 static txDataPacker txPacker;
 
 // ── Button callbacks (no name param needed) ─────────────────
-void onKick(bool pressed) {
+void onClick1(bool pressed) {
   if (pressed) robot.onBoardLedSet(LEDCyan);
   else robot.onBoardLedSet(LEDOff);
 }
 
-void onShoot(bool pressed) {
+void onClick2(bool pressed) {
   if (pressed) robot.onBoardLedSet(LEDRed);
   else robot.onBoardLedSet(LEDOff);
 }
@@ -44,8 +44,8 @@ void setup() {
   robot.bluetoothSetConfig(txPacker.buildConfigMessage(inputConfig, outputConfig));
 
   // Route commands by name - pass function directly
-  robot.bluetoothOnButton("Kick", onKick);
-  robot.bluetoothOnButton("Shoot", onShoot);
+  robot.bluetoothOnButton("LED1", onClick1);
+  robot.bluetoothOnButton("LED2", onClick2);
 }
 
 void loop() {
