@@ -48,8 +48,9 @@ private:
   rxDataParser _rxParser;  // Parser for incoming data
   String _rxBuffer;  // Buffer for incoming data
 
-
 // Configuration
+  String _config;
+  uint32_t _lastConfigSendMs = 0;
   bool _isConfigured;  // Whether the module has been configured
 
 // State storage (T,<name>,<value> pairs)
@@ -66,12 +67,26 @@ private:
   ButtonHandler _buttonHandlers[BTN_MAX];
   uint8_t _buttonHandlerCount = 0;
 
+// Config auto-builder (Soccer Config mode only)
+  static const uint8_t CONFIG_OUTPUT_MAX = 8;
+  String _configOutputs[CONFIG_OUTPUT_MAX];
+  uint8_t _configOutputCount = 0;
+  bool _configBuilt = false;
+  bool _hasSoccerButton = false;     // SoccerBtn registered (mutually exclusive with toggle)
+  bool _hasSoccerToggle = false;     // SoccerTog registered (mutually exclusive with button)
+  void _addButton(const char* name);
+  void _addToggle(const char* name);
+  void _addOutput(const char* name);
+  String _buildAutoConfig(void);
+
 // State helpers
   void _setState(const String& name, const String& value);
   String _getState(const String& name) const;
 
 // Processing
-  void processFrame(const String& frame);
+  void _processLegacyCmd(const String& frame);
+  void _processTelemetry(const String& frame);
+  void _processFrame(const String& frame);
 
 public:
   bool init(
@@ -109,6 +124,7 @@ public:
 
   bool isConfigured(void);
   void setConfig(const String& config);
+  void sendConfig(const uint32_t intervalMs = 1000);
 
 // ============================================================================
 //                               Process
@@ -129,12 +145,12 @@ public:
   JoystickState getJoystick(const String& name) const;
 
 // ============================================================================
-//                            Output setters
+//                            Output senders
 // ============================================================================
 
-  void setOutput(const String& name, int value);
-  void setOutput(const String& name, float value);
-  void setOutput(const String& name, bool value);
+  void sendOutput(const String& name, int value);
+  void sendOutput(const String& name, float value);
+  void sendOutput(const String& name, bool value);
 
 // ============================================================================
 //                            Raw send

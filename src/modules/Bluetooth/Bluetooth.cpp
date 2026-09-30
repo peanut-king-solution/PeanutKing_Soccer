@@ -104,8 +104,62 @@ bool Bluetooth::isConfigured(void) {
   return _isConfigured;
 }
 void Bluetooth::setConfig(const String& config) {
-  // _config = config;
+  if (config.length() == 0 || _mode != DASHBOARD) return;
+  _config = config;
   _isConfigured = false;
+  _lastConfigSendMs = 0;
+}
+void Bluetooth::sendConfig(const uint32_t intervalMs) {
+  // Auto-build config from registered widgets (Soccer Config mode only)
+  if (_config.length() == 0 && !_configBuilt && _mode == PILA_CONFIG
+      && (_hasSoccerButton || _hasSoccerToggle || _configOutputCount > 0)) {
+    _config = _buildAutoConfig();
+    _configBuilt = true;
+  }
+  if (_config.length() == 0) return; // No config to send
+  uint32_t now = millis();
+  if (now - _lastConfigSendMs >= intervalMs) {
+    _serial->print(_config);
+    _lastConfigSendMs = now;
+  }
+}
+
+// ============================================================================
+//                           Config auto-builder
+// ============================================================================
+
+void Bluetooth::_addButton(const char* name) {
+  if (strcmp(name, "SoccerBtn") == 0) {
+    _hasSoccerButton = true;
+    _hasSoccerToggle = false;  // Only one action widget at a time (normal button wins)
+  }
+}
+
+void Bluetooth::_addToggle(const char* name) {
+  if (strcmp(name, "SoccerTog") == 0) {
+    _hasSoccerToggle = true;
+    _hasSoccerButton = false;  // Only one action widget at a time
+  }
+}
+
+void Bluetooth::_addOutput(const char* name) {
+  if (_configOutputCount >= CONFIG_OUTPUT_MAX) return;
+  _configOutputs[_configOutputCount] = name;
+  _configOutputCount++;
+}
+
+String Bluetooth::_buildAutoConfig(void) {
+  // Soccer Config auto-build: C,O,<count>,<outputs...>,<B|TB,name>,\n
+  // Outputs are built via txDataPacker; action widget depends on user registration.
+  String cfg = "C,O," + String(_configOutputCount);
+  for (uint8_t i = 0; i < _configOutputCount; i++) {
+    cfg += "," + _configOutputs[i] + ",false";
+  }
+  // Action widget: only one of B (normal) or TB (toggle) at the end
+  if (_hasSoccerButton)       cfg += ",B,SoccerBtn";
+  else if (_hasSoccerToggle)  cfg += ",TB,SoccerTog";
+  cfg += "\n";
+  return cfg;
 }
 
 // ============================================================================
@@ -132,67 +186,36 @@ String Bluetooth::_getState(const String& name) const {
   return String();
 }
 
-void Bluetooth::processFrame(const String& frame)
-{
-  // Check for configuration acknowledgment frame
-  if (_rxParser.isConfigAck(frame)) {
-    _isConfigured = true;
-    return;
+void Bluetooth::_processTelemetry(const String& frame) {
+  if (!frame.startsWith("T,")) return;
+
+  String parts[32];
+  int n = 0, pos = 0;
+  // Split the frame into parts using commas as delimiters, up to a maximum of 32 parts
+  while (pos <= (int)frame.length() && n < 32) {
+    int comma = frame.indexOf(',', pos);
+    String tok = (comma < 0) ? frame.substring(pos) : frame.substring(pos, comma);
+    tok.trim();
+    if (tok.length() > 0) parts[n++] = tok;
+    if (comma < 0) break;
+    pos = comma + 1;
   }
-  
-  // Check for telemetry frame (T,<name>,<value>,<name>,<value>,...) to update input states
-  if (frame.startsWith("T,")) {
-    String input = frame.substring(2); // remove the "T," prefix
-    int pairCount = 0, pos = 0;        // Count the number of <name>,<value> pairs in the input
-    // Count the number of commas to determine the number of pairs
-    while (pos < input.length()) {
-      int commaPos = input.indexOf(',', pos); // Find the next comma in the input
-      if (commaPos < 0) break;  // No more commas, exit loop
-      pairCount++;  // Increment the pair count for each comma found
-      pos = commaPos + 1; // Move past the comma for the next iteration
-    }
-    // Valid message: must have an even number of tokens (name,value pairs), "T," is not counted in pairCount.
-    // Check if the number of pairs is valid (even number of tokens)
-    if (pairCount > 0 && pairCount % 2 == 0) {
-      pos = 0;
-      // Process each <name>,<value> pair
-      while (pos < input.length()) {
-        // Find the next comma to extract the name
-        int nameEnd = input.indexOf(',', pos);
-        if (nameEnd < 0) break; // No more names, exit loop
-        String name = input.substring(pos, nameEnd);
-        pos = nameEnd + 1; // Move past the comma
 
-        // Find the next comma to extract the value
-        int valueEnd = input.indexOf(',', pos);
-        String value;
-        if (valueEnd < 0) {
-          value = input.substring(pos); // Last value
-          pos = input.length(); // Move to end
-        } else {
-          value = input.substring(pos, valueEnd);
-          value.trim();
-          pos = valueEnd + 1; // Move past the comma
-        }
+  // Ensure there are at least 3 parts (T,<name>,<value>) and that the number of parts is odd (pairs of name/value)
+  if (n < 3 || (n % 2) == 0) return;
 
-        // Update the state with the parsed name and value
-        _setState(name, value);
-
-        // Fire matching button callbacks (Config/Dashboard mode)
-        for (uint8_t i = 0; i < _buttonHandlerCount; i++) {
-          if (_buttonHandlers[i].name == name) {
-            _buttonHandlers[i].callback(value == "1");
-          }
-        }
+  for (int i = 1; i + 1 < n; i += 2) {
+    // Update state with the new value
+    _setState(parts[i], parts[i + 1]);
+    // Fire button callbacks if registered (Dashboard mode only)
+    for (uint8_t h = 0; h < _buttonHandlerCount; h++) {
+      if (_buttonHandlers[h].name == parts[i]) {  // Match button name
+        _buttonHandlers[h].callback(parts[i + 1] == "1");
       }
-    } else {
-      // Invalid message format: log or handle the error as needed
-      // Serial.println("Invalid T frame format: " + frame);
     }
-    return;
   }
-
-  // Legacy commands: parse and push to queue
+}
+void Bluetooth::_processLegacyCmd(const String& frame) {
   RxCommand cmd;
   if (_rxParser.parseCommand(frame, cmd)) {
     // Fire button callbacks immediately (before queue)
@@ -202,7 +225,15 @@ void Bluetooth::processFrame(const String& frame)
         _buttonHandlers[i].callback(pressed);
       }
     }
+    // Enqueue the command for later processing
     _cmdQueue.Push(cmd);
+  }
+}
+void Bluetooth::_processFrame(const String& frame) {
+  if (frame.startsWith("T,")) {
+    _processTelemetry(frame);
+  } else {
+    _processLegacyCmd(frame);
   }
 }
 void Bluetooth::processSerial(void)
@@ -235,7 +266,18 @@ void Bluetooth::processSerial(void)
 
     // Frame delimiter: process the frame if it's valid, then reset the buffer.
     if (c == '\n') {
-      processFrame(_rxBuffer);  // Process the received frame
+      // Config acknowledgment from the app: mark module as configured
+      if (_rxParser.isConfigAck(_rxBuffer)) {
+        _isConfigured = true;
+        Serial.println(F("[BLE][ACK] Correct config received"));
+        _rxBuffer = ""; // Clear the buffer after processing the acknowledgment
+        continue;       // Skip further processing for this frame
+      }
+      // For debugging: print the received frame
+      // Serial.print(F("[BLE][RX] "));
+      // Serial.println(_rxBuffer);
+      
+      _processFrame(_rxBuffer);  // Process the received frame
       _rxBuffer = ""; // Clear the buffer after processing the frame
       continue;       // Skip further processing for this frame
     }
@@ -253,8 +295,8 @@ bool Bluetooth::getToggleState(const String& name) const
 }
 void Bluetooth::onButton(const String& name, ButtonCallback callback)
 {
-  // Legacy mode: only store the first callback, ignore name
-  if (_mode == PILA_LEGACY) {
+  // Legacy / Config mode: only store the first callback (fixed single-button UI)
+  if (_mode != DASHBOARD) {
     if (_buttonHandlerCount == 0) {
       _buttonHandlers[0].name = name;
       _buttonHandlers[0].callback = callback;
@@ -262,7 +304,7 @@ void Bluetooth::onButton(const String& name, ButtonCallback callback)
     }
     return;
   }
-  // Config/Dashboard mode: multiple named callbacks
+  // Dashboard mode: multiple named callbacks
   if (_buttonHandlerCount < BTN_MAX) {
     _buttonHandlers[_buttonHandlerCount].name = name;
     _buttonHandlers[_buttonHandlerCount].callback = callback;
@@ -276,9 +318,10 @@ String Bluetooth::getTextFieldValue(const String& name) const
 JoystickState Bluetooth::getJoystick(const String& name) const
 {
   JoystickState js;
-  // Use name-based lookup: stores "<name>_angle" and "<name>_strength"
-  js.angle = _getState(name + "_angle").toInt();
-  js.strength = _getState(name + "_strength").toInt();
+  String angleKey = name + "Ang";
+  String strengthKey = name + "Str";
+  js.angle = _getState(angleKey).toInt();
+  js.strength = _getState(strengthKey).toInt();
   return js;
 }
 
@@ -296,18 +339,18 @@ RxCommand Bluetooth::getCommand(void)
 }
 
 // ============================================================================
-//                            Output setters
+//                            Output senders
 // ============================================================================
 
-void Bluetooth::setOutput(const String& name, int value)
+void Bluetooth::sendOutput(const String& name, int value)
 {
   _serial->print(_txPacker.buildSendMessage(name.c_str(), (float)value));
 }
-void Bluetooth::setOutput(const String& name, float value)
+void Bluetooth::sendOutput(const String& name, float value)
 {
   _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
 }
-void Bluetooth::setOutput(const String& name, bool value)
+void Bluetooth::sendOutput(const String& name, bool value)
 {
   _serial->print(_txPacker.buildSendMessage(name.c_str(), value));
 }

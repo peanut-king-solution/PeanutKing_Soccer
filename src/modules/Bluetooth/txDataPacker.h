@@ -13,9 +13,7 @@ public:
   txDataPacker(/* args */);
   /**/
   InputComponent makeSlider(const char* name, uint16_t minValue, uint16_t maxValue);
-  InputComponent makeJoystick(
-    const char* joystickName, const char* angleName, const char* strengthName, uint16_t maxStrength
-  );
+  InputComponent makeJoystick(const char* joystickName, uint16_t maxStrength);
   InputComponent makeButton(const char* name);
   InputComponent makeToggleButton(const char* name);
   InputComponent makeTextField(const char* name);

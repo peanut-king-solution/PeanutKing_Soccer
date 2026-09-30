@@ -17,8 +17,6 @@ struct SliderInfo {
 };
 struct JoystickInfo {
   const char* joystickName;
-  const char* angleName;
-  const char* strengthName;
   uint16_t maxStrength;
   uint16_t currentStrength;
   uint16_t currentAngle;

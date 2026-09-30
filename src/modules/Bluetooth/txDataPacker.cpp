@@ -24,13 +24,12 @@ InputComponent txDataPacker::makeSlider(
   return component;
 }
 InputComponent txDataPacker::makeJoystick(
-  const char* joystickName, const char* angleName, const char* strengthName, uint16_t maxStrength
+  const char* joystickName, uint16_t maxStrength
 ) {
   InputComponent component;
   component.type = JoystickType;
   component.info.joystick.joystickName = joystickName;
-  component.info.joystick.angleName = angleName;
-  component.info.joystick.strengthName = strengthName;
+  
   component.info.joystick.maxStrength = maxStrength;
   component.info.joystick.currentStrength = 0; // Initialize current strength to 0
   component.info.joystick.currentAngle = 0;    // Initialize current angle to 0
@@ -81,26 +80,32 @@ String txDataPacker::buildInputConfigMessage(
     message += ","; message += inputComponentLabels[typeIndex];
     // Append component-specific details based on its type
     switch (comp.type) {
-      case SliderType:
+      case SliderType: {
         message += ","; message += String(comp.info.slider.minValue);
         message += ","; message += String(comp.info.slider.maxValue);
-         message += ","; message += comp.info.slider.name;
+        message += ","; message += comp.info.slider.name;
         break;
-      case JoystickType:
-        message += ","; message += comp.info.joystick.angleName;
+      }
+      case JoystickType: {
+        String joystickName = String(comp.info.joystick.joystickName);
+        message += ","; message += joystickName + "Ang";
         message += ","; message += String(comp.info.joystick.maxStrength);
-        message += ","; message += comp.info.joystick.strengthName;
-        message += ","; message += comp.info.joystick.joystickName;
+        message += ","; message += joystickName + "Str";
+        message += ","; message += joystickName;
         break;
-      case ButtonType:
+      }
+      case ButtonType: {
         message += ","; message += comp.info.button.name;
         break;
-      case ToggleButtonType:
+      }
+      case ToggleButtonType: {
         message += ","; message += comp.info.toggleButton.name;
         break;
-      case TextFieldType:
+      }
+      case TextFieldType: {
         message += ","; message += comp.info.textField.name;
         break;
+      }
     }
   }
   // Return the complete input configuration message

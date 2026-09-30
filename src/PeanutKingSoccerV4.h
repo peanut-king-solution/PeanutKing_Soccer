@@ -182,12 +182,6 @@ public:
   bool compassCorrectEnabled = true;   // Enable/disable compass correction for movement
   bool outBoundPreventEnabled = false;
 
-// ============================================================================
-//                     Bluetooth PILA Command Tracking
-// ============================================================================
-
-  PILA_RX_Cmd _lastRxCmdType = CMD_PAUSE;  // Enable/disable out-of-bounds prevention for movement
-
   /**
    * Move the robot in a specified direction with optional rotation
    * `mAngle` - Movement angle (0-360 degrees)
@@ -469,21 +463,27 @@ public:
   bool bluetoothInit(HardwareSerial* port = &Serial1, RemoteMode mode = RemoteMode::PILA_LEGACY);
   bool bluetoothRename(const char* name);
   bool bluetoothReset(void);
-  void bluetoothSetConfig(const String& configMessage);
+  void bluetoothSetConfig(const String& configMessage);  // Dashboard mode only (soccer config auto-builds)
 
   bool bluetoothIsConnected(void);
+  bool bluetoothIsConfig(void);
   void bluetoothRemote(void);
 
-  void bluetoothSetOutput(const String& name, int value);
-  void bluetoothSetOutput(const String& name, float value);
-  void bluetoothSetOutput(const String& name, bool value);
+  void bluetoothSendOutput(const String& name, int value);
+  void bluetoothSendOutput(const String& name, float value);
+  void bluetoothSendOutput(const String& name, bool value);
 
-  bool bluetoothGetToggle(const String& name);
+  // name defaults to soccer fixed widget names ("SoccerTog" / "SoccerBtn")
+  bool bluetoothGetToggle(const String& name = "SoccerTog");
   int bluetoothGetSlider(const String& name);
   String bluetoothGetTextField(const String& name);
   JoystickState bluetoothGetJoystick(const String& name);
 
   void bluetoothOnButton(const String& name, ButtonCallback callback);
+
+  // Register a soccer widget (config mode auto-build)
+  void bluetoothSetSoccerButton(InputComponentType type);
+  void bluetoothSetSoccerOutput(const char* name);
 
 private:
   void _handlePILACommand(const RxCommand& cmd);
@@ -553,10 +553,9 @@ public:
 
   // Bluetooth data
 private:
+
   uint32_t _lastSendTime = 0; // Timestamp of the last data sent via Bluetooth
-  uint32_t _lastControlTime = 0; // Timestamp of the last received control command
-  bool _bleWasConnected = false; // Edge-detector: last poll() was connected
-  PILA_RX_Cmd _lastCommandType = CMD_PAUSE; // Last legacy command type
+  PILA_RX_Cmd _lastRxCmdType = CMD_PAUSE;  // Enable/disable out-of-bounds prevention for movement
 
   // PS2 controller data
   byte vibrationStr = 0;  // Vibration strength (0-255)

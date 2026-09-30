@@ -20,8 +20,12 @@ void setup() {
 
   robot.bluetoothInit(&Serial1, PILA_LEGACY);
   robot.bluetoothOnButton("LED", onClick);  // directly pass the function
+
+  robot.compassCorrectEnabled = true;  // enable compass correction for movement
 }
 
 void loop() {
   robot.bluetoothRemote();
+
+  // the data is sent automatically every 1 second in legacy mode
 }

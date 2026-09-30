@@ -19,9 +19,9 @@
  * ============================================================================= */
 
   PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
-  pwmPin{10, 11, 12, 13}
-{
-}
+    pwmPin{10, 11, 12, 13}
+  {
+  }
 
 /* =============================================================================
  *                              Initialization
@@ -269,7 +269,6 @@ ButtonState PeanutKingSoccerV4::buttonStateRead(ButtonId btn) {
 void PeanutKingSoccerV4::onBoardLedSet(LEDColor color) {
   led.setLED(color);
 }
-
 void PeanutKingSoccerV4::onBoardLedSet(uint8_t LED, uint8_t status) {
   led.setLED(LED, status);
 }
@@ -392,9 +391,18 @@ bool PeanutKingSoccerV4::bluetoothReset(void) { return bluetooth.reset(); }
 bool PeanutKingSoccerV4::bluetoothIsConnected(void) {
   return bluetooth.isConnected();
 }
+bool PeanutKingSoccerV4::bluetoothIsConfig(void) {
+  return bluetooth.isConfigured();
+}
 void PeanutKingSoccerV4::bluetoothRemote(void) {
   // process Bluetooth serial data and commands
   bluetooth.processSerial();
+
+  // If the module is not in legacy mode, check if it is configured
+  if (bluetooth.getMode() != PILA_LEGACY && !bluetooth.isConfigured()) {
+    bluetooth.sendConfig();
+    return;
+  }
 
   // check connection status to app and handle disconnection
   // if (!bluetooth.isConnected()) {
@@ -416,14 +424,14 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
   }
 
   // Auto-stop: if last command was not movement, re-enable compass correction and stop
-  if (_lastRxCmdType != CMD_CIRCLE && _lastRxCmdType != CMD_JOYSTICK) {
+  if (mode != DASHBOARD && _lastRxCmdType != CMD_CIRCLE && _lastRxCmdType != CMD_JOYSTICK) {
     compassCorrectEnabled = true;
     move(0, 0);
   }
 
   // Sending telemetry data of legacy mode
   // format: soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>,<max_eye>,<max_eye_value>
-  if (mode == PILA_LEGACY && bluetooth.isConnected()) {
+  if (mode == PILA_LEGACY && bluetooth.isConnected() && millis() - _lastSendTime > 1000) {
     String telemetry = "soccer";
     telemetry += "," + String(compassRead());
     telemetry += "," + String(ultrasoundGetDist(Front));
@@ -434,12 +442,17 @@ void PeanutKingSoccerV4::bluetoothRemote(void) {
     telemetry += "," + String(compoundMaxEyeValueRead());
     telemetry += "\n";
     bluetooth.sendRaw(telemetry);
+    _lastSendTime = millis();
   }
 }
 
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, int value) { bluetooth.setOutput(name, value); }
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, float value) { bluetooth.setOutput(name, value); }
-void PeanutKingSoccerV4::bluetoothSetOutput(const String& name, bool value) { bluetooth.setOutput(name, value); }
+// ── Outputs ──────────────────────────────────────────────────
+
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, int value) { bluetooth.sendOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, float value) { bluetooth.sendOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, bool value) { bluetooth.sendOutput(name, value); }
+
+// ── Named getters ────────────────────────────────────────────
 
 bool PeanutKingSoccerV4::bluetoothGetToggle(const String& name) {
   return bluetooth.getToggleState(name);
@@ -454,8 +467,25 @@ JoystickState PeanutKingSoccerV4::bluetoothGetJoystick(const String& name) {
   return bluetooth.getJoystick(name);
 }
 
+// ── Callbacks ────────────────────────────────────────────────
+
 void PeanutKingSoccerV4::bluetoothOnButton(const String& name, ButtonCallback callback) {
   bluetooth.onButton(name, callback);
+}
+
+// ── Soccer config: widgets + outputs ─────────────────────────
+
+void PeanutKingSoccerV4::bluetoothSetSoccerButton(InputComponentType type) {
+  // Fixed widget names: ButtonType → SoccerBtn, ToggleButtonType → SoccerTog
+  switch (type) {
+    case ButtonType:       bluetooth._addButton("SoccerBtn"); break;
+    case ToggleButtonType: bluetooth._addToggle("SoccerTog"); break;
+    default: break;
+  }
+}
+
+void PeanutKingSoccerV4::bluetoothSetSoccerOutput(const char* name) {
+  bluetooth._addOutput(name);
 }
 
 /* =============================================================================
