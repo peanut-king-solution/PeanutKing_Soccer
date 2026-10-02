@@ -1,22 +1,47 @@
-#include <PeanutKingSoccerV4.h>
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+/**
+ * This example demonstrates how to read the state of buttons on the PeanutKingSoccerV4 robot.
+ */
 
-void setup() {
+#include <PeanutKingSoccerV4.h>
+static PeanutKingSoccerV4 robot;
+
+void setup()
+{
   robot.init();
 }
 
-void loop() {
-  if (robot.buttonRead(1))                      // If pressed button 1
-    robot.setOnBrdLED(LED_YELLOW);        // Turn on all led on top board (255,r,g,b,w)
+void loop()
+{
+  // Update button states
+  robot.buttonUpdate();
 
-  else if(robot.buttonRead(2))                  // If pressed button 2
-    robot.setOnBrdLED(LED_BLUE);                // Turn off all led on top board (255,r,g,b,w)
+  // Check each button's state (after buttonUpdate() to get the latest state)
+  for (int button = Button1; button <= Button4; button++)
+  {
+    // Read the current state of the button
+    ButtonState state = robot.buttonStateRead(button);
+    // Print the button state to the Serial Monitor
+    switch (state)
+    {
+    case ButtonIdle:
+      break;
+    case ButtonPressed:
+      Serial.print("Button ");
+      Serial.print(button);
+      Serial.println(" - PRESSED");
+      break;
+    case ButtonHolding:
+      Serial.print("Button ");
+      Serial.print(button);
+      Serial.println(" - HOLDING");
+      break;
+    case ButtonReleased:
+      Serial.print("Button ");
+      Serial.print(button);
+      Serial.println(" - RELEASED");
+      break;
+    }
+  }
 
-  else if(robot.buttonRead(3))                  // If pressed button 2
-    robot.setOnBrdLED(LED_RED);                // Turn off all led on top board (255,r,g,b,w)
-
-  else if(robot.buttonRead(4))                  // If pressed button 2
-    robot.setOnBrdLED(LED_CYAN);                // Turn off all led on top board (255,r,g,b,w)
-  else
-     robot.setOnBrdLED(LED_OFF);
+  delay(5);
 }

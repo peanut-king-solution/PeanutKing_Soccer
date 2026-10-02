@@ -1,0 +1,96 @@
+#include "Compass.h"
+
+Compass::Compass()
+  : _handle(BusIndex::HW, COMPASS_I2C_ADDRESS, 400000)  // I2C speed: 400kHz
+{
+}
+
+bool Compass::init(void) {
+  // Return false if the handle is invalid
+  if (!_handle.isValid()) { return false; }
+
+  // Compass Reset Heading
+  delay(10); // wait for compass calibration
+  // Read multiple samples to calculate the average compass reading
+  uint16_t sum = 0; int8_t sampleCount = 10;
+  for (int i = 0; i < sampleCount; i++) {
+    sum += this->read();
+    delay(50); // wait for the next sample
+  }
+  uint16_t averageHeading = sum / sampleCount;
+
+  _factoryConverter.reset();
+  // Set current facing direction as north (0°)
+  _applyNorthOffset(averageHeading);
+
+  return true; // Return true if initialization is successful
+}
+
+uint16_t Compass::read() {
+  // Clear the receive buffer before reading
+  // clearBuffer();
+
+  // Read the compass value from the compass module using the I2C manager
+  I2CManager &i2cManager = I2CManager::getInstance();
+  i2cManager.SensorRead(_handle, GET_YAW, rxBuff, 2);
+  compass = (uint16_t)rxBuff[0] | ((uint16_t)rxBuff[1] << 8);
+  compass = compass / 100;
+
+  // compass received reset current heading as 0° (North)
+  if (compass == 655) {
+    _factoryConverter.reset(); // Reset factory offset only; user converter (rotate/flip) is preserved
+  }
+
+  // Apply factory offset first (on the raw heading), then the user rotate/flip.
+  // Factory only calibrates the start direction; user tuning applies after.
+  float v = _factoryConverter.convert((float)compass); // factory offset (init/655)
+  v = converter.convert(v); // user rotate/flip (public)
+  compass = (uint16_t)v;  // already normalized to [0, 360)
+  return compass;
+}
+
+int16_t* Compass::readRaw6(uint8_t reg, int16_t* dataArr) {
+  // Clear the receive buffer before reading
+  // clearBuffer();
+
+  // Read 6 bytes of raw sensor data from the specified register
+  I2CManager &i2cManager = I2CManager::getInstance();
+  i2cManager.SensorRead(_handle, reg, rxBuff, 6);
+
+  // Combine the received bytes into 16-bit signed integers
+  dataArr[0] = (int16_t)((uint16_t)rxBuff[0] | ((uint16_t)rxBuff[1] << 8));
+  dataArr[1] = (int16_t)((uint16_t)rxBuff[2] | ((uint16_t)rxBuff[3] << 8));
+  dataArr[2] = (int16_t)((uint16_t)rxBuff[4] | ((uint16_t)rxBuff[5] << 8));
+  return dataArr;
+}
+
+int16_t* Compass::readRawAccel(void) {
+  return readRaw6(ACC_RAW, accelData);
+}
+
+int16_t* Compass::readRawGyro(void) {
+  return readRaw6(GYR_RAW, gyroData);
+}
+
+int16_t* Compass::readRawMag(void) {
+  return readRaw6(MAG_RAW, magData);
+}
+
+void Compass::updateNorthOffset(void) {
+  _applyNorthOffset(this->read());
+}
+
+void Compass::_applyNorthOffset(uint16_t heading) {
+  if (heading <= 180) {
+    _factoryConverter.rotate(heading, CW);
+  } else {
+    _factoryConverter.rotate(360 - heading, CCW);
+  }
+}
+
+void Compass::clearBuffer(void) {
+  // Clear the receive buffer by setting all bytes to zero
+  for (uint8_t i = 0; i < COMPASS_RX_BUFFER_SIZE; i++) {
+    rxBuff[i] = 0;
+  }
+}

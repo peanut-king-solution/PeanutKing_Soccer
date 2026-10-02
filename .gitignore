@@ -2,3 +2,4 @@
 # VS Code setting file
 .vscode/
 
+.DS_Store

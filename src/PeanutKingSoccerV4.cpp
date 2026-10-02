@@ -6,124 +6,56 @@
  * @version     4.0.0
  * @author      Jack Kwok
  * @date        2 January 2024
- * 
- * @log         3.3.0 - 5  Jun 2023
+ *
+ * @log         4.0.0 - 9  Jul 2024 - Extract Compass module
+ *              3.3.0 - 5  Jun 2023
  *              3.1.0 - 26 Jul 2022
- */ 
+ */
 
 #include "PeanutKingSoccerV4.h"
-static PeanutKingSoccerV4* V4bot = NULL;
-static void PeanutKingSoccerV4::ULT_Echo_dect_0(){
-  V4bot->ULT_Echo_dect(0);
-}
-static void PeanutKingSoccerV4::ULT_Echo_dect_1(){
-  
-  V4bot->ULT_Echo_dect(1);
-}
-static void PeanutKingSoccerV4::ULT_Echo_dect_2(){
-  
-  V4bot->ULT_Echo_dect(2);
-}
-static void PeanutKingSoccerV4::ULT_Echo_dect_3(){
-  
-  V4bot->ULT_Echo_dect(3);
-}
-void (*PeanutKingSoccerV4::ULT_Echo_dect_ptr[4])() = {
-    PeanutKingSoccerV4::ULT_Echo_dect_0,
-    PeanutKingSoccerV4::ULT_Echo_dect_1,
-    PeanutKingSoccerV4::ULT_Echo_dect_2,
-    PeanutKingSoccerV4::ULT_Echo_dect_3
-};
-PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
-  swiic{
-      SlowSoftI2CMaster (29, 30, 1),
-      SlowSoftI2CMaster (31, 32, 1),
-      SlowSoftI2CMaster (33, 34, 1),
-      SlowSoftI2CMaster (35, 36, 1),
-      SlowSoftI2CMaster (37, 38, 1),
-      SlowSoftI2CMaster (39, 40, 1),
-      SlowSoftI2CMaster (41, 42, 1),
-      SlowSoftI2CMaster (43, 44, 1)},
-  buttonPin{22, 23, 24, 25},        // mainboard V4
-  in1Pin{9,  7,  5, 3},     // timer 1 (controls pin 12, 11);
-  in2Pin{8,  6,  4, 2},     // timer 2 (controls pin 10, 9);
-  ledPin{26, 28, 27},
-  ULTPin_trig{49, 48, 47, 46}, //{49, 48, 47, 46}
-  ULTPin_echo{A15, A14, A13, A12}, //{A15, A14, A13, A12}
-  pwmPin{10, 11, 12, 13} {    // timer 3 (controls pin 5, 3, 2);
-  if (V4bot == NULL)  {         // timer 4 (controls pin 8, 7, 6);
-    V4bot = this;
-  }
-}
 
+/* =============================================================================
+ *                              Constructor
+ * ============================================================================= */
 
-uint8_t PeanutKingSoccerV4::getColorSensor(uint8_t color_sensor_num){
-  uint8_t val = 0;
-  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
-    // Serial.println("I2C device busy");
-    return;
+  PeanutKingSoccerV4::PeanutKingSoccerV4(void) :
+    pwmPin{10, 11, 12, 13}
+  {
   }
-  swiic[color_sensor_num].i2c_write(0x01); // send memory to device
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
-  val = swiic[color_sensor_num].i2c_read(true); // read one byte and send NAK afterwards
-  swiic[color_sensor_num].i2c_stop(); // stop communication
-  return val;
-}
-rgb_t PeanutKingSoccerV4::getColorSensorRGB(uint8_t color_sensor_num){
-  rgb_t temp;
-  if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
-    // Serial.println("I2C device busy");
-    return;
-  }
-  swiic[color_sensor_num].i2c_write(0x08); // send memory to device
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
-  temp.r = swiic[color_sensor_num].i2c_read(false); // read one byte and send NAK afterwards
-  temp.g = swiic[color_sensor_num].i2c_read(false); // read one byte and send NAK afterwards
-  temp.b = swiic[color_sensor_num].i2c_read(true); // read one byte and send NAK afterwards
-  swiic[color_sensor_num].i2c_stop(); // stop communication
-  return temp;
-}
-hsl_t PeanutKingSoccerV4::getColorSensorHSL(uint8_t color_sensor_num){
-  hsl_t temp;
-   if (!swiic[color_sensor_num].i2c_start((0x11<<1)|I2C_WRITE)) { // init transfer
-    // Serial.println("I2C device busy");
-    return;
-  }
-  swiic[color_sensor_num].i2c_write(0x03); // send memory to device
-  swiic[color_sensor_num].i2c_rep_start((0x11<<1)|I2C_READ); // restart for reading
-  temp.h = (uint16_t) (swiic[color_sensor_num].i2c_read(0)|swiic[color_sensor_num].i2c_read(0)<<8); // read one byte and send NAK afterwards
-  temp.s = swiic[color_sensor_num].i2c_read(0); // read one byte and send NAK afterwards
-  temp.l = swiic[color_sensor_num].i2c_read(1); // read one byte and send NAK afterwards
-  swiic[color_sensor_num].i2c_stop(); // stop communication
-  return temp;
-}
-// initialize all IOs, Serial.begin, I2C, timer interrupt, 
-// External interrupt different settings depends on version number 
-void PeanutKingSoccerV4::init(uint8_t mode) {
+
+/* =============================================================================
+ *                              Initialization
+ * ============================================================================= */
+
+  void PeanutKingSoccerV4::init(uint8_t mode) {
   Serial.begin(115200);
-  Serial1.begin(115200);
-  for (uint8_t i=0;i<8;i++){
-    swiic[i].i2c_init();
-  }
-  for (uint8_t i=0; i<4; i++) {
-    pinMode(in1Pin[i],  OUTPUT);
-    pinMode(in2Pin[i],  OUTPUT);
-  }
-  for (uint8_t i=0; i<4; i++)
-    pinMode(buttonPin[i], INPUT_PULLUP);
-  for (uint8_t i=0; i<3; i++)
-    pinMode(ledPin[i], OUTPUT);
-  
-  for (uint8_t i = 0;i<4;i++){
-    pinMode(ULTPin_trig[i],OUTPUT);
-    pinMode(ULTPin_echo[i],INPUT);
-    PcInt::attachInterrupt(ULTPin_echo[i],ULT_Echo_dect_ptr[i],CHANGE);
-  }
-  delay(10);
 
-  compssHandle = gIIC->RegisterDevice(compass_address, 1, IICIT::Speed::SLOW);
-  senbrdHandle = gIIC->RegisterDevice(sensorBoardAddr, 1, IICIT::Speed::SLOW);
-  #if defined(ST7735_RST_PIN)	// reset like Adafruit does
+  // Initialize motor pins
+  motor.init();
+  
+  // Initialize I2C Manager (software + hardware I2C)
+  I2CManager::getInstance().init();
+
+  // Initialize color sensor module
+  colorSensor.init();
+
+  // Initialize compound eye module
+  compoundEye.init();
+
+  // Initialize button module
+  button.init();
+
+  // Initialize LED module
+  led.init();
+
+  // Initialize ultrasonic module
+  ultrasound.init();
+  
+  // Initialize Compass module
+  compass.init();
+
+  // Initialize TFT
+  #if defined(ST7735_RST_PIN)
     FastPin<ST7735_RST_PIN>::setOutput();
     FastPin<ST7735_RST_PIN>::hi();
     FastPin<ST7735_RST_PIN>::lo();
@@ -132,929 +64,558 @@ void PeanutKingSoccerV4::init(uint8_t mode) {
   #endif
   tft.start_TFT();
   tft.fillScreen(ST7735_BLACK);
-
-
-// //---------------------------------------------- Set PWM frequency for D4 & D27 ------------------------------
-// //TCCR0B = TCCR0B & B11111000 | B00000001;    // set timer 0 divisor to     1 for PWM frequency of 62500.00 Hz
-// //TCCR0B = TCCR0B & B11111000 | B00000010;    // set timer 0 divisor to     8 for PWM frequency of  7812.50 Hz
-//   // TCCR0B = TCCR0B & B11111000 | B00000011;    // set timer 0 divisor to    64 for PWM frequency of   976.56 Hz (Default)
-// //TCCR0B = TCCR0B & B11111000 | B00000100;    // set timer 0 divisor to   256 for PWM frequency of   244.14 Hz
-// //TCCR0B = TCCR0B & B11111000 | B00000101;    // set timer 0 divisor to  1024 for PWM frequency of    61.04 Hz
-
-
-// //---------------------------------------------- Set PWM frequency for D11 & D12 -----------------------------
-
-// //TCCR1B = TCCR1B & B11111000 | B00000001;    // set timer 1 divisor to     1 for PWM frequency of 32772.55 Hz
-// TCCR1B = TCCR1B & B11111000 | B00000010;    // set timer 1 divisor to     8 for PWM frequency of  3921.16 Hz
-//   // TCCR1B = TCCR1B & B11111000 | B00000011;    // set timer 1 divisor to    64 for PWM frequency of   490.20 Hz
-// // TCCR1B = TCCR1B & B11111000 | B00000100;    // set timer 1 divisor to   256 for PWM frequency of   122.55 Hz
-// //TCCR1B = TCCR1B & B11111000 | B00000101;    // set timer 1 divisor to  1024 for PWM frequency of    30.64 Hz
-
-// //---------------------------------------------- Set PWM frequency for D9 & D10 ------------------------------
-
-// //TCCR2B = TCCR2B & B11111000 | B00000001;    // set timer 2 divisor to     1 for PWM frequency of 32772.55 Hz
-// // TCCR2B = TCCR2B & B11111000 | B00000010;    // set timer 2 divisor to     8 for PWM frequency of  3921.16 Hz
-// TCCR2B = TCCR2B & B11111000 | B00000011;    // set timer 2 divisor to    32 for PWM frequency of   980.39 Hz
-//   // TCCR2B = TCCR2B & B11111000 | B00000100;    // set timer 2 divisor to    64 for PWM frequency of   490.20 Hz
-// //TCCR2B = TCCR2B & B11111000 | B00000101;    // set timer 2 divisor to   128 for PWM frequency of   245.10 Hz
-// // TCCR2B = TCCR2B & B11111000 | B00000110;    // set timer 2 divisor to   256 for PWM frequency of   122.55 Hz
-// //TCCR2B = TCCR2B & B11111000 | B00000111;    // set timer 2 divisor to  1024 for PWM frequency of    30.64 Hz
-
-
-// //---------------------------------------------- Set PWM frequency for D2, D3 & D5 ---------------------------
-
-// //TCCR3B = TCCR3B & B11111000 | B00000001;    // set timer 3 divisor to     1 for PWM frequency of 32772.55 Hz
-// TCCR3B = TCCR3B & B11111000 | B00000010;    // set timer 3 divisor to     8 for PWM frequency of  3921.16 Hz
-//   // TCCR3B = TCCR3B & B11111000 | B00000011;    // set timer 3 divisor to    64 for PWM frequency of   490.20 Hz
-// // TCCR3B = TCCR3B & B11111000 | B00000100;    // set timer 3 divisor to   256 for PWM frequency of   122.55 Hz
-// //TCCR3B = TCCR3B & B11111000 | B00000101;    // set timer 3 divisor to  1024 for PWM frequency of    30.64 Hz
-
-
-// //---------------------------------------------- Set PWM frequency for D6, D7 & D8 ---------------------------
-
-// //TCCR4B = TCCR4B & B11111000 | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 32772.55 Hz
-// TCCR4B = TCCR4B & B11111000 | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
-//   // TCCR4B = TCCR4B & B11111000 | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
-// // TCCR4B = TCCR4B & B11111000 | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
-// //TCCR4B = TCCR4B & B11111000 | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
-
-
-// //---------------------------------------------- Set PWM frequency for D44, D45 & D46 ------------------------
-
-// //TCCR5B = TCCR5B & B11111000 | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 32772.55 Hz
-// //TCCR5B = TCCR5B & B11111000 | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
-//   // TCCR5B = TCCR5B & B11111000 | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
-// //TCCR5B = TCCR5B & B11111000 | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
-// //TCCR5B = TCCR5B & B11111000 | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
-  
-
-//   /*
-//   //   Timer 1
-//   TCCR1A  = 0x00;           // Normal mode, just as a Timer
-//   TCNT1   = 0;
-//   OCR1A   = 624;             // 8 * 4 / 16 = 2us
-//   // OCR1A = 1250;       // =(16*10^6) / (125*256) -1 (must be <65536)
-//   OCR1A   = 100;            // Hz = ?
-
-//   // TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt
-  
-//   */
-//   // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
-//   // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
-//   // TCCR3A = _BV(COM3A1) | _BV(COM3B1) | _BV(WGM31) | _BV(WGM30);
-//   // TCCR4C = _BV(COM4A1) | _BV(COM4B1) | _BV(WGM41) | _BV(WGM40);
-
-//   TCNT2   = 0;
-//   TCCR2B |= (1 << WGM22);    // CTC mode; Clear Timer on Compare (OCR2A)
-//   // TCCR2A |= (1 << WGM21);    // CTC mode; Clear Timer on Compare (OCR2A)
-//   TIMSK2 |= (1 << OCIE2A);  // enable timer compare interrupt
-//   OCR2A = 63;
-//   // OCR2B = 63;
-//   sei();    //allow interrupts
-
-//   //while ( compassRead() == 400 );
-
-//   // uint8_t l[12];
-//   // for (uint8_t i=0; i<4; i++) {
-//   //   if ( n & (1<<i) ) {
-//   //     uint8_t *p = &l[i * 3];  // 4 bytes per pixel
-//   //     p[0] = 200;                   // R
-//   //     p[1] = 200;                   // G
-//   //     p[2] = 200;                   // B
-//   //   }
-//   // }
-//   // I2CSensorSend(senbrdHandle,LED_RGB,l,12);
-
-//   delay(1500);
-
 }
-
 
 /* =============================================================================
- *                                  Data fetch
+ *                              Data Fetch
  * ============================================================================= */
-void PeanutKingSoccerV4::dataFetch(void) {
-  // int16_t temp;
-  // for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
-  // I2CSensorRead(8, ACC_RAW, 6);
-  // for (uint8_t i=0; i<3; i++) {
-  //   temp  = rxBuff[2*i] & 0xff;
-  //   temp |= rxBuff[2*i+1] << 8;
-  //   Serial.print(temp);   Serial.print(' ');
-  // }
-  // Serial.print(" G: ");
-  // for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
-  // I2CSensorRead(8, GYR_RAW, 6);
-  // for (uint8_t i=0; i<3; i++) {
-  //   temp  = rxBuff[2*i] & 0xff;
-  //   temp |= rxBuff[2*i+1] << 8;
-  //   Serial.print(temp);   Serial.print(' ');
-  // }
-  // Serial.print(" M: ");
-  // for (uint8_t i=0; i<6; i++)     rxBuff[i] = 0;
-  // I2CSensorRead(8, MAG_BUF, 6);
-  // for (uint8_t i=0; i<3; i++) {
-  //   temp  = rxBuff[2*i] & 0xff;
-  //   temp |= rxBuff[2*i+1] << 8;
-  //   Serial.print(temp);   Serial.print(' ');
-  // }
-  // Serial.println(' ');
 
-  for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
-  I2CSensorRead(compssHandle, GET_YAW, 2);
-  compass  = rxBuff[0] & 0xff;
-  compass |= rxBuff[1] << 8;
-  compass = compass/100;
+  void PeanutKingSoccerV4::dataFetch(void) {
+  for (uint8_t pos = Front; pos < PositionCount; pos++) {
+    // Color sensor - RGBC/RGB/HSL/white line by physical position
+    colorRGBC[pos] = colorSensorReadRGBC(pos);
+    colorRGB[pos]  = colorSensorReadRGB(pos);
+    colorHSL[pos]  = colorSensorReadHSL(pos);
+    isWhite[pos]   = isWhiteLine(pos);
 
+    // Ultrasound - distance by physical position
+    distances[pos] = ultrasoundGetDist(pos);
+  }
+
+  // Compound eye
+  compoundEyeReadAll();  // Read all 12 IR sensor values
+  maxEye    = compoundMaxEyeRead();       // Read the index of the IR sensor with maximum reading
+  maxEyeVal = compoundMaxEyeValueRead();  // Read the maximum IR sensor value
+  irAngle   = compoundEyeAngleRead();     // Read the angle of the detected object
   
-
-  compoundEyeRead();
-
-  for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW, 28);
-  for (uint8_t i=0; i<4; i++) {
-    colorRGB[i].r  = rxBuff[6*i]   | rxBuff[6*i+1]<<8;
-    colorRGB[i].g  = rxBuff[6*i+2] | rxBuff[6*i+3]<<8;
-    colorRGB[i].b  = rxBuff[6*i+4] | rxBuff[6*i+5]<<8;
-    groundColor[i] = rxBuff[24+i];
-  }
-
-  for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_HSL, 16);
-  for (uint8_t i=0; i<4; i++) {
-    colorHSL[i].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-    colorHSL[i].s  = rxBuff[4*i+2];
-    colorHSL[i].l  = rxBuff[4*i+3];
-  }
-
-  for (uint8_t i=0; i<16; i++)      rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_HSV, 16);
-  for (uint8_t i=0; i<4; i++) {
-    colorHSV[i].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-    colorHSV[i].s  = rxBuff[4*i+2];
-    colorHSV[i].v  = rxBuff[4*i+3];
-  }
+  // Compass
+  heading = compassRead();
 }
-
-void PeanutKingSoccerV4::I2CSensorRead(IICIT::Handle handle, uint8_t sensor, uint8_t length) {
-  uint8_t _status;
-  txBuff[0] = sensor;
-  _status = gIIC->Write(handle, txBuff, 1);
-  _status = gIIC->Read(handle, rxBuff, length);
-  // I2CSend(addr, txBuff, 1);
-  // I2CRead(addr, rxBuff, length);
-}
-
-void PeanutKingSoccerV4::I2CSensorSend(IICIT::Handle handle, uint8_t sensor, uint8_t *data, uint8_t length) {
-  uint8_t _status;
-  txBuff[0] = sensor;
-  // if (rxBuff[0]!=2) return;
-
-  for (uint8_t i=0; i<length; i++) {
-    txBuff[i+1] = data[i];
-  }
-  _status = gIIC->Write(handle, txBuff, length+1);
-  // I2CSend(addr, txBuff, length+1);
-}
-
-
-IICIT::status_t PeanutKingSoccerV4::rxCpltCallback(const IICIT::status_t status) {
-  return status;
-}
-
-// void PeanutKingSoccerV4::I2CSend(int8_t addr, uint8_t *data, uint8_t length) {
-//   Wire.beginTransmission(addr);
-//   Wire.write(data, length);
-//   Wire.endTransmission();
-// }
-
-// void PeanutKingSoccerV4::I2CRead(int8_t addr, uint8_t *data, uint8_t length) {
-//   uint8_t i=0;
-//   Wire.requestFrom((int)addr, (int)length);
-//   while (Wire.available()) {
-//     data[i++] = Wire.read();
-//   }
-// }
-
 
 /* =============================================================================
- *                                  Sensor Read
+ *                              Motor (wrapper)
  * ============================================================================= */
-bool PeanutKingSoccerV4::buttonRead(uint8_t button_no) {
-  if ( button_no == 1 || button_no == 2 || button_no == 3 || button_no == 4 ) 
-    return !digitalRead(buttonPin[button_no-1]);
-  else
-    return 0;
-}
-uint16_t PeanutKingSoccerV4::compassRead(void) {
-  for (uint8_t i=0; i<2; i++)     rxBuff[i] = 0;
-  I2CSensorRead(compssHandle, GET_YAW, 2);
-  compass  = rxBuff[0] & 0xff;
-  compass |= rxBuff[1] << 8;
-  compass = compass/100;
-  return compass;
-}
-uint8_t PeanutKingSoccerV4::compoundMaxEye(){
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, 13, 1);
-  return rxBuff[0];
-}
-uint8_t PeanutKingSoccerV4::compoundMaxEyeVal(){
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, 12, 1);
-  return rxBuff[0];
-}
-uint8_t PeanutKingSoccerV4::compoundEyeVal(uint8_t n){
-  rxBuff[0] = 0;
-  I2CSensorRead(senbrdHandle, n, 1);
-  return rxBuff[0];
-}
-uint8_t* PeanutKingSoccerV4::compoundEyeRead() {
-  for (uint8_t i=0; i<12; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, IR_RAW, 12);
-  for (uint8_t i=0; i<12; i++) {
-    eye[i]  = rxBuff[i];
-  }
- return eye;
-}
 
-void PeanutKingSoccerV4::compoundEyeCal(float* calData) {
-  uint8_t _status;
-  uint8_t msg[25] = {0};
-  uint16_t eyeCal[12] = {0};
-  msg[0] = IR_CAL;
-  for (uint8_t i=0; i<12; i++) {
-    eyeCal[i] = 4096.0 / calData[i];
+  void PeanutKingSoccerV4::motorConfiguration(MotorId RightFront, MotorId RightBack, MotorId LeftBack, MotorId LeftFront) {
+    motor.mapPort(RightFront, RightBack, LeftBack, LeftFront);
   }
-  for (uint8_t i=0; i<12; i++) {
-    msg[2*i+1] = eyeCal[i] & 0xff;
-    msg[2*i+2] = eyeCal[i] >> 8;
-  }
-  _status = gIIC->Write(senbrdHandle, msg, 25);
-}
 
-
-uint16_t PeanutKingSoccerV4::ultrasonicRead(uint8_t n){
-  if(millis()-ULT_get_interval<30) return ultrasonic[n];
-  if(ultra_send_seq>=3){
-    ultra_send_seq = 0;
-  } else {
-    ultra_send_seq++;
+  void PeanutKingSoccerV4::motorFlipDirection(MotorPos pos, bool flip) {
+    MotorId mi = motor.getPortFromPos(pos);
+    motor.flipDirection(mi, flip);
   }
-  // Serial.print("ULT: ");
-  // Serial.println(ultra_send_seq);
-  // Serial.print("ms: ");
-  // Serial.println(millis());
-  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
-  delayMicroseconds(2);
-  digitalWrite(ULTPin_trig[ultra_send_seq], HIGH);
-  delayMicroseconds(10);
-  digitalWrite(ULTPin_trig[ultra_send_seq], LOW);
-  ULT_get_interval = millis();
-  return ultrasonic[n];
-}
 
-void PeanutKingSoccerV4::ULT_Echo_dect(uint8_t n){
-  if(ultra_send_seq!=n) return;
-  static uint32_t delaystart = 0;
-  delaystart = micros();
-  if (digitalRead(ULTPin_echo[n])){
-    ULT_dt[n] = micros();
-  }else{
-    ULT_dt[n] = micros()-ULT_dt[n];
+  void PeanutKingSoccerV4::motorSetSpeed(MotorPos pos, int16_t speed) {
+    MotorId mi = motor.getPortFromPos(pos);
+    motor.setSpeed(mi, speed);
   }
-  float dist = (float)ULT_dt[n]* 0.17f;
-  if(dist<4500) ultrasonic[n] = (uint16_t)round(dist); 
+
+  void PeanutKingSoccerV4::motorStop(MotorPos pos) {
+    MotorId mi = motor.getPortFromPos(pos);
+    motor.stop(mi);
+  }
+
+  void PeanutKingSoccerV4::motorStopAll(void) {
+    for (uint8_t i = 0; i < 4; i++) {
+      MotorId mi = static_cast<MotorId>(i);
+      motor.stop(mi);
+    }
+  }
+
+  void PeanutKingSoccerV4::motorTestAll(int16_t speed, int duration) {
+    for (uint8_t i = 0; i < 4; i++) {
+      MotorPos pos = static_cast<MotorPos>(i);
+      motorSetSpeed(pos, speed);
+      delay(duration);
+      motorStop(pos);
+      delay(duration);
+    }
+    motorStopAll();
+    delay(duration);
+  }
+
+/* =============================================================================
+*                              Movement (wrapper)
+* ============================================================================= */
   
-}
+  void PeanutKingSoccerV4::move(float mAngle, float mSpeed, float rotate) {
+    uint16_t compassReading = 65535; // Default to invalid value
+    // If compass correction is enabled, read the compass heading
+    if (compassCorrectEnabled) { compassReading = compassRead(); }
+    // Check out-of-bounds status using color sensors (only when prevention is enabled)
+    bool isOutBound[4] = {false, false, false, false};
+    if (outBoundPreventEnabled) {
+      isOutBound[0] = this->isWhiteLine(Front); // Front
+      isOutBound[1] = this->isWhiteLine(Right); // Right
+      isOutBound[2] = this->isWhiteLine(Back); // Back
+      isOutBound[3] = this->isWhiteLine(Left); // Left
+    }
 
-void PeanutKingSoccerV4::setColorBL(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  uint8_t _status;
-  txBuff[0] = COLOR_BL;
-  for (uint8_t i=0; i<4; i++) {
-    uint8_t *p = &txBuff[1 + i*4];  // 4 bytes per pixel
-    p[0] = r;                   // R
-    p[1] = g;                   // G
-    p[2] = b;                   // B
-    p[3] = w;                   // W
+    // Determine movement method based on enabled features
+    WheelSpeeds ws = {0, 0, 0, 0}; // Initialize wheel speeds (RF, RB, LB, LF)
+    // If both compass correction and out-of-bounds prevention are enabled, use correctedMove
+    if (compassCorrectEnabled && outBoundPreventEnabled) {
+      ws = movement.correctedMove(mAngle, mSpeed, compassReading, isOutBound);
+    }
+    // If only compass correction is enabled, use withCorr
+    else if (compassCorrectEnabled) {
+      ws = movement.withCorr(mAngle, mSpeed, compassReading);
+    }
+    // If only out-of-bounds prevention is enabled, use outBoundPrevent
+    else if (outBoundPreventEnabled) {
+      ws = movement.outBoundPrevent(mAngle, mSpeed, isOutBound);
+    }
+    // If neither feature is enabled, move without any corrections
+    else {
+      ws = movement.byAngle(mAngle, mSpeed, rotate);
+    }
+    // Apply the computed speeds by mapping physical position to motor port
+    motorSetSpeed(RightFront, ws.rightFront);
+    motorSetSpeed(RightBack,  ws.rightBack);
+    motorSetSpeed(LeftBack,   ws.leftBack);
+    motorSetSpeed(LeftFront,  ws.leftFront);
   }
-  _status = gIIC->Write(senbrdHandle, txBuff, 17);
+
+  void PeanutKingSoccerV4::moveTest(float speed) {
+    move(0, speed, 0);
+    delay(1000);
+    move(45, speed, 0);
+    delay(1000);
+    move(90, speed, 0);
+    delay(1000);
+    this->motorStopAll();
+    delay(500);
+  }
+
+/* =============================================================================
+ *                              Color Sensor (soft I2C)
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::colorSensorConfiguration(ColorSensorId Front, ColorSensorId Right, ColorSensorId Back, ColorSensorId Left) {
+  colorSensor.mapPort(Front, Right, Back, Left);
 }
 
-
-// void PeanutKingSoccerV4::sendLED(void) {
-// }
-// f l r b
-// f b l r{
-
-
-uint16_t PeanutKingSoccerV4::getRedColor(uint8_t i) {
-  const uint8_t ci[4] = {0, 3, 1, 2};
-  for (uint8_t i=0; i<2; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 2);
-  colorRGB[i].r  = rxBuff[0] | rxBuff[1]<<8;
-  return colorRGB[i].r;
+RGBC PeanutKingSoccerV4::colorSensorReadRGBC(SensorPos pos) {
+  return colorSensor.readRGBRaw(colorSensor.getPortFromPos(pos));
 }
 
-uint16_t PeanutKingSoccerV4::floorColorRead(uint8_t i) {
-  const uint8_t ci[4] = {0, 3, 1, 2};
-  for (uint8_t i=0; i<6; i++)    rxBuff[i] = 0;
-  I2CSensorRead(senbrdHandle, COLOR_RAW+ci[i]*8, 6);
-  colorRGB[i].r  = rxBuff[0] | rxBuff[1]<<8;
-  colorRGB[i].g  = rxBuff[2] | rxBuff[3]<<8;
-  colorRGB[i].b  = rxBuff[4] | rxBuff[5]<<8;
-  return colorRGB[i].r + colorRGB[i].g + colorRGB[i].b;
+RGB PeanutKingSoccerV4::colorSensorReadRGB(SensorPos pos) {
+  return colorSensor.readRGB(colorSensor.getPortFromPos(pos));
 }
 
-// uint8_t PeanutKingSoccerV4::colorReadAll(void) {
-//   const uint8_t ci[4] = {0, 3, 1, 2};
-  
-//   for (uint8_t i=0; i<32; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_RAW, 32);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorRGB[ci[i]].r  = rxBuff[8*i]   | rxBuff[8*i+1]<<8;
-//     colorRGB[ci[i]].g  = rxBuff[8*i+2] | rxBuff[8*i+3]<<8;
-//     colorRGB[ci[i]].b  = rxBuff[8*i+4] | rxBuff[8*i+5]<<8;
-//   }
-//     groundColor[i] = rxBuff[24+i];
+HSL PeanutKingSoccerV4::colorSensorReadHSL(SensorPos pos) {
+  return colorSensor.readHSL(colorSensor.getPortFromPos(pos));
+}
 
-//   for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_HSL, 16);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorHSL[ci[i]].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-//     colorHSL[ci[i]].s  = rxBuff[4*i+2];
-//     colorHSL[ci[i]].l  = rxBuff[4*i+3];
-//   }
+bool PeanutKingSoccerV4::isWhiteLine(SensorPos pos) {
+  return colorSensor.isWhiteLine(colorSensor.getPortFromPos(pos));
+}
 
-//   for (uint8_t i=0; i<16; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_HSV, 16);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorHSV[ci[i]].h  = rxBuff[4*i] | rxBuff[4*i+1]<<8;
-//     colorHSV[ci[i]].s  = rxBuff[4*i+2];
-//     colorHSV[ci[i]].v  = rxBuff[4*i+3];
-//   }
-//   for (uint8_t i=0; i<28; i++)    rxBuff[i] = 0;
-//   I2CSensorRead(senbrdHandle, COLOR_RAW, 28);
-//   for (uint8_t i=0; i<4; i++) {
-//     colorRGB[i].r  = rxBuff[6*i]   | rxBuff[6*i+1]<<8;
-//     colorRGB[i].g  = rxBuff[6*i+2] | rxBuff[6*i+3]<<8;
-//     colorRGB[i].b  = rxBuff[6*i+4] | rxBuff[6*i+5]<<8;
-//     groundColor[i] = rxBuff[24+i];
-//   }
-// }
-void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, char string[]) {
+void PeanutKingSoccerV4::colorSensorCalBaseline(SensorPos pos, uint8_t samples) {
+  colorSensor.calBaseline(colorSensor.getPortFromPos(pos), samples);
+}
+GreenBaseline PeanutKingSoccerV4::colorSensorGetBaseline(SensorPos pos) {
+  return colorSensor.getBaseline(colorSensor.getPortFromPos(pos));
+}
+
+/* =============================================================================
+ *                       IR Compound Eye (wrapper)
+ * ============================================================================= */
+
+uint8_t* PeanutKingSoccerV4::compoundEyeReadAll() {
+  uint8_t* eyePtr = compoundEye.readAll();
+  for (uint8_t i = 0; i < 12; i++) {
+    eyes[i] = eyePtr[i];
+  }
+  return eyes;
+}
+
+EyeId PeanutKingSoccerV4::compoundMaxEyeRead() {
+  return compoundEye.readMaxEye();
+}
+
+uint8_t PeanutKingSoccerV4::compoundMaxEyeValueRead() {
+  return compoundEye.readMaxEyeVal();
+}
+
+uint8_t PeanutKingSoccerV4::compoundEyeValueRead(EyeId eyeIndex) {
+  return compoundEye.readEyeVal(eyeIndex);
+}
+
+uint16_t PeanutKingSoccerV4::compoundEyeAngleRead(void) {
+  return compoundEye.readAngle();
+}
+
+uint8_t PeanutKingSoccerV4::compoundEyeModeRead(void) {
+  return compoundEye.readMode();
+}
+
+/* =============================================================================
+ *                       Button (wrapper for compatibility)
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::buttonUpdate(void) {
+  button.update();
+}
+
+ButtonState PeanutKingSoccerV4::buttonStateRead(ButtonId btn) {
+  return button.readState(btn);
+}
+
+/* =============================================================================
+ *                       LED (wrapper for compatibility)
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::onBoardLedSet(LEDColor color) {
+  led.setLED(color);
+}
+void PeanutKingSoccerV4::onBoardLedSet(uint8_t LED, uint8_t status) {
+  led.setLED(LED, status);
+}
+
+/* =============================================================================
+ *                       Ultrasound (wrapper)
+ * ============================================================================= */
+
+uint16_t PeanutKingSoccerV4::ultrasoundGetDist(SensorPos pos) {
+  UltrasoundId port = ultrasound.getPortFromPos(pos);
+  return ultrasound.read(port);
+}
+
+void PeanutKingSoccerV4::ultrasoundConfiguration(UltrasoundId Front, UltrasoundId Right, UltrasoundId Back, UltrasoundId Left) {
+  ultrasound.mapPort(Front, Right, Back, Left);
+}
+
+void PeanutKingSoccerV4::ultrasoundSetEnabled(bool front, bool right, bool back, bool left) {
+  ultrasound.enable(ultrasound.getPortFromPos(Front), front);
+  ultrasound.enable(ultrasound.getPortFromPos(Right), right);
+  ultrasound.enable(ultrasound.getPortFromPos(Back),  back);
+  ultrasound.enable(ultrasound.getPortFromPos(Left),  left);
+}
+
+void PeanutKingSoccerV4::ultrasoundEnableAll(bool enabled) {
+  ultrasound.setEnableMask(enabled ? 0x0F : 0x00);
+}
+
+/* =============================================================================
+ *                              Compass (wrapper)
+ * ============================================================================= */
+
+uint16_t PeanutKingSoccerV4::compassRead(void)         { return compass.read(); }
+int16_t* PeanutKingSoccerV4::compassReadRawAccel(void) { return compass.readRawAccel(); }
+int16_t* PeanutKingSoccerV4::compassReadRawGyro(void)  { return compass.readRawGyro(); }
+int16_t* PeanutKingSoccerV4::compassReadRawMag(void)   { return compass.readRawMag(); }
+
+void PeanutKingSoccerV4::compassUpdateNorth(void) { compass.updateNorthOffset(); }
+
+/* =============================================================================
+ *                              TFT Display
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::screenSetTextColor(uint16_t color) {
+  tft.setTextColor(color);
+}
+
+void PeanutKingSoccerV4::screenSetTextColor(uint16_t fg, uint16_t bg) {
+  tft.setTextColor(fg, bg);
+}
+
+void PeanutKingSoccerV4::screenSetTextSize(uint8_t size) {
+  tft.setTextSize(size);
+}
+
+void PeanutKingSoccerV4::screenPrintText(uint8_t col, uint8_t row, const char* string) {
   tft.setCursor(col*6, row*10);
   tft.print(string);
 }
 
-void PeanutKingSoccerV4::setScreen(uint8_t col, uint8_t row, int16_t numbers) {
+void PeanutKingSoccerV4::screenPrintNumber(uint8_t col, uint8_t row, int16_t number) {
   tft.setCursor(col*6, row*10);
-  tft.print(numbers);
+  tft.print(number);
 }
-void PeanutKingSoccerV4::clearScreen(void) {
+
+void PeanutKingSoccerV4::screenClear(void) {
   tft.fillScreen(ST7735_BLACK);
 }
-uint16_t PeanutKingSoccerV4::whiteLineCal(uint8_t pin_no) {
 
-  whiteLineThreshold[pin_no] = getColorSensorHSL(pin_no).h;
-  return whiteLineThreshold[pin_no];
-}
-
-bool PeanutKingSoccerV4::whiteLineCheck(uint8_t i,uint16_t thresh) {
-  // floorColorRead(i);
+void PeanutKingSoccerV4::screenDrawAnglePointer(int x, int y, int radius, uint16_t angle, uint16_t arrowColor) {
+  // Normalize angle to [0, 360) range
+  angle = angle % 360;
   
-  colorHSL[i] = getColorSensorHSL(i);
-  if (abs((int)colorHSL[i].h-(int)thresh) < 10 && colorHSL[i].l >= 50) {
-    isWhite[i] = true;
-  } else {
-    isWhite[i] = false;
-  }
-  return isWhite[i];
+  // Clear previous indicator circle
+  tft.fillCircle(x, y, radius + 2, ST7735_BLACK);
+
+  // Draw compass circle outline
+  tft.drawCircle(x, y, radius, ST7735_WHITE);
+
+  // Draw N/S/E/W markers
+  tft.setTextSize(1);
+  tft.setTextColor(ST7735_RED);
+  tft.setCursor(x - 3, y - radius - 10);
+  tft.print("N");
+  tft.setTextColor(ST7735_WHITE);
+  tft.setCursor(x - 3, y + radius + 2);
+  tft.print("S");
+  tft.setCursor(x + radius + 2, y - 3);
+  tft.print("E");
+  tft.setCursor(x - radius - 6, y - 3);
+  tft.print("W");
+
+  // Calculate arrow position based on heading angle
+  float angleRad = angle * 3.14159 / 180.0;
+  int arrowTipX = x + (int)(sin(angleRad) * radius);
+  int arrowTipY = y - (int)(cos(angleRad) * radius);
+
+  // Draw arrow line from center to tip
+  tft.drawLine(x, y, arrowTipX, arrowTipY, arrowColor);
+
+  // Draw arrow head (filled triangle at tip)
+  int headSize = 5;
+  float perpAngle = angleRad + 3.14159 / 2.0;
+  int head1X = arrowTipX - (int)(sin(angleRad) * headSize) + (int)(cos(perpAngle) * headSize / 2);
+  int head1Y = arrowTipY + (int)(cos(angleRad) * headSize) + (int)(sin(perpAngle) * headSize / 2);
+  int head2X = arrowTipX - (int)(sin(angleRad) * headSize) - (int)(cos(perpAngle) * headSize / 2);
+  int head2Y = arrowTipY + (int)(cos(angleRad) * headSize) - (int)(sin(perpAngle) * headSize / 2);
+  tft.fillTriangle(arrowTipX, arrowTipY, head1X, head1Y, head2X, head2Y, arrowColor);
 }
-
-void PeanutKingSoccerV4::setOnBrdLED(uint8_t color) {
-  digitalWrite(ledPin[0], color&1);
-  digitalWrite(ledPin[1], color&2);
-  digitalWrite(ledPin[2], color&4);
-}
-void PeanutKingSoccerV4::setOnBrdLED(uint8_t LED, uint8_t status) {
-  digitalWrite(ledPin[LED], status);
-}
-/* =============================================================================
- *                                  Motors
- * ============================================================================= */
-// simple motor turn, [mi] cannot add, one by one 
-void PeanutKingSoccerV4::motorSet(uint8_t mi, int16_t speed) {
-
-  if ( speed == 0) {
-    digitalWrite(in1Pin[mi], HIGH);
-    digitalWrite(in2Pin[mi], HIGH);
-  }
-  else if (speed > 0) {
-    analogWrite(in1Pin[mi], speed );
-    digitalWrite(in2Pin[mi], LOW);
-  }
-  else {
-    digitalWrite(in1Pin[mi], LOW );
-    analogWrite(in2Pin[mi], - speed);
-  }
-}
-
-void PeanutKingSoccerV4::motorStop(void) {
-  for(uint8_t i=0; i<4; i++) {
-    digitalWrite(in1Pin[i], HIGH);
-    digitalWrite(in2Pin[i], HIGH);
-  }
-}
-
-
-void PeanutKingSoccerV4::motorDisable(void) {
-  for(uint8_t i=0; i<4; i++) {
-    digitalWrite(in1Pin[i], HIGH);
-    digitalWrite(in2Pin[i], HIGH);
-    currentSpeed[i] = 0;
-  }
-}
-
-
-
-void PeanutKingSoccerV4::motorControl(float mAngle, float mSpeed, float rotate) {
-  int16_t mc[4];
-
-  mc[0] = -mSpeed*sin( (mAngle+45.0)*pi/180.0 );
-  mc[1] = -mSpeed*cos( (mAngle+45.0)*pi/180.0 );
-  mc[2] = -mc[0];
-  mc[3] = -mc[1];
-
-  for(int8_t i=3; i>=0; i--) {
-    motorSet(i, mc[i] - rotate);
-  }
-}
-
-void PeanutKingSoccerV4::move(int16_t speed_X, int16_t speed_Y) {
-  double mAngle = atan((double)speed_Y/(double)speed_X) * pi;
-  if ( speed_X<0 ) mAngle += 180;
-  if ( mAngle<0 )  mAngle += 360;
-  
-  uint16_t mSpeed = sqrt( speed_X*speed_X + speed_Y*speed_Y );
-  
-  moveSmart(mAngle, mSpeed);
-}
-
-// motor move + compass as reference
-void PeanutKingSoccerV4::moveSmart(uint16_t angular_direction, int16_t speed, int16_t angle, uint8_t precision) {
-  int16_t c = compassRead() - angle;
-  int16_t rotation = c < 180 ? -c : 360 - c;
-  
-  //speed - 50
-  //rotation = abs(speed) < 120 ? rotation : rotation * 1.5;
-  rotation = rotation * (precision+3)/12;
-  // if ( speed==0 && abs(rotation)>10 ) rotation = rotation < 35 ? 35 : rotation;
-  if ( speed==0 && abs(rotation)<12 ) rotation = 0;
-  motorControl(angular_direction, speed, rotation);
-}
-
-
 
 /* =============================================================================
- *                              Advance Control
+ *                              Bluetooth
  * ============================================================================= */
 
-// motor test ------------------------------------------------------
-uint8_t PeanutKingSoccerV4::motorTest (void) {
-  static uint32_t motorTimer = 0;
-  static uint8_t i = 0;
-  uint32_t timeNow = millis();
-  
-  if ( timeNow - motorTimer > 1000) {
-    motorTimer = timeNow;
-    for (uint8_t j=0; j<4; j++) {
-      if ( i<4 )
-        motorSet( j, i==j ? 100 : 0 );
-      else
-        motorSet( j, (i-4)==j ? -100 : 0 );
-    }
-    i++;
-    if ( i==9 )
-      i=0;
-  }
+bool PeanutKingSoccerV4::bluetoothInit(HardwareSerial* port, RemoteMode mode) { return bluetooth.init(port, mode); }
+bool PeanutKingSoccerV4::bluetoothRename(const char* name) { return bluetooth.rename(name); }
+void PeanutKingSoccerV4::bluetoothSetConfig(const String& configMessage) { bluetooth.setConfig(configMessage); }
+bool PeanutKingSoccerV4::bluetoothReset(void) { return bluetooth.reset(); }
+
+bool PeanutKingSoccerV4::bluetoothIsConnected(void) {
+  return bluetooth.isConnected();
 }
-
-
-//                                  strategy
-// =================================================================================
-void PeanutKingSoccerV4::Chase(int& direct, int& speed, int& rotation) {
-  static bool outside[4];
-  //  attack
-  //  Defend
-  //  MovingSpeed
-  //  BallPossession
-  //  Precision
-
-  int16_t 
-    attackSpeed = 80 + btAttributes[2]*16,                // 150
-    defendSpeed = 50 + btAttributes[2]*12,
-    BallPossessionSpeed = attackSpeed-btAttributes[3]*4,  // 100
-    reading = eye[maxEye];
-
-  uint8_t quadrant;
-  
-    speed = 120;//reading > 500 ? BallPossessionSpeed : attackSpeed;
-    //rotation = (ultrasonic[right] - ultrasonic[left])/6;
-    
-    if (eyeAngle<135)
-      direct = eyeAngle*1.5;
-    else if (eyeAngle>225)
-      direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
-    else {
-      if (ultrasonic[left] > ultrasonic[right])
-        direct = eyeAngle*1.5;
-      else
-        direct = eyeAngle * 1.5 - 180; //359 - (359-eyeAngle)*1.5;
-    }
-    
-    /*
-    uint16_t moveAngle = direct;
-    if (moveAngle < 45 || moveAngle > 315)
-      quadrant = front;
-    else if (moveAngle < 135)
-      quadrant = right;
-    else if (moveAngle < 225)
-      quadrant = back;
-    else
-      quadrant = left;
-
-    if ( ultrasonic[quadrant]>31 )
-      outside[quadrant] = false;
-    else {
-      whiteLineCheck(quadrant);
-      if ( isWhite[quadrant] )
-        outside[quadrant] = true;
-    }
-    if ( outside[quadrant] )
-      speed = 0;
-    if ( outside[front] && (eyeAngle<100 || eyeAngle>260) )
-      speed = 0;
-    else if ( outside[back]  && (eyeAngle>270 && eyeAngle>90) )
-      speed = 0;
-    else 
-    if ( outside[left] ) {
-      if (eyeAngle<120)
-        direct = eyeAngle*1.5;
-      else if (eyeAngle>300)
-        direct = 0;
-      else if (eyeAngle>265)
-        speed = 0;
-      else if (eyeAngle>195)
-        direct = 180;
-      else
-        direct = 360 - (360-eyeAngle)*1.5;
-    }
-    else if ( outside[right] ) {
-      if (eyeAngle>240)
-        direct = 360 - (360-eyeAngle)*1.5;
-      else if (eyeAngle<60)
-        direct = 0;
-      else if (eyeAngle<95)
-        speed = 0;
-      else if (eyeAngle<165)
-        direct = 180;
-      else
-        direct = eyeAngle*1.5;
-    }
-    */
+bool PeanutKingSoccerV4::bluetoothIsConfig(void) {
+  return bluetooth.isConfigured();
 }
-
-void PeanutKingSoccerV4::Back(int& direct, int& speed, int& rotation) {
-  int16_t 
-    defendSpeed = 50 + btAttributes[2]*12,          // 80
-    y = ultrasonic[back] - (11 - btAttributes[2]) * 8,
-    x = (ultrasonic[left] - ultrasonic[right])/2;
-
-  speed = defendSpeed;
-  if ( abs(x) > 50 || ultrasonic[left]+ultrasonic[right]<130 )
-    y -= 25;
-  if ( y > 30 )
-    direct = atan( (float)x/y)*180+180;
-  else if ( x > 4 )
-    direct = 270;
-  else if ( x < -4 )
-    direct = 90;
-  else if ( y > 4 )
-    direct = 180;
-  else if ( y < -4 )
-    direct = 0;
-  else {
-    direct = 0;
-    speed = 0;
-  }
-}
-
-
-
-// uint16_t PeanutKingSoccerV4::sort(uint16_t a[], uint8_t size) {
-//   for(uint8_t i=0; i<(size-1); i++) {
-//     for(uint8_t o=0; o<(size-(i+1)); o++) {
-//       if(a[o] > a[o+1]) {
-//         uint16_t t = a[o];
-//         a[o] = a[o+1];
-//         a[o+1] = t;
-//       }
-//     }
-//   }
-//   return a[(size-1)/2];
-// }
-
-// hsv_t PeanutKingSoccerV4::rgb2hsv(rgb_t in) {
-//   hsv_t      out;
-//   int16_t  min, max, delta;
-
-//   min = in.r < in.g ? in.r : in.g;
-//   min = min  < in.b ? min  : in.b;
-
-//   max = in.r > in.g ? in.r : in.g;
-//   max = max  > in.b ? max  : in.b;
-  
-//   out.v = max;                                // v
-//   delta = max - min;
-//   if ( max == 0 ) { // if max is 0, then r = g = b = 0
-//     out.s = 0;                                // s = 0
-//     out.h = NAN;                              // h is now undefined
-//   }
-//   else if ( delta < 1 ) { // grey color
-//     out.s = 0;
-//     out.h = 0;                                // undefined
-//   }
-//   else {
-//   // NOTE: if Max is == 0, this divide would cause a crash
-//     out.s = 255 * delta / max;                // s
-
-//     if ( in.g >= max )                    // > is bogus, just keeps compilor happy
-//       out.h = 120 + int16_t( in.b - in.r ) * 60 / delta;  // between cyan & yellow
-//     else
-//     if ( in.b >= max )    
-//       out.h = 240 + int16_t( in.r - in.g ) * 60 / delta;  // between magenta & cyan
-//     else {
-//       out.h = 360 + int16_t( in.g - in.b ) * 60 / delta;  // between yellow & magenta
-//       if ( out.h > 360 )
-//         out.h -= 360;
-//     }
-//   }
-//   return out;
-// }
-
-
-// // Bluetooth ------------------------------------------------------
-// void PeanutKingSoccerV4::bluetoothSend(char string[]) {
-// // send char
-//   Serial1.write(string, sizeof(string));
-// }
-
-// void PeanutKingSoccerV4::bluetoothReceive(void) {
-// // send char
-//   btRxBuffer[0] = Serial1.read();
-// }
-
-
-// old function
-void PeanutKingSoccerV4::enableScanning(bool enable, uint16_t sensorType, bool enableLED) {
-  // autoScanEnabled = enable;
-  // autoScanSensors = sensorType;
-  // ledEnabled = enableLED;
-}
-
-bool PeanutKingSoccerV4::buttTrigRead(uint8_t pin) {
-  // button
-  return digitalRead(buttonPin[pin]);
-}
-
-void PeanutKingSoccerV4::buttons(void) {
-  static uint32_t holdTimer[4] = {0};
-  uint32_t currentTime = millis();
-
-  for (uint8_t i=0; i<4; i++) {
-    bool b = !digitalRead(buttonPin[i]);
-    if ( b ) {                  // Pressed
-      switch(button[i]) {
-        case NONE:
-          button[i] = TAP;
-          holdTimer[i] = currentTime;
-        break;
-        case TAP:
-          button[i] = PRESS;
-          // if ( currentTime - holdTimer[i] > TAP_DURATION ) {
-          // }
-        break;
-        case TAP2:
-          if ( currentTime - holdTimer[i] > HOLD_DURATION ) {
-            button[i] = HOLD2;
-          }
-        break;
-        case TAP3:
-          if ( currentTime - holdTimer[i] > HOLD_DURATION )
-            button[i] = RELEASE;
-        break;
-        case PRESS:
-          if ( currentTime - holdTimer[i] > HOLD_DURATION ) {
-            button[i] = HOLD;
-          }
-        break;
-        case TAP1_W:
-          holdTimer[i] = currentTime;
-          button[i] = TAP2;
-        break;
-        case TAP2_W:
-          holdTimer[i] = currentTime;
-          button[i] = TAP3;
-        break;
-        case TAP3_W:
-          if ( currentTime - holdTimer[i] > HOLD_DURATION )
-            button[i] = RELEASE;
-        break;
-        case RELEASE:
-        case RELEASE_S:
-        case RELEASE_L:
-          button[i] = TAP;
-        break;
-        case HOLD:
-        break;
-        default:
-        break;
-      }
-    }
-    else {                                                // Release
-      switch(button[i]) {
-        case TAP:
-          button[i] = TAP1_W;
-          holdTimer[i] = currentTime;
-        break;
-        case TAP2:
-          button[i] = TAP2_W;
-          holdTimer[i] = currentTime;
-        break;
-        case TAP3:
-          button[i] = RELEASE;
-          holdTimer[i] = currentTime;
-        break;
-        case PRESS:
-          button[i] = RELEASE_S;
-        break;
-        case TAP1_W:
-          if ( currentTime - holdTimer[i] > WAIT_DURATION )
-            button[i] = RELEASE_S;
-        break;
-        case HOLD:
-          button[i] = RELEASE_L;
-        break;
-        case TAP2_W:
-          if ( currentTime - holdTimer[i] > WAIT_DURATION )
-            button[i] = TAP2_R;
-        break;
-        case TAP3_W:
-          if ( currentTime - holdTimer[i] > WAIT_DURATION )
-            button[i] = TAP3_R;
-        break;
-        case RELEASE:
-        case RELEASE_S:
-        case RELEASE_L:
-        case TAP2_R:
-        case TAP3_R:
-          button[i] = NONE;
-        break;
-        default:
-          button[i] = NONE;
-        break;
-      }
-    }
-  }
-  // return button[i];
-}
-
-
-
-void PeanutKingSoccerV4::bluetoothAttributes() {
-
-}
-
-
-typedef enum
-{
-  FORWARD= 'F',
-  BACKWARD ='B',
-  LEFT ='L',
-  RIGHT= 'R',
-  CIRCLE= 'C',
-  CROSS= 'X',
-  TRIANGLE= 'T',
-  SQUARE= 'S',
-  START= 'A',
-  PAUSE ='P'
-}BluetoothCmd;
 void PeanutKingSoccerV4::bluetoothRemote(void) {
-  static uint32_t last_ticks = 0;
-  static BluetoothCmd v = PAUSE;
-  static char msg[2] = {0};
-  // if(millis() - last_ticks>80){
-    // Serial.print("Hi");
-  //   Serial1.println(millis());
-  //   Serial1.print("$");
-  //   bluetoothSendStr();
-  //   Serial1.print("$");
-  //   last_ticks = millis();
-  // }
-  if (Serial1.available()) {
-    // v = Serial1.read();
-    Serial1.readBytes(msg, 2);
-    Serial.print("2char:");
-    Serial.print(msg[0]);
-    Serial.print(" ");
-    Serial.println(msg[1]);
-    if(msg[1] == '0'){
-      v = msg[0];
-    }else if(msg[1] == '1'){
-      v = PAUSE;
-    }
+  // process Bluetooth serial data and commands
+  bluetooth.processSerial();
+
+  // If the module is not in legacy mode, check if it is configured
+  if (bluetooth.getMode() != PILA_LEGACY && !bluetooth.isConfigured()) {
+    bluetooth.sendConfig();
+    return;
+  }
+
+  // check connection status to app and handle disconnection
+  // if (!bluetooth.isConnected()) {
     
-  
-      switch (v) {
-          case FORWARD:
-            Serial.println("front");
-            motorSet(0,120);
-            motorSet(1,120);
-            motorSet(2,-120);
-            motorSet(3,-120);
-            // setLED( 1 << 3 | 1<<4, 0, 255, 0, 0);
-            break;
-          case BACKWARD:
-            Serial.println("back");
-            motorSet(0,-120);
-            motorSet(1,-120);
-            motorSet(2,120);
-            motorSet(3,120);
-            // setLED(1<<0 | 1<<7, 0, 255, 0, 0);
-            break;
-          case RIGHT:
-            Serial.println("left");
-            
-            motorSet(0,-120);
-            motorSet(1,120);
-            motorSet(2,120);
-            motorSet(3,-120);
-            // setLED(1<<2 | 1<<1, 0, 255, 0, 0);
-            break;
-          case LEFT:
-            Serial.println("right");
-            motorSet(0,120);
-            motorSet(1,-120);
-            motorSet(2,-120);
-            motorSet(3,120);
-            // setLED(1<<6 | 1<<5, 0, 255, 0, 0);
-            break;
-          case CIRCLE:
-            Serial.println("rot ccw");
-            motorSet(0,120);
-            motorSet(1,120);
-            motorSet(2,120);
-            motorSet(3,120);
-            break;
-          case SQUARE:
-            Serial.println("rot cw");
-            motorSet(0,-120);
-            motorSet(1,-120);
-            motorSet(2,-120);
-            motorSet(3,-120);
-            break;
-          case PAUSE:
-            Serial.println("Stop");
-            motorSet(0,0);
-            motorSet(1,0);
-            motorSet(2,0);
-            motorSet(3,0);
-            // setLED(255, 0, 0, 0, 0);
-            break;
-          case START:
-            // setLED(255, 255, 255, 0, 0);
-            break;
-        }
+  // }
+
+  // Process all pending commands from the queue
+  RemoteMode mode = bluetooth.getMode();
+  while (bluetooth.hasCommand()) {
+    RxCommand cmd = bluetooth.getCommand();
+    // Handle commands of PILA mode
+    if (mode == PILA_LEGACY || mode == PILA_CONFIG) {
+      _handlePILACommand(cmd);
     }
+    // Handle commands of DASHBOARD mode
+    else {
+      // _handleDashboardCommand(cmd);
+    }
+  }
+
+  // Auto-stop: if last command was not movement, re-enable compass correction and stop
+  if (mode != DASHBOARD && _lastRxCmdType != CMD_CIRCLE && _lastRxCmdType != CMD_JOYSTICK) {
+    compassCorrectEnabled = true;
+    move(0, 0);
+  }
+
+  // Sending telemetry data of legacy mode
+  // format: soccer,<compass>,<ultrasound_front>,<ultrasound_back>,<ultrasound_left>,<ultrasound_right>,<max_eye>,<max_eye_value>
+  if (mode == PILA_LEGACY && bluetooth.isConnected() && millis() - _lastSendTime > 1000) {
+    String telemetry = "soccer";
+    telemetry += "," + String(compassRead());
+    telemetry += "," + String(ultrasoundGetDist(Front));
+    telemetry += "," + String(ultrasoundGetDist(Back));
+    telemetry += "," + String(ultrasoundGetDist(Left));
+    telemetry += "," + String(ultrasoundGetDist(Right));
+    telemetry += "," + String(compoundMaxEyeRead());
+    telemetry += "," + String(compoundMaxEyeValueRead());
+    telemetry += "\n";
+    bluetooth.sendRaw(telemetry);
+    _lastSendTime = millis();
+  }
 }
 
-//command(uint8_t value)   send(value, 0);
-/************ low level data pushing commands **********/
+// ── Outputs ──────────────────────────────────────────────────
 
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, int value) { bluetooth.sendOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, float value) { bluetooth.sendOutput(name, value); }
+void PeanutKingSoccerV4::bluetoothSendOutput(const String& name, bool value) { bluetooth.sendOutput(name, value); }
 
+// ── Named getters ────────────────────────────────────────────
 
-
-
-
-void btSetupnTest(){
-  char setBaud[] = "AT+BAUD8";
-  
-  Serial1.begin(9600);
-
-  Serial1.write(setBaud, sizeof(setBaud));
-
-  Serial1.end();
-  Serial1.begin(115200);
+bool PeanutKingSoccerV4::bluetoothGetToggle(const String& name) {
+  return bluetooth.getToggleState(name);
+}
+int PeanutKingSoccerV4::bluetoothGetSlider(const String& name) {
+  return bluetooth.getSliderValue(name);
+}
+String PeanutKingSoccerV4::bluetoothGetTextField(const String& name) {
+  return bluetooth.getTextFieldValue(name);
+}
+JoystickState PeanutKingSoccerV4::bluetoothGetJoystick(const String& name) {
+  return bluetooth.getJoystick(name);
 }
 
+// ── Callbacks ────────────────────────────────────────────────
+
+void PeanutKingSoccerV4::bluetoothOnButton(const String& name, ButtonCallback callback) {
+  bluetooth.onButton(name, callback);
+}
+
+// ── Soccer config: widgets + outputs ─────────────────────────
+
+void PeanutKingSoccerV4::bluetoothSetSoccerButton(InputComponentType type) {
+  // Fixed widget names: ButtonType → SoccerBtn, ToggleButtonType → SoccerTog
+  switch (type) {
+    case ButtonType:       bluetooth._addButton("SoccerBtn"); break;
+    case ToggleButtonType: bluetooth._addToggle("SoccerTog"); break;
+    default: break;
+  }
+}
+
+void PeanutKingSoccerV4::bluetoothSetSoccerOutput(const char* name) {
+  bluetooth._addOutput(name);
+}
+
+/* =============================================================================
+ *                         PILA Command Handler
+ * ============================================================================= */
+
+void PeanutKingSoccerV4::_handlePILACommand(const RxCommand& cmd) {
+  switch (cmd.type) {
+    case CMD_JOYSTICK:
+      compassCorrectEnabled = true;
+      move((float)cmd.first, (float)cmd.second);
+      break;
+
+    case CMD_PAUSE:
+      motorStopAll();
+      break;
+
+    case CMD_CIRCLE:
+      compassCorrectEnabled = false;
+      move(0, 0, (float)cmd.first);
+      break;
+
+    case CMD_LIGHT:
+      // Binary: >0 = HIGH, 0 = LOW
+      led.setLED(0, cmd.third > 0 ? 1 : 0);   // B
+      led.setLED(1, cmd.second > 0 ? 1 : 0);  // G
+      led.setLED(2, cmd.first > 0 ? 1 : 0);   // R
+      break;
+
+    case CMD_COMPASS:
+      compassUpdateNorth();
+      break;
+
+    case CMD_SET_PID:
+      movement.motorPID.setPID(
+        (double)cmd.first,
+        (double)cmd.second,
+        (double)cmd.third
+      );
+      break;
+
+    case CMD_BUTTON:
+      // Already handled in Bluetooth::processFrame()
+      break;
+
+    case CMD_TOGGLE:
+      // Already handled in Bluetooth::processFrame()
+      break;
+  }
+  _lastRxCmdType = cmd.type;
+}
+
+/* =============================================================================
+ *                              PS2 Controller
+ * ============================================================================= */
+
+byte PeanutKingSoccerV4::ps2Init(DigitalPinId CLK, DigitalPinId DAT, bool pressure, bool vibration) {
+  uint8_t PS2_CLK_PIN = static_cast<uint8_t>(CLK);
+  uint8_t PS2_DAT_PIN = static_cast<uint8_t>(DAT);
+
+  // there must be 2 pins between CLK and DAT
+  if (abs(PS2_CLK_PIN - PS2_DAT_PIN) != 3) {
+    // Invalid PS2_CLK_PIN or PS2_DAT_PIN configuration, return error code
+    return 0xFF; // Error code for invalid pin configuration
+  }
+
+  uint8_t PS2_CMD_PIN = 0, PS2_ATT_PIN = 0;
+  // Determine CMD and ATT pins based on CLK and DAT pins
+  if (PS2_CLK_PIN > PS2_DAT_PIN) {  // like clk is D1_P and dat is D4_P
+    PS2_ATT_PIN = PS2_CLK_PIN - 1; // ATT pin is in CLK right
+    PS2_CMD_PIN = PS2_DAT_PIN + 1; // CMD pin is in DAT left
+  } else if (PS2_CLK_PIN < PS2_DAT_PIN) {  // like clk is D6_P and dat is D3_P
+    PS2_ATT_PIN = PS2_CLK_PIN + 1; // ATT pin is in CLK left
+    PS2_CMD_PIN = PS2_DAT_PIN - 1; // CMD pin is in DAT right
+  }
+  byte error = ps2x.config_gamepad(PS2_CLK_PIN, PS2_CMD_PIN, PS2_ATT_PIN, PS2_DAT_PIN, pressure, vibration);
+  return error;
+}
+void PeanutKingSoccerV4::ps2SetVibration(byte strength) {
+  vibrationStr = strength;
+}
+void PeanutKingSoccerV4::ps2Update(void) {
+  ps2x.read_gamepad(false, vibrationStr);
+}
+PS2ButtonState PeanutKingSoccerV4::ps2ButtonStateRead(PS2Button button) {
+  uint16_t btn = static_cast<uint16_t>(button);
+  if (ps2x.ButtonPressed(btn))      { return PS2Pressed; }
+  if (ps2x.Button(btn))             { return PS2Holding; }
+  if (ps2x.ButtonReleased(btn))     { return PS2Released; }
+  return PS2Idle;
+}
+PS2JoystickData PeanutKingSoccerV4::ps2JoystickRead(PS2Joystick joystick) {
+  // Prepare the data structure to hold the results
+  PS2JoystickData data;
+  byte x = (joystick == PS2LeftJoystick) ? ps2x.Analog(PSS_LX) : ps2x.Analog(PSS_RX);
+  byte y = (joystick == PS2LeftJoystick) ? ps2x.Analog(PSS_LY) : ps2x.Analog(PSS_RY);
+
+  const float CX = 128.0;   // X-axis center point (for LX and RX)
+  const float CY = 127.0;   // Y-axis center point (for LY and RY)
+  float dx = x - CX;
+  float dy = y - CY;
+
+  // Calculate angle in degrees (0-360)
+  data.angle = atan2(dx, -dy) * (180.0 / PI);
+  if (data.angle < 0) {
+    data.angle += 360;   // Normalize to [0, 360)
+  }
+
+  // Calculate strength (0-255) based on distance from center
+  float raw_strength = sqrt(dx * dx + dy * dy);
+  // The following commented-out code was an initial attempt to scale the strength based on a circular boundary, 
+  // but it has been replaced with a square boundary scaling method for better control and consistency.
+  // const float MAX_R = sqrt(CX * CX + CY * CY); // = sqrt(128^2 + 127^2) ≈ 180.31
+  // data.strength = (raw_strength / MAX_R) * 255.0;
+  // if (data.strength > 255.0) {
+  //   data.strength = 255.0; // Cap at 255
+  // }
+  // Deadzone for very small movements
+  if (raw_strength < 0.5) { data.strength = 0; }
+  // Scale strength to fit within a square boundary instead of a circular one
+  else {
+    float norm_x = dx / 128.0; // Normalize to [-1, 1]
+    float norm_y = dy / 127.0; // Normalize to [-1, 1]
+    // Find the maximum absolute value to determine the scaling factor
+    float max_abs = max(fabs(norm_x), fabs(norm_y));
+    if (max_abs > 1.0) { max_abs = 1.0; } // Cap at 1.0
+    // Scale to the boundary of the square
+    float boundary_r = raw_strength / max_abs;
+    data.strength = raw_strength / boundary_r * 255.0;    // Scale to [0, 255]
+    if (data.strength > 255.0) { data.strength = 255.0; } // Cap at 255
+  }
+  return data;
+}

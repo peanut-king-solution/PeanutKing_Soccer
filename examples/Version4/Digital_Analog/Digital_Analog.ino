@@ -1,5 +1,10 @@
+/**
+ * This example demonstrates how to read digital and analog sensor values
+ * from the PeanutKingSoccerV4 robot.
+ */
+
 #include <PeanutKingSoccerV4.h>
-static PeanutKingSoccerV4 robot = PeanutKingSoccerV4();
+static PeanutKingSoccerV4 robot;
 
 void setup() {
   robot.init(); 
@@ -50,15 +55,15 @@ void loop() {
   Serial.print(analogRead(A4_P));
   Serial.print("\n");
 
-  robot.setOnBrdLED(LED_CYAN);
+  robot.onBoardLedSet(LEDCyan);
   delay(200);
   digitalWrite(D4_P, LOW);
   digitalWrite(D5_P, LOW);
   digitalWrite(D6_P, LOW);
   
-  robot.setOnBrdLED(0,HIGH);
-  robot.setOnBrdLED(1,LOW);
-  robot.setOnBrdLED(2,LOW);
+  robot.onBoardLedSet(0,HIGH);
+  robot.onBoardLedSet(1,LOW);
+  robot.onBoardLedSet(2,LOW);
 
   delay(200);
 
